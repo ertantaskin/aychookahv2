@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #FFFFFF;
+    --foreground: #0A0A0A;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #0A0A0A;
+      --foreground: #FFFFFF;
+    }
+  }
+  
+  *, *::before, *::after {
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  }
+
+  html {
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-playfair), Georgia, 'Times New Roman', serif !important;
+  }
+
+  button, input, textarea, select, a, p, span, div, li, ul, ol {
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  }
+
+  /* Özel başlıklar için Poppins */
+  .benefit-title, .product-title, .feature-title {
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  }
+
+  /* Serif font class */
+  .font-serif {
+    font-family: var(--font-playfair), Georgia, 'Times New Roman', serif !important;
+  }
+
+  /* Sans font class */
+  .font-sans {
+    font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  }
+
+  /* Display font class (same as serif) */
+  .font-display {
+    font-family: var(--font-playfair), Georgia, 'Times New Roman', serif !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Gradient Animation */
+  @keyframes gradient {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+  }
+
+  /* Float Animation */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Fade In Animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* Slide In Right Animation */
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slideInRight {
+    animation: slideInRight 0.3s ease-out;
+  }
+}
+
