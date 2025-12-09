@@ -25,19 +25,19 @@ const CTASection: React.FC = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 border border-luxury-goldLight/30 rounded-full backdrop-blur-sm bg-luxury-goldLight/5">
             <span className="w-2 h-2 bg-luxury-goldLight rounded-full animate-pulse" />
-            <span className="text-luxury-goldLight text-xs sm:text-sm font-medium tracking-widest uppercase">
+            <span className="font-sans text-luxury-goldLight text-xs sm:text-sm font-medium tracking-widest uppercase">
               Size Özel Çözümler
             </span>
           </div>
 
           <h2 className="font-sans text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-8 leading-tight">
             Lüks Nargile Deneyimini{" "}
-            <span className="inline-block bg-gradient-to-r from-luxury-goldLight via-luxury-gold to-luxury-goldLight bg-clip-text text-transparent animate-gradient">
+            <span className="font-sans inline-block bg-gradient-to-r from-luxury-goldLight via-luxury-gold to-luxury-goldLight bg-clip-text text-transparent animate-gradient">
               Keşfedin
             </span>
           </h2>
           
-          <p className="text-lg sm:text-xl text-luxury-lightGray mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="font-sans text-lg sm:text-xl text-luxury-lightGray mb-12 max-w-3xl mx-auto leading-relaxed">
             Özel koleksiyonumuzdan sizin için en uygun ürünü seçin veya bizimle iletişime 
             geçerek özel tasarım hizmeti hakkında bilgi alın.
           </p>

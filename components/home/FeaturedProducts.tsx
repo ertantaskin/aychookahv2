@@ -163,18 +163,18 @@ const FeaturedProducts: React.FC = () => {
               {/* Product Info */}
               <div className="p-3 sm:p-4 md:p-6 bg-white flex-1 flex flex-col">
                 <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-                  <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-luxury-goldLight/10 text-luxury-goldLight text-[10px] sm:text-xs uppercase tracking-wider rounded">
+                  <span className="font-sans px-1.5 sm:px-2 py-0.5 sm:py-1 bg-luxury-goldLight/10 text-luxury-goldLight text-[10px] sm:text-xs uppercase tracking-wider rounded">
                     {product.category}
                   </span>
                   <span className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-gray-300" />
-                  <span className="text-[10px] sm:text-xs text-gray-500 truncate">{product.equipmentType}</span>
+                  <span className="font-sans text-[10px] sm:text-xs text-gray-500 truncate">{product.equipmentType}</span>
                 </div>
                 
-                <div className="product-title text-luxury-black text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-luxury-goldLight transition-colors duration-300">
+                <div className="font-sans product-title text-luxury-black text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-luxury-goldLight transition-colors duration-300">
                   {product.name}
                 </div>
                 
-                <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 flex-grow">
+                <p className="font-sans text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 flex-grow">
                   {product.description}
                 </p>
                 
@@ -183,7 +183,7 @@ const FeaturedProducts: React.FC = () => {
                   {product.features.slice(0, 2).map((feature, idx) => (
                     <span 
                       key={idx}
-                      className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 text-gray-700 text-[9px] sm:text-xs rounded-md font-medium"
+                      className="font-sans px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gray-100 text-gray-700 text-[9px] sm:text-xs rounded-md font-medium"
                     >
                       {feature}
                     </span>

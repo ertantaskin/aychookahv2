@@ -1,0 +1,341 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  password  String
+  role      String    @default("user")
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  addresses Address[]
+  cart      Cart?
+  media     Media[]
+  orders    Order[]
+  reviews   Review[]
+
+  @@map("users")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admins")
+}
+
+model Category {
+  id             String    @id @default(cuid())
+  name           String    @unique
+  slug           String    @unique
+  description    String?
+  image          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  metaKeywords   String?
+  ogImage        String?
+  seoDescription String?
+  seoTitle       String?
+  products       Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  description      String
+  price            Float
+  stock            Int              @default(0)
+  sku              String?          @unique
+  isActive         Boolean          @default(true)
+  isNew            Boolean          @default(false)
+  isBestseller     Boolean          @default(false)
+  material         String?
+  height           String?
+  equipmentType    String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  categoryId       String
+  brand            String?
+  metaKeywords     String?
+  ogImage          String?
+  seoDescription   String?
+  seoTitle         String?
+  shortDescription String?
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  features         ProductFeature[]
+  images           ProductImage[]
+  category         Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  reviews          Review[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([isActive])
+  @@map("products")
+}
+
+model ProductFeature {
+  id        String  @id @default(cuid())
+  name      String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_features")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String?
+  isPrimary Boolean @default(false)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  status          OrderStatus   @default(PENDING)
+  total           Float
+  subtotal        Float
+  shippingCost    Float         @default(0)
+  tax             Float         @default(0)
+  paymentMethod   String?
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentId       String?
+  shippingAddress Json
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  userId          String
+  items           OrderItem[]
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  quantity       Int
+  price          Float
+  orderId        String
+  productId      String?
+  productName    String?  // Ürün adı snapshot (ürün silinse bile korunur)
+  productImageUrl String? // Ürün görseli snapshot (ürün silinse bile korunur)
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  cartId    String
+  productId String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?
+  userId     String
+  productId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isApproved Boolean  @default(false)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([userId])
+  @@index([isApproved])
+  @@map("reviews")
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  title      String
+  firstName  String
+  lastName   String
+  phone      String
+  address    String
+  city       String
+  district   String
+  postalCode String
+  isDefault  Boolean  @default(false)
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+model PaymentGateway {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  displayName String
+  isActive    Boolean  @default(false)
+  isTestMode  Boolean  @default(true)
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("payment_gateways")
+}
+
+model SiteSEO {
+  id                     String   @id @default(cuid())
+  siteName               String
+  siteDescription        String
+  siteUrl                String
+  defaultTitle           String
+  defaultDescription     String
+  defaultKeywords        String?
+  ogImage                String?
+  twitterHandle          String?
+  facebookAppId          String?
+  googleSiteVerification String?
+  bingVerification       String?
+  robotsTxt              String?
+  analyticsId            String?
+  structuredData         Json?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  address                String?
+  city                   String?
+  country                String?
+  email                  String?
+  instagramUrl           String?
+  latitude               Float?
+  linkedinUrl            String?
+  longitude              Float?
+  openingHours           String?
+  phone                  String?
+  pinterestUrl           String?
+  postalCode             String?
+  priceRange             String?
+  youtubeUrl             String?
+  favicon                String?
+
+  @@map("site_seo")
+}
+
+model PageSEO {
+  id             String   @id @default(cuid())
+  pagePath       String   @unique
+  pageName       String
+  title          String?
+  description    String?
+  keywords       String?
+  ogTitle        String?
+  ogDescription  String?
+  ogImage        String?
+  ogType         String?  @default("website")
+  noindex        Boolean  @default(false)
+  nofollow       Boolean  @default(false)
+  canonical      String?
+  structuredData Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([pagePath])
+  @@map("page_seo")
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  pagePath  String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pagePath])
+  @@index([isActive])
+  @@map("faqs")
+}
+
+model Media {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  type        String
+  size        Int
+  mimeType    String
+  alt         String?
+  description String?
+  uploadedBy  String?
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User?    @relation(fields: [uploadedBy], references: [id])
+
+  @@index([uploadedBy])
+  @@index([type])
+  @@index([createdAt])
+  @@map("media")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}

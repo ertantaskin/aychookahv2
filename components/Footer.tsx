@@ -1,8 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import WhatsAppWidget from "./WhatsAppWidget";
 
 const Footer: React.FC = () => {
+  const pathname = usePathname();
   const currentYear = new Date().getFullYear();
+
+  // Admin sayfalarında footer'ı gösterme
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <footer className="relative bg-gradient-to-b from-luxury-black to-luxury-darkGray">

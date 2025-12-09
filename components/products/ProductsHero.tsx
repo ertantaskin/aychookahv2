@@ -1,6 +1,6 @@
 const ProductsHero: React.FC = () => {
   return (
-    <section className="relative pt-24 sm:pt-28 pb-10 sm:pb-12 bg-gradient-to-b from-luxury-black to-luxury-darkGray">
+    <section className="relative pt-4 sm:pt-8 pb-10 sm:pb-12 bg-gradient-to-b from-luxury-black to-luxury-darkGray">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-4xl mx-auto">
           {/* Badge */}

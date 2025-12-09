@@ -118,7 +118,7 @@ const Hero: React.FC = () => {
               }`}>
                 {/* Description */}
                 <p 
-                  className={`text-lg sm:text-xl md:text-2xl text-white font-light mb-8 leading-relaxed transition-all duration-1000 ${
+                  className={`font-sans text-lg sm:text-xl md:text-2xl text-white font-light mb-8 leading-relaxed transition-all duration-1000 ${
                     isVisible && index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                   }`}
                 >

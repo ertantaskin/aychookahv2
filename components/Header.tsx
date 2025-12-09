@@ -3,11 +3,19 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { getGuestCartItemCount } from "@/lib/utils/cart-client";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+  const [user, setUser] = useState<{ id: string; email: string; name: string; role: string } | null>(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(false);
   const pathname = usePathname();
+
+  // Admin sayfalarında header'ı gösterme (hooks'tan sonra kontrol et)
+  const isAdminPage = pathname?.startsWith("/admin");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +39,122 @@ const Header: React.FC = () => {
       document.body.style.overflow = "unset";
     };
   }, [isMenuOpen]);
+
+  // Client-side mount kontrolü (hydration hatasını önlemek için)
+  useEffect(() => {
+    setIsMounted(true);
+    // Mount olduktan sonra guest sepet sayısını set et
+    const guestCount = getGuestCartItemCount();
+    setCartItemCount(guestCount);
+  }, []);
+
+  // Kullanıcı session'ını ve sepet sayısını güncelle (mount olduğunda ve pathname değiştiğinde)
+  useEffect(() => {
+    if (!isMounted) return;
+
+    let isCancelled = false;
+
+    const updateSessionAndCart = async () => {
+      try {
+        // Session kontrolü - cache bypass için timestamp ekle
+        const sessionResponse = await fetch("/api/auth/session", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+        if (isCancelled) return;
+        
+        const sessionData = await sessionResponse.json();
+        if (!isCancelled) {
+          setUser(sessionData.user);
+        }
+
+        // Sepet sayısını güncelle
+        if (sessionData.user) {
+          // Authenticated kullanıcı için API'den güncel sayıyı al
+          try {
+            const cartResponse = await fetch("/api/cart/count", {
+              cache: "no-store",
+            });
+            if (isCancelled) return;
+            
+            const cartData = await cartResponse.json();
+            // Sadece API'den geçerli bir sayı geldiyse güncelle
+            if (!isCancelled && cartData.count !== undefined && cartData.count !== null && typeof cartData.count === 'number') {
+              setCartItemCount(cartData.count);
+            }
+          } catch {
+            // API hatası durumunda guest sepet sayısını koru
+            if (!isCancelled) {
+              const currentGuestCount = getGuestCartItemCount();
+              setCartItemCount(currentGuestCount);
+            }
+          }
+        } else {
+          // Guest kullanıcı için localStorage'dan güncel sayıyı al
+          if (!isCancelled) {
+            const currentGuestCount = getGuestCartItemCount();
+            setCartItemCount(currentGuestCount);
+          }
+        }
+      } catch {
+        // Hata durumunda guest sepet sayısını al
+        if (!isCancelled) {
+          const currentGuestCount = getGuestCartItemCount();
+          setCartItemCount(currentGuestCount);
+        }
+      }
+    };
+
+    updateSessionAndCart();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isMounted, pathname]);
+
+  // Sepet güncellendiğinde sayıyı güncelle (sadece cartUpdated event'inde)
+  useEffect(() => {
+    if (!isMounted) return;
+
+    let isCancelled = false;
+
+    const handleCartUpdate = () => {
+      if (isCancelled) return;
+      
+      // Önce guest sepet sayısını al (optimistic update - hızlı)
+        const guestCount = getGuestCartItemCount();
+        if (!isCancelled) {
+          setCartItemCount(guestCount);
+        }
+      
+      // Eğer user state'i varsa, authenticated kullanıcı için API'den güncel sayıyı al
+      if (user) {
+        fetch("/api/cart/count", {
+          cache: "no-store",
+        })
+          .then(res => res.json())
+          .then(cartData => {
+            if (isCancelled) return;
+            
+            if (cartData.count !== undefined && cartData.count !== null && typeof cartData.count === 'number') {
+                setCartItemCount(cartData.count);
+              }
+          })
+          .catch(() => {
+            // API hatası durumunda guest sepet sayısı zaten set edilmiş
+          });
+      }
+    };
+
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    
+    return () => {
+      isCancelled = true;
+      window.removeEventListener("cartUpdated", handleCartUpdate);
+    };
+  }, [isMounted, user]);
 
   const navigation = [
     { 
@@ -77,6 +201,11 @@ const Header: React.FC = () => {
     { name: "WhatsApp", icon: "whatsapp", href: "#" },
   ];
 
+  // Admin sayfalarında header'ı gösterme (hooks'tan sonra kontrol et)
+  if (isAdminPage) {
+    return null;
+  }
+
   return (
     <>
       <header 
@@ -122,10 +251,139 @@ const Header: React.FC = () => {
               </nav>
             </div>
 
+            {/* Desktop Actions - Sepet, Kullanıcı ve Menu */}
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Sepet İkonu */}
+              <Link
+                href="/sepet"
+                className="relative flex items-center justify-center w-10 h-10 text-luxury-lightGray hover:text-luxury-goldLight transition-colors"
+                aria-label="Sepet"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-luxury-goldLight text-luxury-black text-xs font-bold rounded-full">
+                    {cartItemCount > 99 ? "99+" : cartItemCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Kullanıcı İkonu */}
+              <button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (isCheckingSession) return;
+                  
+                  setIsCheckingSession(true);
+                  try {
+                    // Önce mevcut user state'ini kontrol et
+                    if (user) {
+                      window.location.href = "/hesabim";
+                      return;
+                    }
+                    
+                    // Eğer user state'i yoksa, session kontrolü yap
+                    const sessionResponse = await fetch("/api/auth/session");
+                    const sessionData = await sessionResponse.json();
+                    
+                    if (sessionData.user) {
+                      window.location.href = "/hesabim";
+                    } else {
+                      window.location.href = "/giris";
+                    }
+                  } catch (error) {
+                    console.error("Session check error:", error);
+                    window.location.href = "/giris";
+                  } finally {
+                    setIsCheckingSession(false);
+                  }
+                }}
+                className="flex items-center justify-center w-10 h-10 text-luxury-lightGray hover:text-luxury-goldLight transition-colors disabled:opacity-50 disabled:cursor-wait"
+                aria-label={user ? "Hesabım" : "Giriş Yap"}
+                title={user ? (user.name || user.email) : "Giriş Yap"}
+                disabled={isCheckingSession}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
+
+              {/* Desktop Menu Button (for flyout on all screens) */}
+              <button
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 border border-luxury-goldLight/30 rounded-full text-luxury-goldLight hover:bg-luxury-goldLight hover:text-luxury-black transition-all duration-300"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                <span className="text-sm font-medium uppercase tracking-wider">Menu</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Mobile Sepet, Kullanıcı ve Menu Buttons */}
+            <div className="lg:hidden flex items-center gap-3">
+              {/* Sepet İkonu - Mobile */}
+              <Link
+                href="/sepet"
+                className="relative flex items-center justify-center w-10 h-10 text-luxury-lightGray hover:text-luxury-goldLight transition-colors"
+                aria-label="Sepet"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-luxury-goldLight text-luxury-black text-xs font-bold rounded-full">
+                    {cartItemCount > 99 ? "99+" : cartItemCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Kullanıcı İkonu - Mobile */}
+              <button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (isCheckingSession) return;
+                  
+                  setIsCheckingSession(true);
+                  try {
+                    // Önce mevcut user state'ini kontrol et
+                    if (user) {
+                      window.location.href = "/hesabim";
+                      return;
+                    }
+                    
+                    // Eğer user state'i yoksa, session kontrolü yap
+                    const sessionResponse = await fetch("/api/auth/session");
+                    const sessionData = await sessionResponse.json();
+                    
+                    if (sessionData.user) {
+                      window.location.href = "/hesabim";
+                    } else {
+                      window.location.href = "/giris";
+                    }
+                  } catch (error) {
+                    console.error("Session check error:", error);
+                    window.location.href = "/giris";
+                  } finally {
+                    setIsCheckingSession(false);
+                  }
+                }}
+                className="flex items-center justify-center w-10 h-10 text-luxury-lightGray hover:text-luxury-goldLight transition-colors disabled:opacity-50 disabled:cursor-wait"
+                aria-label={user ? "Hesabım" : "Giriş Yap"}
+                title={user ? (user.name || user.email) : "Giriş Yap"}
+                disabled={isCheckingSession}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
+
             {/* Menu Button */}
             <button
               type="button"
-              className="lg:hidden relative w-10 h-10 flex items-center justify-center text-luxury-lightGray hover:text-luxury-goldLight transition-colors"
+                className="relative w-10 h-10 flex items-center justify-center text-luxury-lightGray hover:text-luxury-goldLight transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Menüyü aç/kapat"
             >
@@ -135,18 +393,7 @@ const Header: React.FC = () => {
                 <span className={`w-full h-0.5 bg-current transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
               </div>
             </button>
-
-            {/* Desktop Menu Button (for flyout on all screens) */}
-            <button
-              type="button"
-              className="hidden lg:flex items-center gap-2 px-4 py-2 border border-luxury-goldLight/30 rounded-full text-luxury-goldLight hover:bg-luxury-goldLight hover:text-luxury-black transition-all duration-300"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <span className="text-sm font-medium uppercase tracking-wider">Menu</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            </div>
           </div>
         </nav>
       </header>

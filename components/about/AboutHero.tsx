@@ -12,7 +12,7 @@ const AboutHero: React.FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-block px-4 py-2 bg-luxury-goldLight/20 rounded-sm mb-6">
-            <span className="text-luxury-goldLight font-semibold text-sm uppercase tracking-wider">
+            <span className="font-sans text-luxury-goldLight font-semibold text-sm uppercase tracking-wider">
               Hikayemiz
             </span>
           </div>
@@ -21,7 +21,7 @@ const AboutHero: React.FC = () => {
             Gelenekten <span className="text-luxury-goldLight">Geleceğe</span>
           </h1>
           
-          <p className="text-lg sm:text-xl text-luxury-lightGray leading-relaxed">
+          <p className="font-sans text-lg sm:text-xl text-luxury-lightGray leading-relaxed">
             Aychookah, tutku ve zanaat geleneğinin buluştuğu, her detayda mükemmeliyeti arayan 
             bir markadır. El işçiliği nargile üretimi ve orijinal Rus nargile kültürünü 
             Türkiye&apos;ye taşımanın gururunu yaşıyoruz.

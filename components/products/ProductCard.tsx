@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 
 interface Product {
-  id: number;
+  id: string | number;
   name: string;
   category: string;
   equipmentType: string;
@@ -15,6 +17,7 @@ interface Product {
   features: string[];
   material: string;
   height?: string;
+  slug?: string;
 }
 
 interface ProductCardProps {
@@ -73,9 +76,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
                 {product.name}
               </h3>
 
-              <p className="font-sans text-sm text-gray-600 mb-3 line-clamp-2">
-                {product.description}
-              </p>
+              {product.description && (
+                <p className="font-sans text-sm text-gray-600 mb-3 line-clamp-2">
+                  {product.description}
+                </p>
+              )}
 
               <div className="flex flex-wrap gap-1 mb-3">
                 {product.features.slice(0, 3).map((feature, idx) => (
@@ -161,9 +166,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
   }
 
   // Default grid view
+  const productSlug = product.slug || `product-${product.id}`;
+  
   return (
-    <div
-      className="group bg-white rounded-xl sm:rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-xl overflow-hidden h-full flex flex-col"
+    <Link
+      href={`/urun/${productSlug}`}
+      className="group bg-white rounded-xl sm:rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-xl overflow-hidden h-full flex flex-col block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -190,7 +198,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
           </svg>
         </button>
 
-        {/* Product Image Placeholder */}
+        {/* Product Image */}
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
         <div className="absolute inset-0 flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
           <div className="text-center">
             <svg className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,6 +214,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
             </svg>
           </div>
         </div>
+        )}
 
         {/* Quick View on Hover - Hidden on mobile */}
         <div className={`hidden sm:block absolute inset-x-0 bottom-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
@@ -224,9 +241,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
         </h3>
 
         {/* Description */}
-        <p className="font-sans text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2 leading-relaxed flex-grow">
-          {product.description}
-        </p>
+        {product.description && (
+          <p className="font-sans text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2 leading-relaxed flex-grow">
+            {product.description}
+          </p>
+        )}
 
         {/* Features */}
         <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-3 sm:mb-4">
@@ -262,7 +281,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
           </button>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

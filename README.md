@@ -1,138 +1,241 @@
-# Aychookah - Lüks Nargile Web Sitesi
+# Aychookah E-Ticaret Platformu
 
-Modern ve şık bir nargile markası web sitesi. Next.js 15, TypeScript ve Tailwind CSS kullanılarak geliştirilmiştir.
+Modern, güvenli ve ölçeklenebilir e-ticaret platformu. Next.js 15, Prisma, PostgreSQL ve iyzico ödeme entegrasyonu ile geliştirilmiştir.
 
-## 🎯 Özellikler
+## 🚀 Özellikler
 
-- ✨ **Modern Tasarım**: Siyah, beyaz ve koyu gri renk paleti ile lüks ve sade bir görünüm
-- 🎨 **Responsive**: Mobil, tablet ve masaüstü cihazlarda mükemmel görünüm
-- ⚡ **Performans**: Next.js 15 App Router ile optimize edilmiş performans
-- 🔍 **SEO Uyumlu**: Meta etiketler, sitemap ve robots.txt ile tam SEO desteği
-- 🌐 **Türkçe İçerik**: Tam Türkçe dil desteği
-- 📱 **PWA Desteği**: Progressive Web App özellikleri
+### Müşteri Tarafı
+- ✅ Ürün listeleme ve filtreleme
+- ✅ Ürün detay sayfaları
+- ✅ Sepet yönetimi
+- ✅ Kullanıcı girişi/kayıt
+- ✅ Checkout süreci
+- ✅ iyzico ödeme entegrasyonu
+- ✅ Sipariş takibi
+- ✅ Responsive tasarım
 
-## 📄 Sayfalar
+### Admin Paneli
+- ✅ Dashboard ve istatistikler
+- ✅ Ürün yönetimi (CRUD)
+- ✅ Sipariş yönetimi
+- ✅ Kullanıcı yönetimi
+- ✅ Stok takibi
 
-1. **Ana Sayfa**: Hero bölümü, öne çıkan ürünler, el işçiliği ve Rus kültürü tanıtımı
-2. **Ürünler**: Filtrelenebilir ve sıralanabilir ürün listesi
-3. **Hakkımızda**: Marka hikayesi, değerler ve üretim süreci
-4. **İletişim**: İletişim formu ve iletişim bilgileri
+## 📋 Gereksinimler
 
-## 🚀 Kurulum
+- Node.js 18+
+- PostgreSQL 12+
+- npm veya yarn
 
-1. **Bağımlılıkları yükleyin:**
+## 🛠️ Kurulum
+
+### 1. Bağımlılıkları Yükleyin
+
 ```bash
 npm install
 ```
 
-2. **Geliştirme sunucusunu başlatın:**
+### 2. Environment Variables
+
+`.env.local` dosyası oluşturun:
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/aychookah"
+
+# NextAuth
+NEXTAUTH_SECRET="your-secret-key-here"
+NEXTAUTH_URL="http://localhost:3000"
+
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# iyzico (Test için sandbox kullanın)
+IYZICO_API_KEY="your-api-key"
+IYZICO_SECRET_KEY="your-secret-key"
+IYZICO_URI="https://sandbox-api.iyzipay.com"
+
+# Admin (opsiyonel)
+ADMIN_EMAIL="admin@aychookah.com"
+ADMIN_PASSWORD="admin123"
+ADMIN_NAME="Admin"
+```
+
+**NEXTAUTH_SECRET oluşturma:**
+```bash
+openssl rand -base64 32
+```
+
+### 3. Veritabanı Kurulumu
+
+```bash
+# Migration oluştur ve uygula
+npm run db:migrate
+
+# Prisma client generate et
+npm run db:generate
+
+# Veritabanını seed et (örnek veriler)
+npm run db:seed
+```
+
+### 4. Geliştirme Sunucusu
+
 ```bash
 npm run dev
 ```
 
-3. **Tarayıcınızda açın:**
-```
-http://localhost:3000
-```
+Uygulama `http://localhost:3000` adresinde çalışacaktır.
 
-## 🏗️ Proje Yapısı
+## 📝 Kullanılabilir Komutlar
 
-```
-aychookah/
-├── app/                    # Next.js App Router
-│   ├── layout.tsx         # Ana layout
-│   ├── page.tsx           # Ana sayfa
-│   ├── globals.css        # Global stiller
-│   ├── urunler/           # Ürünler sayfası
-│   ├── hakkimizda/        # Hakkımızda sayfası
-│   ├── iletisim/          # İletişim sayfası
-│   ├── sitemap.ts         # SEO sitemap
-│   ├── robots.ts          # SEO robots
-│   └── manifest.ts        # PWA manifest
-├── components/            # React bileşenleri
-│   ├── Header.tsx         # Header bileşeni
-│   ├── Footer.tsx         # Footer bileşeni
-│   ├── home/             # Ana sayfa bileşenleri
-│   ├── products/         # Ürünler bileşenleri
-│   ├── about/            # Hakkımızda bileşenleri
-│   └── contact/          # İletişim bileşenleri
-├── public/               # Statik dosyalar
-├── tailwind.config.ts    # Tailwind yapılandırması
-├── tsconfig.json         # TypeScript yapılandırması
-└── package.json          # Proje bağımlılıkları
-```
-
-## 🎨 Renk Paleti
-
-- **Luxury Black**: #0A0A0A
-- **Dark Gray**: #1A1A1A
-- **Medium Gray**: #2D2D2D
-- **Light Gray**: #B8B8B8
-- **Gold**: #D4AF37
-- **Gold Light**: #E5C76B
-
-## 📦 Kullanılan Teknolojiler
-
-- **Next.js 15**: React framework (App Router)
-- **TypeScript**: Tip güvenliği
-- **Tailwind CSS**: Utility-first CSS framework
-- **React 18**: UI kütüphanesi
-- **Zod**: Form validasyonu için (isteğe bağlı)
-
-## 🔧 Özelleştirme
-
-### Renkleri Değiştirme
-`tailwind.config.ts` dosyasında renk paletini özelleştirebilirsiniz.
-
-### Ürün Ekleme
-`components/products/ProductsGrid.tsx` dosyasındaki `allProducts` dizisine yeni ürünler ekleyebilirsiniz.
-
-### İletişim Bilgileri
-`components/Footer.tsx` ve `components/contact/ContactInfo.tsx` dosyalarında iletişim bilgilerini güncelleyebilirsiniz.
-
-## 🌐 Deployment
-
-### Vercel (Önerilen)
 ```bash
-npm run build
+# Geliştirme
+npm run dev              # Geliştirme sunucusu
+npm run build            # Production build
+npm run start            # Production sunucu
+
+# Veritabanı
+npm run db:migrate       # Migration oluştur/uygula
+npm run db:generate      # Prisma client generate
+npm run db:seed          # Veritabanını seed et
+npm run db:studio        # Prisma Studio aç
+
+# Admin
+npm run create-admin     # Admin kullanıcısı oluştur
 ```
-Projeyi Vercel'e yükleyin ve otomatik deployment yapın.
+
+## 🔐 İlk Kullanım
+
+### Admin Paneline Giriş
+
+1. `/giris` sayfasına gidin
+2. "Admin" seçeneğini seçin
+3. Seed script'teki veya `.env.local`'deki admin bilgileriyle giriş yapın
+4. `/admin` sayfasına yönlendirileceksiniz
+
+**Varsayılan Admin:**
+- Email: `admin@aychookah.com`
+- Password: `admin123`
+
+### İlk Ürün Ekleme
+
+1. Admin paneline giriş yapın
+2. `/admin/urunler` sayfasına gidin
+3. "Yeni Ürün" butonuna tıklayın
+4. Ürün bilgilerini doldurun ve kaydedin
+
+## 📁 Proje Yapısı
+
+```
+app/
+├── admin/              # Admin paneli
+│   ├── urunler/        # Ürün yönetimi
+│   ├── siparisler/     # Sipariş yönetimi
+│   └── kullanicilar/   # Kullanıcı yönetimi
+├── urunler/            # Ürün listesi ve detay
+├── sepet/              # Sepet sayfası
+├── odeme/              # Checkout ve ödeme
+└── api/auth/           # NextAuth API
+
+lib/
+├── actions/            # Server actions
+│   ├── products.ts
+│   ├── cart.ts
+│   ├── orders.ts
+│   ├── payment.ts
+│   └── admin/
+├── prisma.ts           # Prisma client
+└── auth.ts             # NextAuth config
+
+components/
+├── products/           # Ürün componentleri
+├── cart/               # Sepet componentleri
+├── checkout/           # Checkout componentleri
+└── admin/              # Admin componentleri
+```
+
+## 🔒 Güvenlik
+
+- ✅ NextAuth.js ile güvenli kimlik doğrulama
+- ✅ Server-side validation
+- ✅ SQL injection koruması (Prisma)
+- ✅ XSS koruması
+- ✅ CSRF koruması (Next.js built-in)
+- ✅ Environment variables ile hassas bilgi yönetimi
+
+## 💳 Ödeme Entegrasyonu
+
+### iyzico Test Ortamı
+
+Test için iyzico sandbox kullanın:
+- API Key ve Secret Key'i iyzico test hesabınızdan alın
+- `IYZICO_URI="https://sandbox-api.iyzipay.com"` olarak ayarlayın
+
+### Production
+
+Production'da:
+- Gerçek API key'leri kullanın
+- `IYZICO_URI="https://api.iyzipay.com"` olarak güncelleyin
+
+## 🚢 Deployment
+
+### Vercel
+
+1. GitHub'a push edin
+2. Vercel'e import edin
+3. Environment variables'ı ekleyin
+4. Deploy edin
 
 ### Diğer Platformlar
-Next.js'in desteklediği herhangi bir platformda (Netlify, AWS, DigitalOcean, vb.) deploy edebilirsiniz.
 
-## 📝 SEO İyileştirmeleri
+- Environment variables'ı ayarlayın
+- `npm run build` ile build alın
+- `npm run start` ile başlatın
+- Migration'ları çalıştırın: `npm run db:migrate`
 
-- ✅ Meta etiketler (title, description, keywords)
-- ✅ Open Graph etiketleri
-- ✅ Twitter Card etiketleri
-- ✅ Sitemap.xml
-- ✅ Robots.txt
-- ✅ Semantic HTML
-- ✅ Alt etiketleri (görseller eklendiğinde)
-- ✅ Structured data (isteğe bağlı olarak eklenebilir)
+## 🐛 Sorun Giderme
 
-## 🖼️ Görseller Ekleme
+### Veritabanı Bağlantı Hatası
 
-Ürün görselleri için `public/images/products/` klasörüne görselleri ekleyin.
-Önerilen görsel formatları: WebP, AVIF (Next.js otomatik optimize eder)
+- PostgreSQL'in çalıştığından emin olun
+- `DATABASE_URL` değerini kontrol edin
+- Migration'ları çalıştırdığınızdan emin olun
 
-## 🔐 Güvenlik
+### Prisma Client Hatası
 
-- Form validasyonu (Zod ile genişletilebilir)
-- XSS koruması (React varsayılan)
-- CSRF koruması (API route'ları eklendiğinde)
-- Helmet entegrasyonu (production için önerilir)
+```bash
+npx prisma generate
+```
+
+### NextAuth Hatası
+
+- `NEXTAUTH_SECRET` değerini kontrol edin
+- `NEXTAUTH_URL` değerini kontrol edin
+
+### iyzico Hatası
+
+- API key'lerin doğru olduğundan emin olun
+- Sandbox/Production URI'sini kontrol edin
+
+## 📚 Teknolojiler
+
+- **Framework:** Next.js 15 (App Router)
+- **Database:** PostgreSQL + Prisma ORM
+- **Authentication:** NextAuth.js v5
+- **Payment:** iyzico
+- **UI:** Tailwind CSS
+- **Type Safety:** TypeScript
+- **State Management:** Zustand
+- **Notifications:** Sonner
 
 ## 📄 Lisans
 
-Bu proje özel kullanım içindir.
+Bu proje özel bir projedir.
 
-## 📞 Destek
+## 🤝 Destek
 
-Sorularınız için: info@aychookah.com
-
----
-
-**Aychookah** - Lüks Nargile Sanatının Zirvesi
-
+Sorun yaşarsanız:
+1. Console log'larını kontrol edin
+2. Prisma Studio ile veritabanını kontrol edin: `npm run db:studio`
+3. Build log'larını inceleyin: `npm run build`

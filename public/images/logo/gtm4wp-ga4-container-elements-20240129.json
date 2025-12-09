@@ -1,0 +1,595 @@
+{
+    "exportFormatVersion": 2,
+    "exportTime": "2024-01-29 14:09:36",
+    "containerVersion": {
+        "path": "accounts/198866/containers/176025081/versions/0",
+        "accountId": "198866",
+        "containerId": "176025081",
+        "containerVersionId": "0",
+        "container": {
+            "path": "accounts/198866/containers/176025081",
+            "accountId": "198866",
+            "containerId": "176025081",
+            "name": "Sandbox 2024",
+            "publicId": "GTM-NVG83W5Z",
+            "usageContext": [
+                "WEB"
+            ],
+            "fingerprint": "1706099204762",
+            "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/198866/containers/176025081/workspaces?apiLink=container",
+            "features": {
+                "supportUserPermissions": true,
+                "supportEnvironments": true,
+                "supportWorkspaces": true,
+                "supportGtagConfigs": false,
+                "supportBuiltInVariables": true,
+                "supportClients": false,
+                "supportFolders": true,
+                "supportTags": true,
+                "supportTemplates": true,
+                "supportTriggers": true,
+                "supportVariables": true,
+                "supportVersions": true,
+                "supportZones": true,
+                "supportTransformations": false
+            },
+            "tagIds": [
+                "GTM-NVG83W5Z"
+            ]
+        },
+        "tag": [
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "tagId": "5",
+                "name": "GA4 - Event - Ecommerce events",
+                "type": "gaawe",
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "sendEcommerceData",
+                        "value": "true"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "getEcommerceDataFrom",
+                        "value": "dataLayer"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enhancedUserId",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "eventName",
+                        "value": "{{Event}}"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "measurementIdOverride",
+                        "value": "{{GA4 ID}}"
+                    }
+                ],
+                "fingerprint": "1706099226698",
+                "firingTriggerId": [
+                    "4"
+                ],
+                "tagFiringOption": "ONCE_PER_EVENT",
+                "monitoringMetadata": {
+                    "type": "MAP"
+                },
+                "consentSettings": {
+                    "consentStatus": "NOT_SET"
+                }
+            }
+        ],
+        "trigger": [
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "triggerId": "4",
+                "name": "Event - Ecommerce Events",
+                "type": "CUSTOM_EVENT",
+                "customEventFilter": [
+                    {
+                        "type": "MATCH_REGEX",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{_event}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "view_item|view_item_list|select_item|add_to_cart|remove_from_cart|view_cart|begin_checkout|add_payment_info|add_shipping_info|purchase"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1706099226698"
+            }
+        ],
+        "variable": [
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "3",
+                "name": "Ecommerce Value",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.value"
+                    }
+                ],
+                "fingerprint": "1706099226697",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "6",
+                "name": "Ecommerce Coupon",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.coupon"
+                    }
+                ],
+                "fingerprint": "1706099226699",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "7",
+                "name": "Ecommerce Tax",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.tax"
+                    }
+                ],
+                "fingerprint": "1706099226699",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "8",
+                "name": "Ecommerce Currency",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.currency"
+                    }
+                ],
+                "fingerprint": "1706099226699",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "9",
+                "name": "Ecommerce",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "1"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce"
+                    }
+                ],
+                "fingerprint": "1706099226700",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "10",
+                "name": "Ecommerce Affiliation",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.affiliation"
+                    }
+                ],
+                "fingerprint": "1706099226700",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "11",
+                "name": "Ecommerce Items",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.items"
+                    }
+                ],
+                "fingerprint": "1706099226700",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "12",
+                "name": "Ecommerce Transaction ID",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.transaction_id"
+                    }
+                ],
+                "fingerprint": "1706099226701",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "13",
+                "name": "Ecommerce Shipping",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "ecommerce.shipping"
+                    }
+                ],
+                "fingerprint": "1706099226701",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "14",
+                "name": "Order Data - Billing First Name Hash",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.first_name_hash"
+                    }
+                ],
+                "fingerprint": "1706537145006",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "15",
+                "name": "Order Data - Billing Last Name Hash",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.last_name_hash"
+                    }
+                ],
+                "fingerprint": "1706537154197",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "16",
+                "name": "Order Data - Billing Email Hash",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.email_hash"
+                    }
+                ],
+                "fingerprint": "1706537314608",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "17",
+                "name": "Order Data - Billing Phone Hash",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.phone_hash"
+                    }
+                ],
+                "fingerprint": "1706537321715",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "18",
+                "name": "Order Data - Billing Street",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.address_1"
+                    }
+                ],
+                "fingerprint": "1706537357509",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "19",
+                "name": "Order Data - Billing City",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.city"
+                    }
+                ],
+                "fingerprint": "1706537301115",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "20",
+                "name": "Order Data - Billing Region",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.state"
+                    }
+                ],
+                "fingerprint": "1706537349318",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "21",
+                "name": "Order Data - Billing Postal Code",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.postcode"
+                    }
+                ],
+                "fingerprint": "1706537334906",
+                "formatValue": {}
+            },
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "variableId": "22",
+                "name": "Order Data - Billing Country",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderData.customer.billing.country"
+                    }
+                ],
+                "fingerprint": "1706537308140",
+                "formatValue": {}
+            }
+        ],
+        "builtInVariable": [
+            {
+                "accountId": "198866",
+                "containerId": "176025081",
+                "type": "EVENT",
+                "name": "Event"
+            }
+        ],
+        "fingerprint": "1706537376483",
+        "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/198866/containers/176025081/versions/0?apiLink=version"
+    }
+}
