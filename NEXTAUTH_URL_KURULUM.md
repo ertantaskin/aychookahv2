@@ -88,3 +88,4 @@ NEXT_PUBLIC_APP_URL="https://staging.aychookah.com:8443"
 - NextAuth callback URL'i otomatik olarak `NEXTAUTH_URL` + `/api/auth/callback/[provider]` olarak oluşturur
 - Eğer özel bir callback URL gerekiyorsa, provider yapılandırmasında belirtin
 
+

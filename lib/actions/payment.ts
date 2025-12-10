@@ -4,6 +4,9 @@ import { auth } from "@/lib/auth";
 import { getCart } from "./cart";
 import { getActivePaymentGateway } from "./admin/payment-gateways";
 import { prisma } from "@/lib/prisma";
+import { getTaxSettings } from "@/lib/utils/tax-calculator";
+import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
+import { calculateTaxForCart } from "@/lib/utils/tax-calculator";
 
 // iyzico için tarih formatı: yyyy-MM-dd HH:mm:ss
 const formatDateForIyzipay = (date: Date): string => {
@@ -145,14 +148,28 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       }
     }
 
-    // Toplam hesapla
-    const subtotal = cart.items.reduce(
+    // Ayarları getir
+    const taxSettings = await getTaxSettings();
+    const shippingSettings = await getShippingSettings();
+
+    // Toplam hesapla (ürün fiyatları KDV dahil olarak saklanıyor)
+    const cartSubtotal = cart.items.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
-    const shippingCost = 0;
-    const tax = subtotal * 0.20;
-    const total = subtotal + shippingCost + tax;
+
+    // Vergi hesapla (KDV dahil fiyatlardan)
+    const taxCalculation = calculateTaxForCart(
+      cartSubtotal,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
+
+    // Toplam
+    const total = taxCalculation.total + shippingCost;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -335,9 +352,9 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
             orderNumber,
             userId: session.user.id,
             total,
-            subtotal,
+            subtotal: taxCalculation.subtotal,
             shippingCost,
-            tax,
+            tax: taxCalculation.tax,
             shippingAddress,
             paymentMethod: "iyzico",
             paymentStatus: "PENDING",
@@ -383,13 +400,13 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
     // Ödeme başarısız olursa sepet korunacak, kullanıcı tekrar deneyebilecek
 
     // BasketItems oluştur - retry durumunda mevcut siparişten, yeni siparişte sepetten
+    // Ürün fiyatları KDV dahil olarak saklanıyor, iyzico'ya da KDV dahil gönderiyoruz
     let basketItems;
     if (retryOrderId && pendingOrder) {
       // Mevcut siparişten basketItems oluştur
       basketItems = pendingOrder.items.map((item) => {
-        const itemPrice = item.price * item.quantity;
-        const itemTax = itemPrice * 0.20; // %20 KDV
-        const itemTotalWithTax = itemPrice + itemTax;
+        // item.price zaten KDV dahil, quantity ile çarpıyoruz
+        const itemTotalWithTax = item.price * item.quantity;
         
         return {
           id: item.productId,
@@ -402,21 +419,20 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
     } else {
       // Sepetten basketItems oluştur
       basketItems = cart.items.map((item) => {
-      const itemPrice = item.product.price * item.quantity;
-      const itemTax = itemPrice * 0.20; // %20 KDV
-      const itemTotalWithTax = itemPrice + itemTax;
+        // item.product.price zaten KDV dahil, quantity ile çarpıyoruz
+        const itemTotalWithTax = item.product.price * item.quantity;
       
-      return {
-        id: item.productId,
-        name: item.product.name,
+        return {
+          id: item.productId,
+          name: item.product.name,
           category1: (item.product as any).category?.name || "Genel",
-        itemType: "PHYSICAL",
-        price: parseFloat(itemTotalWithTax.toFixed(2)).toFixed(2), // Yuvarlama için
-      };
-    });
+          itemType: "PHYSICAL",
+          price: parseFloat(itemTotalWithTax.toFixed(2)).toFixed(2), // Yuvarlama için
+        };
+      });
     }
 
-    // BasketItems toplamını hesapla (price ve paidPrice ile eşleşmeli)
+    // BasketItems toplamını hesapla
     const basketItemsSum = parseFloat(
       basketItems.reduce(
         (sum, item) => sum + parseFloat(item.price),
@@ -424,12 +440,26 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       ).toFixed(2)
     );
 
+    // Kargo ücreti varsa basketItems'a ekle
+    if (shippingCost > 0) {
+      basketItems.push({
+        id: "SHIPPING",
+        name: "Kargo Ücreti",
+        category1: "Kargo",
+        itemType: "PHYSICAL",
+        price: parseFloat(shippingCost.toFixed(2)).toFixed(2),
+      });
+    }
+
+    // Toplam tutar - zaten hesaplanmış total değişkenini kullan (ürünler + vergi + kargo)
+    const totalAmount = total;
+
     // iyzico ödeme isteği
     const request = {
       locale: "tr",
       conversationId: `CONV-${pendingOrder.id}-${Date.now()}`, // Order ID'yi conversationId'ye ekle
-      price: basketItemsSum.toFixed(2),
-      paidPrice: basketItemsSum.toFixed(2),
+      price: totalAmount.toFixed(2),
+      paidPrice: totalAmount.toFixed(2),
       currency: "TRY",
       basketId: pendingOrder.id, // Order ID'yi basketId olarak kullan
       paymentGroup: "PRODUCT",

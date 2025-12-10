@@ -47,14 +47,13 @@ function AdminLoginForm() {
         setErrorMessage("Email veya şifre hatalı. Lütfen tekrar deneyin.");
         setLoading(false);
       } else if (result?.ok) {
-        // Başarılı giriş - URL'den error parametresini temizle ve admin paneline yönlendir
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete("error");
-        window.history.replaceState({}, "", newUrl.toString());
-        
-        // Admin paneline yönlendir
-        router.push("/admin");
-        router.refresh();
+        // Başarılı giriş - Session cookie'sinin set edilmesi için kısa bir gecikme
+        // Sonra tam sayfa yenileme ile admin paneline yönlendir
+        // Bu, middleware'in yeni session'ı görmesini sağlar
+        // window.location.href kullanarak tam sayfa yenileme yapıyoruz
+        // Bu sayede middleware yeni session cookie'sini görebilir
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        window.location.href = "/admin";
       } else {
         setLoading(false);
       }

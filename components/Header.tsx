@@ -222,7 +222,7 @@ const Header: React.FC = () => {
             <Link href="/" className="flex items-center group relative">
               <div className="relative">
                 <Image 
-                  src="/images/logo/ayc-hookah-logo.png"
+                  src="/images/logo/ayc-hookah-logo.png" 
                   width={200}
                   height={64} 
                   alt="AYC HOOKAH Logo" 

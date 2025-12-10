@@ -107,15 +107,15 @@ export default async function AdminDashboard() {
     // Son siparişler
     prisma.order.findMany({
       take: 10,
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
         },
       },
+    },
     }),
   ]);
 

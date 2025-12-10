@@ -128,6 +128,7 @@ model Order {
   updatedAt       DateTime      @updatedAt
   userId          String
   items           OrderItem[]
+  logs            OrderLog[]
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -137,19 +138,37 @@ model Order {
 }
 
 model OrderItem {
-  id             String   @id @default(cuid())
-  quantity       Int
-  price          Float
-  orderId        String
-  productId      String?
-  productName    String?  // Ürün adı snapshot (ürün silinse bile korunur)
-  productImageUrl String? // Ürün görseli snapshot (ürün silinse bile korunur)
-  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product        Product? @relation(fields: [productId], references: [id])
+  id              String   @id @default(cuid())
+  quantity        Int
+  price           Float
+  orderId         String
+  productId       String?
+  productImageUrl String?
+  productName     String?
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product? @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
+}
+
+model OrderLog {
+  id            String   @id @default(cuid())
+  orderId       String
+  action        String
+  field         String?
+  oldValue      String?
+  newValue      String?
+  description   String
+  changedBy     String?
+  changedByName String?
+  createdAt     DateTime @default(now())
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("order_logs")
 }
 
 model Cart {
@@ -321,6 +340,16 @@ model Media {
   @@index([type])
   @@index([createdAt])
   @@map("media")
+}
+
+model StoreSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("store_settings")
 }
 
 enum OrderStatus {

@@ -150,31 +150,31 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
         <div className="flex-1 min-w-0 space-y-6">
           {/* Başlık Alanı */}
           <div className="bg-white border border-gray-300 rounded-sm">
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          <input
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-3 text-2xl font-sans font-semibold text-gray-900 border-0 focus:outline-none focus:ring-0 placeholder:text-gray-400"
               placeholder="Ürün adını girin"
-            />
-          </div>
+          />
+        </div>
 
           {/* Permalink (Slug) */}
           <div className="bg-white border border-gray-300 rounded-sm p-4">
             <div className="flex items-center gap-2 text-sm font-sans text-gray-600">
               <span className="font-medium">Permalink:</span>
               <span className="text-blue-600">/urun/</span>
-              <input
-                type="text"
-                required
-                value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+          <input
+            type="text"
+            required
+            value={formData.slug}
+            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 className="flex-1 px-2 py-1 text-sm font-sans border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="urun-adi"
-              />
+            placeholder="urun-adi"
+          />
             </div>
-          </div>
+        </div>
 
           {/* Ana İçerik Editörü */}
           <div className="bg-white border border-gray-300 rounded-sm">
@@ -182,13 +182,13 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
               <h2 className="text-sm font-sans font-semibold text-gray-700">İçerik</h2>
             </div>
             <div className="p-4">
-              <SimpleEditor
-                content={formData.description}
-                onChange={(content) => setFormData({ ...formData, description: content })}
+          <SimpleEditor
+            content={formData.description}
+            onChange={(content) => setFormData({ ...formData, description: content })}
                 placeholder="Ürün açıklamasını buraya yazın..."
-              />
+          />
             </div>
-          </div>
+        </div>
 
           {/* Kısa Açıklama (Excerpt) */}
           <div className="bg-white border border-gray-300 rounded-sm">
@@ -196,18 +196,18 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
               <h2 className="text-sm font-sans font-semibold text-gray-700">Kısa Açıklama</h2>
             </div>
             <div className="p-4">
-              <textarea
-                value={formData.shortDescription}
-                onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+          <textarea
+            value={formData.shortDescription}
+            onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
                 rows={4}
                 className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-y"
                 placeholder="Ürünün kısa açıklaması (opsiyonel)"
-              />
+          />
               <p className="text-xs text-gray-500 mt-2">
                 Bu açıklama ürün detay sayfasında miktar ve sepete ekle butonunun üstünde gösterilir.
               </p>
             </div>
-          </div>
+        </div>
 
           {/* Ürün Ayarları */}
           <div className="bg-white border border-gray-300 rounded-sm">
@@ -215,37 +215,40 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
               <h2 className="text-sm font-sans font-semibold text-gray-700">Ürün Ayarları</h2>
             </div>
             <div className="p-4 space-y-4">
-              <div>
+        <div>
                 <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
-                  Fiyat (₺) *
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+            Fiyat (₺) *
+          </label>
+          <input
+            type="number"
+            required
+            min="0"
+            step="0.01"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Fiyat KDV dahil olarak girilir ve gösterilir.
+          </p>
+        </div>
+        <div>
                 <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
-                  Stok *
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+            Stok *
+          </label>
+          <input
+            type="number"
+            required
+            min="0"
+            value={formData.stock}
+            onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
+          />
+        </div>
+        <div>
                 <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
                   Marka
-                </label>
+          </label>
                 <input
                   type="text"
                   value={formData.brand}
@@ -253,42 +256,42 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ürün markası"
                 />
-              </div>
-              <div>
+        </div>
+        <div>
                 <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
-                  Ekipman Tipi
-                </label>
-                <input
-                  type="text"
-                  value={formData.equipmentType}
-                  onChange={(e) => setFormData({ ...formData, equipmentType: e.target.value })}
+            Ekipman Tipi
+          </label>
+          <input
+            type="text"
+            value={formData.equipmentType}
+            onChange={(e) => setFormData({ ...formData, equipmentType: e.target.value })}
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
+          />
+        </div>
+        <div>
                 <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
-                  Malzeme
-                </label>
-                <input
-                  type="text"
-                  value={formData.material}
-                  onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+            Malzeme
+          </label>
+          <input
+            type="text"
+            value={formData.material}
+            onChange={(e) => setFormData({ ...formData, material: e.target.value })}
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
+          />
+        </div>
+        <div>
                 <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
-                  Yükseklik
-                </label>
-                <input
-                  type="text"
-                  value={formData.height}
-                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+            Yükseklik
+          </label>
+          <input
+            type="text"
+            value={formData.height}
+            onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
+          />
               </div>
             </div>
-          </div>
+        </div>
 
           {/* SEO Ayarları */}
           <div className="bg-white border border-gray-300 rounded-sm">
@@ -325,9 +328,9 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
               <div>
                 <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
                   Anahtar Kelimeler
-                </label>
-                <input
-                  type="text"
+          </label>
+          <input
+            type="text"
                   value={formData.metaKeywords}
                   onChange={(e) => setFormData({ ...formData, metaKeywords: e.target.value })}
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -344,7 +347,7 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
                   onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
                   className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="https://example.com/og-image.jpg"
-                />
+          />
               </div>
             </div>
           </div>
@@ -376,7 +379,7 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
                 />
                 <label className="text-sm font-sans text-gray-700">Yeni Ürün</label>
               </div>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={formData.isBestseller}
@@ -457,10 +460,10 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
                   usageCount: 0,
                 }] : []}
               />
-            </div>
           </div>
+        </div>
 
-          {/* Galeri Görselleri */}
+        {/* Galeri Görselleri */}
           <div className="bg-white border border-gray-300 rounded-sm">
             <div className="border-b border-gray-300 px-4 py-3 bg-gray-50">
               <h2 className="text-sm font-sans font-semibold text-gray-700">Galeri Görselleri</h2>
@@ -487,54 +490,54 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
                   usageCount: 0,
                 }))}
               />
-              {selectedGalleryImages.length > 0 && (
+            {selectedGalleryImages.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  {selectedGalleryImages.map((img, index) => (
+                {selectedGalleryImages.map((img, index) => (
                     <div key={index} className="relative group aspect-square">
                       <div className="relative w-full h-full bg-gray-100 rounded border border-gray-300 overflow-hidden">
-                        <Image
-                          src={img.url}
-                          alt={img.alt || formData.name}
-                          fill
-                          className="object-cover"
+                      <Image
+                        src={img.url}
+                        alt={img.alt || formData.name}
+                        fill
+                        className="object-cover"
                           sizes="(max-width: 768px) 50vw, 150px"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newImages = selectedGalleryImages.filter((_, i) => i !== index);
-                          setSelectedGalleryImages(newImages);
-                        }}
-                        className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      />
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newImages = selectedGalleryImages.filter((_, i) => i !== index);
+                        setSelectedGalleryImages(newImages);
+                      }}
+                        className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                        <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        </div>
 
           {/* Kategori */}
           <div className="bg-white border border-gray-300 rounded-sm">
             <div className="border-b border-gray-300 px-4 py-3 bg-gray-50">
               <h2 className="text-sm font-sans font-semibold text-gray-700">Kategori *</h2>
-            </div>
+        </div>
             <div className="p-4 space-y-3">
               {/* Arama */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
+            <input
+              type="text"
                   value={categorySearch}
                   onChange={(e) => setCategorySearch(e.target.value)}
                   placeholder="Kategori ara..."
                   className="w-full pl-10 pr-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              
+            />
+          </div>
+
               {/* Kategori Listesi */}
               <div className="border border-gray-300 rounded max-h-64 overflow-y-auto">
                 {filteredCategories.length === 0 ? (
@@ -560,7 +563,7 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
                         <span className="text-sm font-sans text-gray-700 flex-1">
                           {category.name}
                         </span>
-                      </label>
+            </label>
                     ))}
                   </div>
                 )}
@@ -574,15 +577,15 @@ export default function ProductForm({ product, categories }: ProductFormProps) {
               <h2 className="text-sm font-sans font-semibold text-gray-700">Özellikler</h2>
             </div>
             <div className="p-4">
-              <input
-                type="text"
+            <input
+              type="text"
                 value={formData.features}
                 onChange={(e) => setFormData({ ...formData, features: e.target.value })}
                 className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Özellik 1, Özellik 2, Özellik 3"
-              />
+            />
               <p className="text-xs text-gray-500 mt-2">Virgülle ayırın</p>
-            </div>
+          </div>
           </div>
         </div>
       </div>

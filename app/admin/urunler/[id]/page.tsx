@@ -45,7 +45,7 @@ export default async function EditProductPage({ params }: PageProps) {
       
       {/* Ana içerik alanı */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <ProductForm product={product} categories={categories} />
+      <ProductForm product={product} categories={categories} />
       </div>
     </div>
   );

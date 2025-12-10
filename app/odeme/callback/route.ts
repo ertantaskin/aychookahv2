@@ -188,6 +188,7 @@ export async function POST(request: NextRequest) {
     console.log("Payment callback - conversationId:", paymentResult?.conversationId);
     console.log("Payment callback - basketId:", paymentResult?.basketId);
     console.log("Payment callback - paymentId:", paymentResult?.paymentId);
+    console.log("Payment callback - success:", paymentResult?.success);
 
     // Ödeme başarılı mı kontrol et
     if (
@@ -253,54 +254,89 @@ export async function POST(request: NextRequest) {
         
       // 1. ConversationId'den orderId çıkar
       if (paymentResult.conversationId) {
+        console.log("Trying to extract orderId from conversationId:", paymentResult.conversationId);
         const convMatch = paymentResult.conversationId.match(/^CONV-([^-]+)-/);
         if (convMatch && convMatch[1]) {
           orderId = convMatch[1];
-          console.log("Order ID from conversationId:", orderId);
-          }
+          console.log("✅ Order ID extracted from conversationId:", orderId);
+        } else {
+          console.warn("⚠️ Could not extract orderId from conversationId format");
         }
+      }
         
       // 2. BasketId'den orderId al (eğer conversationId'den bulunamadıysa)
       if (!orderId && paymentResult.basketId) {
+        console.log("Trying to find order by basketId:", paymentResult.basketId);
         // BasketId olarak orderId kullanıyoruz
         const orderById = await prisma.order.findUnique({
           where: { id: paymentResult.basketId },
-            });
+        });
         if (orderById) {
           orderId = paymentResult.basketId;
-          console.log("Order ID from basketId:", orderId);
+          console.log("✅ Order ID found from basketId:", orderId);
+        } else {
+          console.warn("⚠️ Order not found with basketId:", paymentResult.basketId);
         }
       }
 
       // 3. PaymentId ile mevcut sipariş kontrolü (duplicate ödeme kontrolü)
-      if (!orderId) {
+      if (!orderId && paymentResult.paymentId) {
+        console.log("Trying to find order by paymentId:", paymentResult.paymentId);
         const orderByPaymentId = await prisma.order.findFirst({
           where: { paymentId: paymentResult.paymentId },
         });
         if (orderByPaymentId) {
           orderId = orderByPaymentId.id;
-          console.log("Order ID from paymentId (duplicate check):", orderId);
-            }
+          console.log("✅ Order ID found from paymentId (duplicate check):", orderId);
+        } else {
+          console.warn("⚠️ Order not found with paymentId:", paymentResult.paymentId);
+        }
+      }
+      
+      // 4. Son çare: Son PENDING iyzico siparişini bul (aynı kullanıcı için)
+      if (!orderId) {
+        console.log("⚠️ OrderId not found, trying to find recent PENDING order...");
+        // Bu durumda kullanıcı bilgisi yok, bu yüzden bu yöntem çalışmayabilir
+        // Ama en azından log'layalım
       }
 
       if (!orderId) {
-        console.error("Order not found for payment. ConversationId:", paymentResult.conversationId, "PaymentId:", paymentResult.paymentId);
+        console.error("❌ Order not found for payment. ConversationId:", paymentResult.conversationId, "PaymentId:", paymentResult.paymentId, "BasketId:", paymentResult.basketId);
         // Debug: Tüm pending siparişleri listele
         const pendingOrders = await prisma.order.findMany({
           where: {
             paymentStatus: "PENDING",
             paymentMethod: "iyzico",
           },
-          take: 5,
+          take: 10,
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
             orderNumber: true,
             notes: true,
             createdAt: true,
+            userId: true,
           },
         });
-        console.log("Recent pending orders:", pendingOrders);
+        console.log("📋 Recent pending orders:", JSON.stringify(pendingOrders, null, 2));
+        
+        // Son çare: PaymentId ile eşleşen herhangi bir sipariş var mı kontrol et
+        if (paymentResult.paymentId) {
+          const anyOrderWithPaymentId = await prisma.order.findFirst({
+            where: {
+              paymentId: paymentResult.paymentId,
+            },
+            select: {
+              id: true,
+              orderNumber: true,
+              paymentStatus: true,
+              status: true,
+            },
+          });
+          if (anyOrderWithPaymentId) {
+            console.log("⚠️ Found order with same paymentId (duplicate payment?):", anyOrderWithPaymentId);
+          }
+        }
         
         return NextResponse.redirect(new URL("/sepet?error=order_not_found", request.url), { status: 307 });
         }
@@ -365,13 +401,14 @@ export async function POST(request: NextRequest) {
       }
           
       // Siparişi güncelle - ödeme başarılı
+      console.log("✅ Updating order:", order.id, "with paymentId:", paymentResult.paymentId);
       const updatedOrder = await prisma.order.update({
         where: { id: order.id },
         data: {
           paymentId: paymentResult.paymentId,
           paymentStatus: "COMPLETED",
           status: "PROCESSING", // Hazırlanıyor durumu
-          notes: `Ödeme tamamlandı. iyzico Payment ID: ${paymentResult.paymentId}. Conversation ID: ${paymentResult.conversationId}`,
+          notes: `Ödeme tamamlandı. iyzico Payment ID: ${paymentResult.paymentId}. Conversation ID: ${paymentResult.conversationId}. Callback time: ${new Date().toISOString()}`,
         },
         include: {
           items: {

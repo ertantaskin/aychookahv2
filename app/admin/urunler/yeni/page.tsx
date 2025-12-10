@@ -25,7 +25,7 @@ export default async function NewProductPage() {
       
       {/* Ana içerik alanı */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <ProductForm categories={categories} />
+      <ProductForm categories={categories} />
       </div>
     </div>
   );

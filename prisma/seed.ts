@@ -102,6 +102,36 @@ async function main() {
   console.log("📧 Email:", adminEmail);
   console.log("🔑 Password:", adminPassword);
 
+  // Varsayılan mağaza ayarlarını oluştur
+  await prisma.storeSettings.upsert({
+    where: { key: "tax" },
+    update: {},
+    create: {
+      key: "tax",
+      config: {
+        defaultTaxRate: 0.20, // %20 KDV
+        taxIncluded: true, // Fiyatlar KDV dahil
+        rules: [],
+      },
+    },
+  });
+
+  await prisma.storeSettings.upsert({
+    where: { key: "shipping" },
+    update: {},
+    create: {
+      key: "shipping",
+      config: {
+        defaultShippingCost: 0, // Varsayılan kargo ücretsiz
+        freeShippingThreshold: null, // Ücretsiz kargo eşiği yok
+        estimatedDeliveryDays: 3, // Tahmini teslimat 3 gün
+        rules: [],
+      },
+    },
+  });
+
+  console.log("✅ Store settings created");
+
   console.log("🎉 Seeding completed!");
 }
 

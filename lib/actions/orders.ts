@@ -3,6 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { getTaxSettings } from "@/lib/utils/tax-calculator";
+import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
+import { calculateTaxForCart } from "@/lib/utils/tax-calculator";
 
 // Sipariş oluştur
 export const createOrder = async (shippingAddress: any, paymentId?: string) => {
@@ -36,14 +39,28 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
       }
     }
 
-    // Toplam hesapla
-    const subtotal = cart.items.reduce(
+    // Ayarları getir
+    const taxSettings = await getTaxSettings();
+    const shippingSettings = await getShippingSettings();
+
+    // Toplam hesapla (ürün fiyatları KDV dahil olarak saklanıyor)
+    const cartSubtotal = cart.items.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
-    const shippingCost = 0; // Kargo ücreti hesaplama mantığı buraya eklenebilir
-    const tax = subtotal * 0.20; // %20 KDV
-    const total = subtotal + shippingCost + tax;
+
+    // Vergi hesapla (KDV dahil fiyatlardan)
+    const taxCalculation = calculateTaxForCart(
+      cartSubtotal,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
+
+    // Toplam
+    const total = taxCalculation.total + shippingCost;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -54,9 +71,9 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
         orderNumber,
         userId: session.user.id,
         total,
-        subtotal,
+        subtotal: taxCalculation.subtotal,
         shippingCost,
-        tax,
+        tax: taxCalculation.tax,
         shippingAddress,
         paymentId,
         paymentStatus: paymentId ? "COMPLETED" : "PENDING",
@@ -241,14 +258,28 @@ export const createOrderFromPayment = async (
       }
     }
 
-    // Toplam hesapla - eğer total parametresi verilmişse onu kullan
-    const subtotal = cart.items.reduce(
+    // Ayarları getir
+    const taxSettings = await getTaxSettings();
+    const shippingSettings = await getShippingSettings();
+
+    // Toplam hesapla (ürün fiyatları KDV dahil olarak saklanıyor)
+    const cartSubtotal = cart.items.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
-    const shippingCost = 0;
-    const tax = subtotal * 0.20;
-    const calculatedTotal = total || (subtotal + shippingCost + tax);
+
+    // Vergi hesapla (KDV dahil fiyatlardan)
+    const taxCalculation = calculateTaxForCart(
+      cartSubtotal,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
+
+    // Toplam - eğer total parametresi verilmişse onu kullan
+    const calculatedTotal = total || (taxCalculation.total + shippingCost);
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -259,9 +290,9 @@ export const createOrderFromPayment = async (
         orderNumber,
         userId: finalUserId,
         total: calculatedTotal,
-        subtotal,
+        subtotal: taxCalculation.subtotal,
         shippingCost,
-        tax,
+        tax: taxCalculation.tax,
         shippingAddress,
         paymentId,
         paymentMethod: "iyzico", // iyzico ödeme yöntemi
@@ -351,14 +382,28 @@ export const createOrderForEftHavale = async (
       }
     }
 
-    // Toplam hesapla
-    const subtotal = cart.items.reduce(
+    // Ayarları getir
+    const taxSettings = await getTaxSettings();
+    const shippingSettings = await getShippingSettings();
+
+    // Toplam hesapla (ürün fiyatları KDV dahil olarak saklanıyor)
+    const cartSubtotal = cart.items.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
-    const shippingCost = 0;
-    const tax = subtotal * 0.20;
-    const total = subtotal + shippingCost + tax;
+
+    // Vergi hesapla (KDV dahil fiyatlardan)
+    const taxCalculation = calculateTaxForCart(
+      cartSubtotal,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
+
+    // Toplam
+    const total = taxCalculation.total + shippingCost;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -369,9 +414,9 @@ export const createOrderForEftHavale = async (
         orderNumber,
         userId: session.user.id,
         total,
-        subtotal,
+        subtotal: taxCalculation.subtotal,
         shippingCost,
-        tax,
+        tax: taxCalculation.tax,
         shippingAddress,
         paymentMethod,
         paymentStatus: "PENDING", // Ödeme bekleniyor

@@ -4,8 +4,10 @@ import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 
 export default function LogoutButton() {
-  const handleLogout = () => {
-    signOut({ callbackUrl: "/" });
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    // Çıkış yaptıktan sonra ürünler sayfasına yönlendir
+    window.location.href = "/urunler";
   };
 
   return (

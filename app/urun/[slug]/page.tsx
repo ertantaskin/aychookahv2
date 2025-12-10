@@ -5,6 +5,7 @@ import { getSiteSEO } from "@/lib/actions/seo";
 import ProductDetailClient from "@/components/products/ProductDetailClient";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import { ProductStructuredData, BreadcrumbStructuredData, AggregateRatingStructuredData } from "@/components/seo/StructuredData";
+import { getTaxSettings } from "@/lib/utils/tax-calculator";
 
 // Cache'i devre dışı bırak - her istekte yeniden oluştur
 export const dynamic = 'force-dynamic';
@@ -70,6 +71,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     const relatedProducts = await getRelatedProducts(product.id, product.categoryId);
     const siteSEO = await getSiteSEO();
     const baseUrl = siteSEO.siteUrl;
+    const taxSettings = await getTaxSettings();
 
     // Calculate average rating
     const reviews = product.reviews || [];
@@ -136,7 +138,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
             reviewCount={reviews.length}
           />
         )}
-        <ProductDetailClient product={product} />
+        <ProductDetailClient product={product} taxSettings={taxSettings} />
         {relatedProducts.length > 0 && (
           <RelatedProducts products={relatedProducts} />
         )}

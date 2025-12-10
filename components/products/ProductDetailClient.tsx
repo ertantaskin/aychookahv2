@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import ReviewForm from "./ReviewForm";
 import ReviewList from "./ReviewList";
 import DOMPurify from "dompurify";
+import { calculatePriceWithoutTax } from "@/lib/utils/tax-calculator";
 
 interface ProductDetailClientProps {
   product: {
@@ -36,9 +37,13 @@ interface ProductDetailClientProps {
     }>;
     _count: { reviews: number };
   };
+  taxSettings: {
+    defaultTaxRate: number;
+    taxIncluded: boolean;
+  };
 }
 
-export default function ProductDetailClient({ product }: ProductDetailClientProps) {
+export default function ProductDetailClient({ product, taxSettings }: ProductDetailClientProps) {
   const router = useRouter();
   const images = product.images || [];
   // Map reviews to include email field for ReviewList component
@@ -359,8 +364,18 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           </div>
 
           {/* Fiyat */}
-          <div className="font-sans text-4xl font-bold text-luxury-black">
-            {product.price.toLocaleString("tr-TR")} ₺
+          <div>
+            <div className="font-sans text-4xl font-bold text-luxury-black flex items-center gap-2">
+              <span>{product.price.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+              {taxSettings.taxIncluded && (
+                <span className="font-sans text-base font-normal text-gray-600">KDV dahil</span>
+              )}
+            </div>
+            {taxSettings.taxIncluded && (
+              <div className="font-sans text-xs text-gray-500 mt-1">
+                KDV hariç: {calculatePriceWithoutTax(product.price, taxSettings.defaultTaxRate).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+              </div>
+            )}
           </div>
 
           {/* Stok Durumu */}

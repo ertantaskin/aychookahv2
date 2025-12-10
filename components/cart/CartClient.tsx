@@ -33,9 +33,24 @@ interface CartClientProps {
       };
     }>;
   } | null;
+  calculatedSubtotal: number;
+  calculatedTax: number;
+  calculatedShipping: number;
+  calculatedTotal: number;
+  taxSettings: {
+    defaultTaxRate: number;
+    taxIncluded: boolean;
+  };
 }
 
-export default function CartClient({ cart }: CartClientProps) {
+export default function CartClient({
+  cart,
+  calculatedSubtotal,
+  calculatedTax,
+  calculatedShipping,
+  calculatedTotal,
+  taxSettings,
+}: CartClientProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [guestCartItems, setGuestCartItems] = useState<any[]>([]);
@@ -132,13 +147,11 @@ export default function CartClient({ cart }: CartClientProps) {
     );
   }
 
-  const subtotal = displayCart.items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
-  const shippingCost = 0;
-  const tax = subtotal * 0.20;
-  const total = subtotal + shippingCost + tax;
+  // Hesaplanmış değerleri kullan
+  const subtotal = calculatedSubtotal;
+  const shippingCost = calculatedShipping;
+  const tax = calculatedTax;
+  const total = calculatedTotal;
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     // Stok kontrolü - client-side
@@ -437,12 +450,16 @@ export default function CartClient({ cart }: CartClientProps) {
                   <span>{subtotal.toLocaleString("tr-TR")} ₺</span>
                 </div>
                 <div className="flex justify-between text-gray-700 font-sans">
-                  <span>KDV (%20)</span>
+                  <span>KDV (%{(taxSettings.defaultTaxRate * 100).toFixed(0)})</span>
                   <span>{tax.toLocaleString("tr-TR")} ₺</span>
                 </div>
                 <div className="flex justify-between text-gray-700 font-sans">
                   <span>Kargo</span>
-                  <span>Ücretsiz</span>
+                  <span>
+                    {shippingCost === 0
+                      ? "Ücretsiz"
+                      : `${shippingCost.toLocaleString("tr-TR")} ₺`}
+                  </span>
                 </div>
                 <div className="border-t border-gray-200 pt-4 flex justify-between text-xl font-sans font-bold text-luxury-black">
                   <span>Toplam</span>

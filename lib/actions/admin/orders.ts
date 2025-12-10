@@ -123,7 +123,7 @@ export const getAllOrders = async (
           items: {
             where: {
               productId: {
-                not: null,
+                not: null as any,
               },
             },
             include: {
@@ -161,15 +161,59 @@ export const getAllOrders = async (
 
 // Sipariş durumunu güncelle
 export const updateOrderStatus = async (orderId: string, status: string) => {
-  await checkAdmin();
+  const adminId = await checkAdmin();
 
   try {
+    // Mevcut siparişi al
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true },
+    });
+
+    if (!currentOrder) {
+      throw new Error("Sipariş bulunamadı");
+    }
+
+    // Admin bilgilerini al
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { name: true, email: true },
+    });
+
+    // Siparişi güncelle
     const order = await prisma.order.update({
       where: { id: orderId },
       data: { status: status as any },
     });
 
+    // Log kaydet (sadece değişiklik varsa)
+    if (currentOrder.status !== status) {
+      const statusLabels: Record<string, string> = {
+        PENDING: "Beklemede",
+        CONFIRMED: "Onaylandı",
+        PROCESSING: "Hazırlanıyor",
+        SHIPPED: "Kargoda",
+        DELIVERED: "Teslim Edildi",
+        CANCELLED: "İptal Edildi",
+        REFUNDED: "İade Edildi",
+      };
+
+      await (prisma as any).orderLog.create({
+        data: {
+          orderId,
+          action: "status_changed",
+          field: "status",
+          oldValue: currentOrder.status,
+          newValue: status,
+          description: `Sipariş durumu "${statusLabels[currentOrder.status] || currentOrder.status}" → "${statusLabels[status] || status}" olarak değiştirildi`,
+          changedBy: adminId,
+          changedByName: admin?.name || admin?.email || "Bilinmeyen",
+        },
+      });
+    }
+
     revalidatePath("/admin/siparisler");
+    revalidatePath(`/admin/siparisler/${orderId}`);
     return { success: true, order };
   } catch (error) {
     console.error("Error updating order status:", error);
@@ -182,10 +226,18 @@ export const getOrder = async (orderId: string) => {
   await checkAdmin();
 
   try {
+    // Önce siparişi al
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
         items: {
           include: {
             product: {
@@ -201,10 +253,159 @@ export const getOrder = async (orderId: string) => {
       },
     });
 
-    return order;
+    if (!order) {
+      return null;
+    }
+
+    // Logları ayrı olarak al
+    const logs = await (prisma as any).orderLog.findMany({
+      where: { orderId: order.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    // Order'a logs'u ekle
+    return {
+      ...order,
+      logs: logs || [],
+    } as any;
   } catch (error) {
     console.error("Error fetching order:", error);
     throw new Error("Sipariş yüklenirken bir hata oluştu");
+  }
+};
+
+// Ödeme durumunu güncelle
+export const updatePaymentStatus = async (orderId: string, paymentStatus: string) => {
+  const adminId = await checkAdmin();
+
+  try {
+    // Mevcut siparişi al
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { paymentStatus: true },
+    });
+
+    if (!currentOrder) {
+      throw new Error("Sipariş bulunamadı");
+    }
+
+    // Admin bilgilerini al
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { name: true, email: true },
+    });
+
+    // Siparişi güncelle
+    const order = await prisma.order.update({
+      where: { id: orderId },
+      data: { paymentStatus: paymentStatus as any },
+    });
+
+    // Log kaydet (sadece değişiklik varsa)
+    if (currentOrder.paymentStatus !== paymentStatus) {
+      const paymentStatusLabels: Record<string, string> = {
+        PENDING: "Beklemede",
+        COMPLETED: "Tamamlandı",
+        FAILED: "Başarısız",
+        REFUNDED: "İade Edildi",
+      };
+
+      await (prisma as any).orderLog.create({
+        data: {
+          orderId,
+          action: "payment_status_changed",
+          field: "paymentStatus",
+          oldValue: currentOrder.paymentStatus,
+          newValue: paymentStatus,
+          description: `Ödeme durumu "${paymentStatusLabels[currentOrder.paymentStatus] || currentOrder.paymentStatus}" → "${paymentStatusLabels[paymentStatus] || paymentStatus}" olarak değiştirildi`,
+          changedBy: adminId,
+          changedByName: admin?.name || admin?.email || "Bilinmeyen",
+        },
+      });
+    }
+
+    revalidatePath("/admin/siparisler");
+    revalidatePath(`/admin/siparisler/${orderId}`);
+    return { success: true, order };
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    throw new Error("Ödeme durumu güncellenirken bir hata oluştu");
+  }
+};
+
+// Sipariş notlarını güncelle
+export const updateOrderNotes = async (orderId: string, notes: string | null) => {
+  const adminId = await checkAdmin();
+
+  try {
+    // Mevcut siparişi al
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { notes: true },
+    });
+
+    if (!currentOrder) {
+      throw new Error("Sipariş bulunamadı");
+    }
+
+    // Admin bilgilerini al
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { name: true, email: true },
+    });
+
+    // Siparişi güncelle
+    const order = await prisma.order.update({
+      where: { id: orderId },
+      data: { notes },
+    });
+
+    // Log kaydet (sadece değişiklik varsa)
+    const oldNotes = currentOrder.notes || "";
+    const newNotes = notes || "";
+    if (oldNotes !== newNotes) {
+      await (prisma as any).orderLog.create({
+        data: {
+          orderId,
+          action: "notes_updated",
+          field: "notes",
+          oldValue: oldNotes || null,
+          newValue: newNotes || null,
+          description: newNotes
+            ? oldNotes
+              ? "Sipariş notları güncellendi"
+              : "Sipariş notları eklendi"
+            : "Sipariş notları silindi",
+          changedBy: adminId,
+          changedByName: admin?.name || admin?.email || "Bilinmeyen",
+        },
+      });
+    }
+
+    revalidatePath("/admin/siparisler");
+    revalidatePath(`/admin/siparisler/${orderId}`);
+    return { success: true, order };
+  } catch (error) {
+    console.error("Error updating order notes:", error);
+    throw new Error("Sipariş notları güncellenirken bir hata oluştu");
+  }
+};
+
+// Sipariş loglarını getir
+export const getOrderLogs = async (orderId: string) => {
+  await checkAdmin();
+
+  try {
+    const logs = await (prisma as any).orderLog.findMany({
+      where: { orderId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return logs;
+  } catch (error) {
+    console.error("Error fetching order logs:", error);
+    throw new Error("Sipariş logları yüklenirken bir hata oluştu");
   }
 };
 

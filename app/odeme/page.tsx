@@ -6,6 +6,9 @@ import { getOrder } from "@/lib/actions/orders";
 import { getAddresses } from "@/lib/actions/addresses";
 import { prisma } from "@/lib/prisma";
 import CheckoutClient from "@/components/checkout/CheckoutClient";
+import { getTaxSettings } from "@/lib/utils/tax-calculator";
+import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
+import { calculateTaxForCart } from "@/lib/utils/tax-calculator";
 
 export const metadata: Metadata = {
   title: "Ödeme",
@@ -62,19 +65,60 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   // Kullanıcının kayıtlı adreslerini getir
   const addresses = await getAddresses();
 
+  // Ayarları getir
+  const taxSettings = await getTaxSettings();
+  const shippingSettings = await getShippingSettings();
+
   // Retry durumunda sepet kontrolü yapmıyoruz, mevcut siparişi kullanıyoruz
   // Normal durumda sepet kontrolü yapıyoruz
   if (!retryOrderId) {
-  const cart = await getCart();
+    const cart = await getCart();
 
-  if (!cart || cart.items.length === 0) {
-    redirect("/sepet");
+    if (!cart || cart.items.length === 0) {
+      redirect("/sepet");
+    }
+
+    // Hesaplamaları yap
+    const cartSubtotal = cart.items.reduce(
+      (sum, item) => sum + item.product.price * item.quantity,
+      0
+    );
+    const taxCalculation = calculateTaxForCart(
+      cartSubtotal,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
+    const total = taxCalculation.total + shippingCost;
+
+    return (
+      <CheckoutClient
+        cart={cart}
+        retryOrder={null}
+        addresses={addresses}
+        userEmail={session.user.email || ""}
+        calculatedSubtotal={taxCalculation.subtotal}
+        calculatedTax={taxCalculation.tax}
+        calculatedShipping={shippingCost}
+        calculatedTotal={total}
+        taxSettings={taxSettings}
+      />
+    );
   }
 
-    return <CheckoutClient cart={cart} retryOrder={null} addresses={addresses} userEmail={session.user.email || ""} />;
-  }
-
-  // Retry durumunda - mevcut siparişi kullan
-  return <CheckoutClient cart={null} retryOrder={retryOrder} addresses={addresses} userEmail={session.user.email || ""} />;
+  // Retry durumunda - mevcut siparişi kullan (zaten hesaplanmış değerler var)
+  return (
+    <CheckoutClient
+      cart={null}
+      retryOrder={retryOrder}
+      addresses={addresses}
+      userEmail={session.user.email || ""}
+      calculatedSubtotal={retryOrder?.subtotal || 0}
+      calculatedTax={retryOrder?.tax || 0}
+      calculatedShipping={retryOrder?.shippingCost || 0}
+      calculatedTotal={retryOrder?.total || 0}
+      taxSettings={taxSettings}
+    />
+  );
 }
 

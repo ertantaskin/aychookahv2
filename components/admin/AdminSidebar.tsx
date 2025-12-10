@@ -19,6 +19,7 @@ import {
   ChevronRight,
   FolderTree,
   BarChart3,
+  Settings,
 } from "lucide-react";
 import CacheClearButton from "./CacheClearButton";
 
@@ -40,6 +41,15 @@ const menuItems = [
   { href: "/admin/medya", label: "Medya Kütüphanesi", icon: Image },
   { href: "/admin/odeme-sistemleri", label: "Ödeme Sistemleri", icon: CreditCard },
   { href: "/admin/seo", label: "SEO Yönetimi", icon: Search },
+  {
+    href: "/admin/magaza-ayarlari",
+    label: "Mağaza Ayarları",
+    icon: Settings,
+    subItems: [
+      { href: "/admin/magaza-ayarlari/kargo", label: "Kargo Ayarları" },
+      { href: "/admin/magaza-ayarlari/vergi", label: "Vergi Ayarları" },
+    ],
+  },
 ];
 
 export default function AdminSidebar() {
@@ -49,8 +59,18 @@ export default function AdminSidebar() {
     if (pathname.startsWith("/admin/urunler")) {
       return ["/admin/urunler"];
     }
+    // Eğer mağaza ayarları sayfasındaysak, mağaza ayarları menüsünü açık tut
+    if (pathname.startsWith("/admin/magaza-ayarlari")) {
+      return ["/admin/magaza-ayarlari"];
+    }
     return [];
   });
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    // Çıkış yaptıktan sonra ana sayfaya yönlendir
+    window.location.href = "/";
+  };
 
   const toggleExpanded = (href: string) => {
     setExpandedItems((prev) =>
@@ -116,17 +136,17 @@ export default function AdminSidebar() {
                   )}
                 </>
               ) : (
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-sans ${
-                    isActive
-                      ? "bg-gray-800 text-white font-medium"
-                      : "hover:bg-gray-800 text-gray-300"
-                  }`}
-                >
-                  <IconComponent className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </Link>
+            <Link
+              href={item.href}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-sans ${
+                isActive
+                  ? "bg-gray-800 text-white font-medium"
+                  : "hover:bg-gray-800 text-gray-300"
+              }`}
+            >
+              <IconComponent className="w-5 h-5" />
+              <span className="font-medium">{item.label}</span>
+            </Link>
               )}
             </div>
           );
@@ -143,7 +163,7 @@ export default function AdminSidebar() {
           <span>Ana Sayfa</span>
         </Link>
         <button
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={handleSignOut}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors text-left font-sans text-gray-300 hover:text-white"
         >
           <LogOut className="w-5 h-5" />

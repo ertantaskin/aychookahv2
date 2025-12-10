@@ -53,6 +53,14 @@ interface CheckoutClientProps {
   } | null;
   addresses: Address[];
   userEmail: string;
+  calculatedSubtotal: number;
+  calculatedTax: number;
+  calculatedShipping: number;
+  calculatedTotal: number;
+  taxSettings: {
+    defaultTaxRate: number;
+    taxIncluded: boolean;
+  };
 }
 
 interface PaymentMethod {
@@ -63,7 +71,17 @@ interface PaymentMethod {
   isActive: boolean;
 }
 
-export default function CheckoutClient({ cart, retryOrder, addresses, userEmail }: CheckoutClientProps) {
+export default function CheckoutClient({
+  cart,
+  retryOrder,
+  addresses,
+  userEmail,
+  calculatedSubtotal,
+  calculatedTax,
+  calculatedShipping,
+  calculatedTotal,
+  taxSettings,
+}: CheckoutClientProps) {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -174,15 +192,11 @@ export default function CheckoutClient({ cart, retryOrder, addresses, userEmail 
     }
   };
 
-  // Retry durumunda mevcut siparişten, normal durumda sepetten hesapla
-  const subtotal = retryOrder
-    ? retryOrder.subtotal
-    : cart
-    ? cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-    : 0;
-  const shippingCost = retryOrder ? retryOrder.shippingCost : 0;
-  const tax = retryOrder ? retryOrder.tax : subtotal * 0.20;
-  const total = retryOrder ? retryOrder.total : subtotal + shippingCost + tax;
+  // Hesaplanmış değerleri kullan
+  const subtotal = calculatedSubtotal;
+  const shippingCost = calculatedShipping;
+  const tax = calculatedTax;
+  const total = calculatedTotal;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -488,12 +502,16 @@ export default function CheckoutClient({ cart, retryOrder, addresses, userEmail 
                     <span>{subtotal.toLocaleString("tr-TR")} ₺</span>
                   </div>
                   <div className="flex justify-between text-gray-700 font-sans">
-                    <span>KDV (%20)</span>
+                    <span>KDV (%{(taxSettings.defaultTaxRate * 100).toFixed(0)})</span>
                     <span>{tax.toLocaleString("tr-TR")} ₺</span>
                   </div>
                   <div className="flex justify-between text-gray-700 font-sans">
                     <span>Kargo</span>
-                    <span>Ücretsiz</span>
+                    <span>
+                      {shippingCost === 0
+                        ? "Ücretsiz"
+                        : `${shippingCost.toLocaleString("tr-TR")} ₺`}
+                    </span>
                   </div>
                   <div className="border-t border-gray-200 pt-4 flex justify-between text-xl font-sans font-bold text-luxury-black">
                     <span>Toplam</span>
