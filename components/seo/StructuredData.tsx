@@ -1,8 +1,6 @@
 "use client";
 
 import { 
-  OrganizationJsonLd, 
-  BreadcrumbJsonLd, 
   AggregateRatingJsonLd,
 } from "next-seo";
 
@@ -62,15 +60,28 @@ interface ReviewData {
 }
 
 export function OrganizationStructuredData({ data }: { data: OrganizationData }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: data.name,
+    url: data.url,
+    ...(data.logo && { logo: data.logo }),
+    ...(data.description && { description: data.description }),
+    ...(data.contactPoint && {
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: data.contactPoint.telephone,
+        contactType: data.contactPoint.contactType,
+        areaServed: data.contactPoint.areaServed,
+      },
+    }),
+    ...(data.sameAs && data.sameAs.length > 0 && { sameAs: data.sameAs }),
+  };
+
   return (
-    <OrganizationJsonLd
-      type="Organization"
-      name={data.name}
-      url={data.url}
-      logo={data.logo}
-      description={data.description}
-      contactPoint={data.contactPoint}
-      sameAs={data.sameAs}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }
@@ -117,17 +128,26 @@ export function BreadcrumbStructuredData({ data }: { data: BreadcrumbData }) {
     return null;
   }
 
-  // Transform to the format expected by next-seo (items prop with BreadcrumbListItem[])
-  const items: BreadcrumbListItem[] = data.itemListElement
+  // Transform to the format expected by schema.org
+  const items = data.itemListElement
     .sort((a, b) => a.position - b.position) // Sort by position
     .map((item) => ({
+      "@type": "ListItem",
+      position: item.position,
       name: item.name,
       item: item.item,
     }));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items,
+  };
+
   return (
-    <BreadcrumbJsonLd
-      items={items}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }

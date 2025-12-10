@@ -1,0 +1,16 @@
+DATABASE_URL=postgresql://user:password@host:5432/database
+NEXTAUTH_SECRET=your-nextauth-secret-key-here-generate-with-openssl-rand-base64-32
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+IYZICO_API_KEY=your-iyzico-api-key
+IYZICO_SECRET_KEY=your-iyzico-secret-key
+IYZICO_URI=https://api.iyzipay.com
+R2_ACCOUNT_ID=your-cloudflare-r2-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
+R2_BUCKET_NAME=your-r2-bucket-name
+R2_PUBLIC_URL=https://your-r2-public-url.com
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=your-secure-admin-password
+ADMIN_NAME=Admin
+NODE_ENV=production
+

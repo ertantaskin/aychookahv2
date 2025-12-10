@@ -23,15 +23,28 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const HomePage: React.FC = async () => {
-  const siteSEO = await getSiteSEO();
-  const baseUrl = siteSEO.siteUrl;
+  let siteSEO;
+  try {
+    siteSEO = await getSiteSEO();
+  } catch (error) {
+    console.error('Error fetching site SEO:', error);
+    // Fallback values
+    siteSEO = {
+      siteName: 'Aychookah',
+      siteUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com',
+      siteDescription: 'Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları',
+      ogImage: undefined,
+    };
+  }
+
+  const baseUrl = siteSEO?.siteUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
 
   // Organization structured data
   const organizationData = {
-    name: siteSEO.siteName,
-    url: siteSEO.siteUrl,
-    description: siteSEO.siteDescription,
-    logo: siteSEO.ogImage || undefined,
+    name: siteSEO?.siteName || 'Aychookah',
+    url: baseUrl,
+    description: siteSEO?.siteDescription || 'Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları',
+    logo: siteSEO?.ogImage || undefined,
   };
 
   // Breadcrumb structured data
