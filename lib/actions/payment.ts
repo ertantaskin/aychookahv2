@@ -6,7 +6,7 @@ import { getActivePaymentGateway } from "./admin/payment-gateways";
 import { prisma } from "@/lib/prisma";
 import { getTaxSettings } from "@/lib/utils/tax-calculator";
 import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
-import { calculateTaxForCart } from "@/lib/utils/tax-calculator";
+import { calculateTaxForCartWithShipping } from "@/lib/utils/tax-calculator";
 
 // iyzico için tarih formatı: yyyy-MM-dd HH:mm:ss
 const formatDateForIyzipay = (date: Date): string => {
@@ -158,19 +158,6 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       0
     );
 
-    // Vergi hesapla (KDV dahil fiyatlardan)
-    const taxCalculation = calculateTaxForCart(
-      cartSubtotal,
-      taxSettings.defaultTaxRate,
-      taxSettings.taxIncluded
-    );
-
-    // Kargo hesapla
-    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
-
-    // Toplam
-    const total = taxCalculation.total + shippingCost;
-
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -206,6 +193,25 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
     // Eğer retryOrderId varsa, mevcut PENDING siparişi kullan
     // Yoksa, sepet ile eşleşen mevcut PENDING/FAILED siparişi ara
     let pendingOrder;
+    let total: number;
+    let finalShippingCost: number;
+    let taxCalculation: ReturnType<typeof calculateTaxForCartWithShipping>;
+    
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+
+    // Vergi hesapla (ürünler + kargo üzerinden)
+    taxCalculation = calculateTaxForCartWithShipping(
+      cartSubtotal,
+      shippingCost,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+    
+    // Başlangıç değerleri (normal durum için)
+    total = taxCalculation.total;
+    finalShippingCost = taxCalculation.shippingCost;
+    
     if (retryOrderId) {
       // Mevcut PENDING siparişi getir
       pendingOrder = await prisma.order.findUnique({
@@ -231,11 +237,28 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
         throw new Error("Bu sipariş için tekrar ödeme yapılamaz");
       }
 
-      // Mevcut siparişi güncelle (yeni shipping address ile)
+      // Güncel sepetten hesaplama yap (kargo ücreti veya vergi değişmiş olabilir)
+      const retryCartSubtotal = cart.items.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0
+      );
+      const retryShippingCost = calculateShippingCost(retryCartSubtotal, shippingSettings);
+      const retryTaxCalculation = calculateTaxForCartWithShipping(
+        retryCartSubtotal,
+        retryShippingCost,
+        taxSettings.defaultTaxRate,
+        taxSettings.taxIncluded
+      );
+
+      // Mevcut siparişi güncelle (yeni shipping address ve güncel tutarlar ile)
       pendingOrder = await prisma.order.update({
         where: { id: retryOrderId },
         data: {
           shippingAddress,
+          subtotal: retryTaxCalculation.subtotal,
+          shippingCost: retryTaxCalculation.shippingCost,
+          tax: retryTaxCalculation.tax,
+          total: retryTaxCalculation.total,
           notes: `Tekrar ödeme denemesi - ${new Date().toISOString()}`,
         },
         include: {
@@ -246,6 +269,11 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
           },
         },
       });
+
+      // Güncel hesaplanan değerleri kullan
+      finalShippingCost = retryTaxCalculation.shippingCost;
+      total = retryTaxCalculation.total;
+      taxCalculation = retryTaxCalculation;
 
       // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
       for (const item of pendingOrder.items) {
@@ -303,11 +331,28 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
           // Eşleşen sipariş bulundu, onu kullan
           console.log("Mevcut sipariş bulundu, yeniden kullanılıyor:", order.id);
           
-          // Siparişi güncelle (yeni shipping address ile)
+          // Güncel sepetten hesaplama yap (kargo ücreti veya vergi değişmiş olabilir)
+          const existingCartSubtotal = cart.items.reduce(
+            (sum, item) => sum + item.product.price * item.quantity,
+            0
+          );
+          const existingShippingCost = calculateShippingCost(existingCartSubtotal, shippingSettings);
+          const existingTaxCalculation = calculateTaxForCartWithShipping(
+            existingCartSubtotal,
+            existingShippingCost,
+            taxSettings.defaultTaxRate,
+            taxSettings.taxIncluded
+          );
+          
+          // Siparişi güncelle (yeni shipping address ve güncel tutarlar ile)
           pendingOrder = await prisma.order.update({
             where: { id: order.id },
             data: {
               shippingAddress,
+              subtotal: existingTaxCalculation.subtotal,
+              shippingCost: existingTaxCalculation.shippingCost,
+              tax: existingTaxCalculation.tax,
+              total: existingTaxCalculation.total,
               notes: `Tekrar ödeme denemesi - ${new Date().toISOString()}`,
               paymentStatus: "PENDING", // PENDING'e geri al
             },
@@ -323,6 +368,11 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
               },
             },
           });
+
+          // Güncel hesaplanan değerleri kullan
+          finalShippingCost = existingTaxCalculation.shippingCost;
+          total = existingTaxCalculation.total;
+          taxCalculation = existingTaxCalculation;
 
           // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
           for (const item of pendingOrder.items) {
@@ -344,6 +394,9 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
 
       // Eğer eşleşen sipariş bulunamadıysa, yeni sipariş oluştur
       if (!pendingOrder) {
+        // Normal durumda hesaplanan değerleri kullan
+        total = taxCalculation.total;
+        finalShippingCost = taxCalculation.shippingCost;
         // Yeni sipariş oluştur
         // Ödeme başlatılmadan önce PENDING durumunda sipariş oluştur (veritabanına kaydet)
         // Bu sayede callback'te userId ve tüm bilgileri veritabanından alabiliriz
@@ -353,7 +406,7 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
             userId: session.user.id,
             total,
             subtotal: taxCalculation.subtotal,
-            shippingCost,
+            shippingCost: finalShippingCost,
             tax: taxCalculation.tax,
             shippingAddress,
             paymentMethod: "iyzico",
@@ -432,6 +485,21 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       });
     }
 
+    // Kargo ücretine KDV ekle (iyzico'ya KDV dahil gönderilmeli)
+    // Kargo ücreti KDV hariç, KDV ekleyerek KDV dahil halini hesapla
+    // Her durumda: shippingCost * (1 + taxRate)
+    if (shippingCost > 0) {
+      const shippingWithTax = shippingCost * (1 + taxSettings.defaultTaxRate);
+      
+      basketItems.push({
+        id: "SHIPPING",
+        name: "Kargo Ücreti",
+        category1: "Kargo",
+        itemType: "PHYSICAL",
+        price: parseFloat(shippingWithTax.toFixed(2)).toFixed(2),
+      });
+    }
+
     // BasketItems toplamını hesapla
     const basketItemsSum = parseFloat(
       basketItems.reduce(
@@ -440,19 +508,17 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       ).toFixed(2)
     );
 
-    // Kargo ücreti varsa basketItems'a ekle
-    if (shippingCost > 0) {
-      basketItems.push({
-        id: "SHIPPING",
-        name: "Kargo Ücreti",
-        category1: "Kargo",
-        itemType: "PHYSICAL",
-        price: parseFloat(shippingCost.toFixed(2)).toFixed(2),
-      });
+    // Toplam tutar - basketItems toplamını kullan (iyzico bunu bekliyor)
+    // BasketItems toplamı ile total'un eşit olması gerekiyor
+    const totalAmount = parseFloat(basketItemsSum.toFixed(2));
+    
+    // Kontrol: basketItems toplamı ile hesaplanan total arasındaki fark
+    const calculatedTotal = total;
+    const difference = Math.abs(basketItemsSum - calculatedTotal);
+    if (difference > 0.01) {
+      console.warn(`BasketItems toplamı (${basketItemsSum}) ile hesaplanan total (${calculatedTotal}) eşit değil. Fark: ${difference}`);
+      // İyzico basketItems toplamını beklediği için, totalAmount'u basketItemsSum'a eşitle
     }
-
-    // Toplam tutar - zaten hesaplanmış total değişkenini kullan (ürünler + vergi + kargo)
-    const totalAmount = total;
 
     // iyzico ödeme isteği
     const request = {

@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import CheckoutClient from "@/components/checkout/CheckoutClient";
 import { getTaxSettings } from "@/lib/utils/tax-calculator";
 import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
-import { calculateTaxForCart } from "@/lib/utils/tax-calculator";
+import { calculateTaxForCartWithShipping } from "@/lib/utils/tax-calculator";
 
 export const metadata: Metadata = {
   title: "Ödeme",
@@ -83,13 +83,14 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
-    const taxCalculation = calculateTaxForCart(
+    const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+    const taxCalculation = calculateTaxForCartWithShipping(
       cartSubtotal,
+      shippingCost,
       taxSettings.defaultTaxRate,
       taxSettings.taxIncluded
     );
-    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
-    const total = taxCalculation.total + shippingCost;
+    const total = taxCalculation.total;
 
     return (
       <CheckoutClient
@@ -99,24 +100,44 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
         userEmail={session.user.email || ""}
         calculatedSubtotal={taxCalculation.subtotal}
         calculatedTax={taxCalculation.tax}
-        calculatedShipping={shippingCost}
+        calculatedShipping={taxCalculation.shippingCost}
         calculatedTotal={total}
         taxSettings={taxSettings}
       />
     );
   }
 
-  // Retry durumunda - mevcut siparişi kullan (zaten hesaplanmış değerler var)
+  // Retry durumunda - güncel sepetten hesaplama yap (kargo ücreti veya vergi değişmiş olabilir)
+  const cart = await getCart();
+  
+  if (!cart || cart.items.length === 0) {
+    redirect("/sepet");
+  }
+
+  // Güncel hesaplamaları yap
+  const cartSubtotal = cart.items.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  );
+  const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+  const taxCalculation = calculateTaxForCartWithShipping(
+    cartSubtotal,
+    shippingCost,
+    taxSettings.defaultTaxRate,
+    taxSettings.taxIncluded
+  );
+  const total = taxCalculation.total;
+
   return (
     <CheckoutClient
-      cart={null}
+      cart={cart}
       retryOrder={retryOrder}
       addresses={addresses}
       userEmail={session.user.email || ""}
-      calculatedSubtotal={retryOrder?.subtotal || 0}
-      calculatedTax={retryOrder?.tax || 0}
-      calculatedShipping={retryOrder?.shippingCost || 0}
-      calculatedTotal={retryOrder?.total || 0}
+      calculatedSubtotal={taxCalculation.subtotal}
+      calculatedTax={taxCalculation.tax}
+      calculatedShipping={taxCalculation.shippingCost}
+      calculatedTotal={total}
       taxSettings={taxSettings}
     />
   );

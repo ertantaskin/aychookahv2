@@ -93,6 +93,63 @@ export function calculateTaxForCart(
 }
 
 /**
+ * Sepet toplamı ve kargo ücreti için vergi hesapla (kargo ücretine de vergi eklenir)
+ * @param cartSubtotal Ara toplam (ürünler)
+ * @param shippingCost Kargo ücreti (KDV hariç)
+ * @param taxRate KDV oranı (örn: 0.20 = %20)
+ * @param taxIncluded Fiyatlar KDV dahil mi? (Eğer true ise, cartSubtotal aslında KDV dahil toplam)
+ * @returns { subtotal: number, shippingCost: number, tax: number, total: number }
+ */
+export function calculateTaxForCartWithShipping(
+  cartSubtotal: number,
+  shippingCost: number,
+  taxRate: number,
+  taxIncluded: boolean
+): {
+  subtotal: number; // KDV hariç ara toplam
+  shippingCost: number; // KDV hariç kargo ücreti
+  tax: number; // Toplam KDV tutarı (ürünler + kargo)
+  total: number; // KDV dahil toplam
+} {
+  if (taxIncluded) {
+    // Fiyatlar KDV dahil ise, cartSubtotal'den KDV'yi çıkar
+    const subtotalWithoutTax = calculatePriceWithoutTax(cartSubtotal, taxRate);
+    const productTax = cartSubtotal - subtotalWithoutTax;
+    
+    // Kargo ücretine KDV ekle
+    const shippingTax = shippingCost * taxRate;
+    const shippingWithTax = shippingCost + shippingTax;
+    
+    // Toplam KDV
+    const totalTax = productTax + shippingTax;
+    
+    // Toplam
+    const total = cartSubtotal + shippingWithTax;
+    
+    return {
+      subtotal: subtotalWithoutTax,
+      shippingCost: shippingCost,
+      tax: totalTax,
+      total: total,
+    };
+  } else {
+    // Fiyatlar KDV hariç ise
+    const productTax = cartSubtotal * taxRate;
+    const shippingTax = shippingCost * taxRate;
+    const totalTax = productTax + shippingTax;
+    
+    const total = cartSubtotal + shippingCost + totalTax;
+    
+    return {
+      subtotal: cartSubtotal,
+      shippingCost: shippingCost,
+      tax: totalTax,
+      total: total,
+    };
+  }
+}
+
+/**
  * Ürün fiyatını gösterim için formatla
  * @param price Ürün fiyatı (veritabanından gelen)
  * @param taxIncluded Fiyat KDV dahil mi?

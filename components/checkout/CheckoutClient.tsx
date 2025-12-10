@@ -272,7 +272,7 @@ export default function CheckoutClient({
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-sans font-bold text-luxury-black mb-8">Ödeme</h1>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -480,42 +480,94 @@ export default function CheckoutClient({
           {/* Özet */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 sticky top-24">
-              <h2 className="text-xl font-sans font-bold text-luxury-black mb-6">
-                Sipariş Özeti
-              </h2>
+              <h2 className="text-xl font-sans font-bold text-luxury-black mb-6">Sipariş Özeti</h2>
 
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 mb-6 pb-4 border-b border-gray-200">
+                <h3 className="text-sm font-sans font-semibold text-gray-700 mb-3">Sipariş İçeriği</h3>
                 {(retryOrder ? retryOrder.items : cart?.items || []).map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm font-sans">
-                    <span className="text-gray-700">
-                      {(retryOrder ? (item.product?.name || "Silinmiş Ürün") : (item.product?.name || "Silinmiş Ürün")) || "Ürün"} x {item.quantity}
-                    </span>
-                    <span className="font-medium text-gray-900">
+                  <div key={item.id} className="flex items-start justify-between gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-sans font-medium text-gray-900 truncate">
+                        {(retryOrder ? (item.product?.name || "Silinmiş Ürün") : (item.product?.name || "Silinmiş Ürün")) || "Ürün"}
+                      </p>
+                      <p className="text-xs text-gray-500 font-sans mt-0.5">Adet: {item.quantity}</p>
+                    </div>
+                    <span className="text-sm font-sans font-semibold text-gray-900 whitespace-nowrap">
                       {((retryOrder && 'price' in item ? item.price : (item.product?.price || 0)) * item.quantity).toLocaleString("tr-TR")} ₺
                     </span>
                   </div>
                 ))}
+              </div>
 
-                <div className="border-t border-gray-200 pt-4 space-y-2">
-                  <div className="flex justify-between text-gray-700 font-sans">
-                    <span>Ara Toplam</span>
-                    <span>{subtotal.toLocaleString("tr-TR")} ₺</span>
+              <div className="space-y-4 mb-6">
+                  {/* Ara Toplam */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <span className="text-gray-700 font-sans font-medium">Ara Toplam</span>
+                      </div>
+                      <span className="text-gray-900 font-sans font-semibold whitespace-nowrap">{subtotal.toLocaleString("tr-TR")} ₺</span>
+                    </div>
+                    <p className="text-xs text-gray-500 font-sans ml-7">Ürün fiyatları toplamı (KDV hariç)</p>
                   </div>
-                  <div className="flex justify-between text-gray-700 font-sans">
-                    <span>KDV (%{(taxSettings.defaultTaxRate * 100).toFixed(0)})</span>
-                    <span>{tax.toLocaleString("tr-TR")} ₺</span>
+
+                  {/* Kargo */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                        <span className="text-gray-700 font-sans font-medium">Kargo Ücreti</span>
                   </div>
-                  <div className="flex justify-between text-gray-700 font-sans">
-                    <span>Kargo</span>
-                    <span>
+                      <span className={`font-sans font-semibold whitespace-nowrap ${shippingCost === 0 ? 'text-green-600' : 'text-gray-900'}`}>
                       {shippingCost === 0
                         ? "Ücretsiz"
                         : `${shippingCost.toLocaleString("tr-TR")} ₺`}
                     </span>
                   </div>
-                  <div className="border-t border-gray-200 pt-4 flex justify-between text-xl font-sans font-bold text-luxury-black">
-                    <span>Toplam</span>
-                    <span>{total.toLocaleString("tr-TR")} ₺</span>
+                    {shippingCost === 0 ? (
+                      <p className="text-xs text-green-600 font-sans ml-7">✓ Ücretsiz kargo uygulandı</p>
+                    ) : (
+                      <p className="text-xs text-gray-500 font-sans ml-7">Kargo ücreti (KDV hariç)</p>
+                    )}
+                  </div>
+
+                  {/* KDV */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-gray-700 font-sans font-medium">
+                          KDV (%{(taxSettings.defaultTaxRate * 100).toFixed(0)})
+                        </span>
+                      </div>
+                      <span className="text-gray-900 font-sans font-semibold whitespace-nowrap">{tax.toLocaleString("tr-TR")} ₺</span>
+                    </div>
+                    <p className="text-xs text-gray-500 font-sans ml-7">Katma Değer Vergisi (ürünler + kargo üzerinden)</p>
+                  </div>
+
+                  {/* Toplam */}
+                  <div className="border-t-2 border-gray-300 pt-4 mt-2">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <svg className="w-6 h-6 text-luxury-goldLight flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xl font-sans font-bold text-luxury-black block">Toplam Tutar</span>
+                          <p className="text-xs text-gray-500 font-sans mt-1">Ödenecek toplam tutar</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-2xl font-sans font-bold text-luxury-black whitespace-nowrap block">{total.toLocaleString("tr-TR")} ₺</span>
+                        <span className="text-xs font-normal text-gray-500 mt-1 block">KDV Dahil</span>
+                      </div>
                   </div>
                 </div>
               </div>

@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { getTaxSettings } from "@/lib/utils/tax-calculator";
 import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
-import { calculateTaxForCart } from "@/lib/utils/tax-calculator";
+import { calculateTaxForCartWithShipping } from "@/lib/utils/tax-calculator";
 
 // Sipariş oluştur
 export const createOrder = async (shippingAddress: any, paymentId?: string) => {
@@ -49,18 +49,19 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
       0
     );
 
-    // Vergi hesapla (KDV dahil fiyatlardan)
-    const taxCalculation = calculateTaxForCart(
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+
+    // Vergi hesapla (ürünler + kargo üzerinden)
+    const taxCalculation = calculateTaxForCartWithShipping(
       cartSubtotal,
+      shippingCost,
       taxSettings.defaultTaxRate,
       taxSettings.taxIncluded
     );
 
-    // Kargo hesapla
-    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
-
     // Toplam
-    const total = taxCalculation.total + shippingCost;
+    const total = taxCalculation.total;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -72,7 +73,7 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
         userId: session.user.id,
         total,
         subtotal: taxCalculation.subtotal,
-        shippingCost,
+        shippingCost: taxCalculation.shippingCost,
         tax: taxCalculation.tax,
         shippingAddress,
         paymentId,
@@ -268,18 +269,19 @@ export const createOrderFromPayment = async (
       0
     );
 
-    // Vergi hesapla (KDV dahil fiyatlardan)
-    const taxCalculation = calculateTaxForCart(
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+
+    // Vergi hesapla (ürünler + kargo üzerinden)
+    const taxCalculation = calculateTaxForCartWithShipping(
       cartSubtotal,
+      shippingCost,
       taxSettings.defaultTaxRate,
       taxSettings.taxIncluded
     );
 
-    // Kargo hesapla
-    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
-
     // Toplam - eğer total parametresi verilmişse onu kullan
-    const calculatedTotal = total || (taxCalculation.total + shippingCost);
+    const calculatedTotal = total || taxCalculation.total;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -291,7 +293,7 @@ export const createOrderFromPayment = async (
         userId: finalUserId,
         total: calculatedTotal,
         subtotal: taxCalculation.subtotal,
-        shippingCost,
+        shippingCost: taxCalculation.shippingCost,
         tax: taxCalculation.tax,
         shippingAddress,
         paymentId,
@@ -392,18 +394,19 @@ export const createOrderForEftHavale = async (
       0
     );
 
-    // Vergi hesapla (KDV dahil fiyatlardan)
-    const taxCalculation = calculateTaxForCart(
+    // Kargo hesapla
+    const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+
+    // Vergi hesapla (ürünler + kargo üzerinden)
+    const taxCalculation = calculateTaxForCartWithShipping(
       cartSubtotal,
+      shippingCost,
       taxSettings.defaultTaxRate,
       taxSettings.taxIncluded
     );
 
-    // Kargo hesapla
-    const shippingCost = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
-
     // Toplam
-    const total = taxCalculation.total + shippingCost;
+    const total = taxCalculation.total;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -415,7 +418,7 @@ export const createOrderForEftHavale = async (
         userId: session.user.id,
         total,
         subtotal: taxCalculation.subtotal,
-        shippingCost,
+        shippingCost: taxCalculation.shippingCost,
         tax: taxCalculation.tax,
         shippingAddress,
         paymentMethod,

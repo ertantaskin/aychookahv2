@@ -4,7 +4,7 @@ import { getCart } from "@/lib/actions/cart";
 import CartClient from "@/components/cart/CartClient";
 import { getTaxSettings } from "@/lib/utils/tax-calculator";
 import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
-import { calculateTaxForCart } from "@/lib/utils/tax-calculator";
+import { calculateTaxForCartWithShipping } from "@/lib/utils/tax-calculator";
 
 // Cache'i devre dışı bırak - her istekte yeniden oluştur
 export const dynamic = 'force-dynamic';
@@ -34,15 +34,17 @@ export default async function CartPage() {
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
-    const taxCalculation = calculateTaxForCart(
+    const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+    const taxCalculation = calculateTaxForCartWithShipping(
       cartSubtotal,
+      shippingCost,
       taxSettings.defaultTaxRate,
       taxSettings.taxIncluded
     );
     calculatedSubtotal = taxCalculation.subtotal;
     calculatedTax = taxCalculation.tax;
-    calculatedShipping = calculateShippingCost(taxCalculation.subtotal, shippingSettings);
-    calculatedTotal = taxCalculation.total + calculatedShipping;
+    calculatedShipping = taxCalculation.shippingCost;
+    calculatedTotal = taxCalculation.total;
   }
 
   return (
@@ -53,6 +55,7 @@ export default async function CartPage() {
       calculatedShipping={calculatedShipping}
       calculatedTotal={calculatedTotal}
       taxSettings={taxSettings}
+      shippingSettings={shippingSettings}
     />
   );
 }
