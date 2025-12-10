@@ -3,6 +3,10 @@ import { auth } from "@/lib/auth";
 import { getCart } from "@/lib/actions/cart";
 import CartClient from "@/components/cart/CartClient";
 
+// Cache'i devre dışı bırak - her istekte yeniden oluştur
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Sepetim",
   description: "Sepetinizdeki ürünleri görüntüleyin ve düzenleyin",

@@ -6,6 +6,10 @@ import ProductDetailClient from "@/components/products/ProductDetailClient";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import { ProductStructuredData, BreadcrumbStructuredData, AggregateRatingStructuredData } from "@/components/seo/StructuredData";
 
+// Cache'i devre dışı bırak - her istekte yeniden oluştur
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 type PageProps = {
   params: Promise<{ slug: string }>;
 };

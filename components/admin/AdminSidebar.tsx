@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Image,
 } from "lucide-react";
+import CacheClearButton from "./CacheClearButton";
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -57,10 +58,11 @@ export default function AdminSidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-700 space-y-2">
+        <CacheClearButton />
         <Link
           href="/"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors mb-2 font-sans text-gray-300 hover:text-white"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-800 transition-colors font-sans text-gray-300 hover:text-white"
         >
           <Home className="w-5 h-5" />
           <span>Ana Sayfa</span>

@@ -9,6 +9,10 @@ import { getPageMetadata } from "@/lib/seo";
 import { OrganizationStructuredData, BreadcrumbStructuredData } from "@/components/seo/StructuredData";
 import { getSiteSEO } from "@/lib/actions/seo";
 
+// Cache'i devre dışı bırak - her istekte yeniden oluştur
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function generateMetadata(): Promise<Metadata> {
   const pageMetadata = await getPageMetadata("/");
   if (pageMetadata) {

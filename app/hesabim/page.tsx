@@ -22,6 +22,10 @@ import {
 } from "lucide-react";
 import LogoutButton from "@/components/account/LogoutButton";
 
+// Cache'i devre dışı bırak - her istekte yeniden oluştur
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AccountPage() {
   const session = await getSession();
 
