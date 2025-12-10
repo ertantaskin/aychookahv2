@@ -23,10 +23,8 @@ const nextConfig = {
     }
     return config;
   },
-  // Experimental: Server components için
-  experimental: {
-    serverComponentsExternalPackages: ['iyzipay'],
-  },
+  // Server components için external packages
+  serverExternalPackages: ['iyzipay'],
 };
 
 export default nextConfig;

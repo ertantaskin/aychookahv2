@@ -82,7 +82,7 @@ export default function SEOClient({ initialSiteSEO, initialPageSEOList, initialF
     const formData = new FormData(e.currentTarget);
     const result = await updateSiteSEO(formData);
 
-    if (result.success) {
+    if (result.success && result.data) {
       toast.success("Site SEO ayarları başarıyla güncellendi");
       setSiteSEO(result.data);
       router.refresh();
@@ -100,10 +100,10 @@ export default function SEOClient({ initialSiteSEO, initialPageSEOList, initialF
     const formData = new FormData(e.currentTarget);
     const result = await createOrUpdatePageSEO(formData);
 
-    if (result.success) {
+    if (result.success && result.data) {
       toast.success("Sayfa SEO ayarları başarıyla kaydedildi");
       if (pageId) {
-        setPageSEOList(pageSEOList.map(p => p.id === pageId ? result.data : p));
+        setPageSEOList(pageSEOList.map(p => p.id === pageId ? result.data! : p));
         setIsEditingPage(null);
       } else {
         setPageSEOList([...pageSEOList, result.data]);
@@ -141,10 +141,10 @@ export default function SEOClient({ initialSiteSEO, initialPageSEOList, initialF
       ? await updateFAQ(faqId, formData)
       : await createFAQ(formData);
 
-    if (result.success) {
+    if (result.success && result.data) {
       toast.success(faqId ? "FAQ güncellendi" : "FAQ oluşturuldu");
       if (faqId) {
-        setFaqs(faqs.map(f => f.id === faqId ? result.data : f));
+        setFaqs(faqs.map(f => f.id === faqId ? result.data! : f));
         setIsEditingFAQ(null);
       } else {
         setFaqs([...faqs, result.data]);
@@ -313,7 +313,7 @@ export default function SEOClient({ initialSiteSEO, initialPageSEOList, initialF
                   placeholder="https://example.com/favicon.ico"
                   className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                 />
-                <p className="mt-1 text-xs font-sans text-gray-500">Favicon görselinin URL'ini girin (örn: .ico, .png, .svg)</p>
+                <p className="mt-1 text-xs font-sans text-gray-500">Favicon görselinin URL&apos;ini girin (örn: .ico, .png, .svg)</p>
               </div>
 
               <div>

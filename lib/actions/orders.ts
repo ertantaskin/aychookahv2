@@ -67,7 +67,7 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
             quantity: item.quantity,
             price: item.product.price,
             productName: item.product.name,
-            productImageUrl: item.product.images?.find(img => img.isPrimary)?.url || item.product.images?.[0]?.url || null,
+            productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
           })),
         },
       },
@@ -82,14 +82,16 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
 
     // Stokları güncelle
     for (const item of cart.items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
+      if (item.productId) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
           },
-        },
-      });
+        });
+      }
     }
 
     // Sepeti temizle
@@ -272,7 +274,7 @@ export const createOrderFromPayment = async (
             quantity: item.quantity,
             price: item.product.price,
             productName: item.product.name,
-            productImageUrl: item.product.images?.find(img => img.isPrimary)?.url || item.product.images?.[0]?.url || null,
+            productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
           })),
         },
       },
@@ -287,14 +289,16 @@ export const createOrderFromPayment = async (
 
     // Stokları güncelle
     for (const item of cart.items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
+      if (item.productId) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
           },
-        },
-      });
+        });
+      }
     }
 
     // Sepeti temizle
@@ -379,7 +383,7 @@ export const createOrderForEftHavale = async (
             quantity: item.quantity,
             price: item.product.price,
             productName: item.product.name,
-            productImageUrl: item.product.images?.find(img => img.isPrimary)?.url || item.product.images?.[0]?.url || null,
+            productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
           })),
         },
       },

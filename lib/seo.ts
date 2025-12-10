@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getSiteSEO, getPageSEO } from "@/lib/actions/seo";
-import { DefaultSeo, NextSeo } from "next-seo";
+import { NextSeo } from "next-seo";
 
 export async function getDefaultMetadata(): Promise<Metadata> {
   const siteSEO = await getSiteSEO();

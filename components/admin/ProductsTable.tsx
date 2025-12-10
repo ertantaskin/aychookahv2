@@ -74,7 +74,15 @@ export default function ProductsTable() {
         sortBy,
         sortOrder
       );
-      setProducts(result.products);
+      // Map products to match interface (convert null to undefined for alt)
+      const mappedProducts: Product[] = result.products.map((product) => ({
+        ...product,
+        images: product.images.map((img) => ({
+          url: img.url,
+          alt: img.alt ?? undefined,
+        })),
+      }));
+      setProducts(mappedProducts);
       setTotal(result.total);
       setTotalPages(result.totalPages);
       

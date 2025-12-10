@@ -41,7 +41,14 @@ interface ProductDetailClientProps {
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
   const router = useRouter();
   const images = product.images || [];
-  const reviews = product.reviews || [];
+  // Map reviews to include email field for ReviewList component
+  const reviews = (product.reviews || []).map((review) => ({
+    ...review,
+    user: {
+      name: review.user.name,
+      email: null, // Email is not included in product reviews query
+    },
+  }));
   
   // Primary image'i bul veya ilk görseli kullan
   const primaryImageIndex = images.findIndex((img) => img.isPrimary);

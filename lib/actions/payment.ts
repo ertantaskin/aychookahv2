@@ -26,7 +26,7 @@ const loadIyzipay = async () => {
   try {
     // Server-side'da require kullan (Next.js build sorunlarını önlemek için)
     if (typeof window === "undefined") {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line
       const iyzicoModule = require("iyzipay");
       IyzipayClass = iyzicoModule.default || iyzicoModule;
       return IyzipayClass;
@@ -232,14 +232,16 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
 
       // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
       for (const item of pendingOrder.items) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
+        if (item.productId) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
             },
-          },
-        });
+          });
+        }
       }
     } else {
       // retryOrderId yoksa, sepet ile eşleşen mevcut PENDING/FAILED siparişi ara
@@ -307,14 +309,16 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
 
           // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
           for (const item of pendingOrder.items) {
-            await prisma.product.update({
-              where: { id: item.productId },
-              data: {
-                stock: {
-                  decrement: item.quantity,
+            if (item.productId) {
+              await prisma.product.update({
+                where: { id: item.productId },
+                data: {
+                  stock: {
+                    decrement: item.quantity,
+                  },
                 },
-              },
-            });
+              });
+            }
           }
           
           break; // Eşleşen sipariş bulundu, döngüden çık
@@ -345,7 +349,7 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
                 quantity: item.quantity,
                 price: item.product.price,
                 productName: item.product.name,
-                productImageUrl: item.product.images?.find(img => img.isPrimary)?.url || item.product.images?.[0]?.url || null,
+                productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
               })),
             },
           },
@@ -361,14 +365,16 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
         // Stokları rezerve et (azalt) - ödeme başarılı olursa kalıcı olacak
         // Ödeme başarısız olursa callback'te geri verilecek
         for (const item of cart.items) {
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
+          if (item.productId) {
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: item.quantity,
+                },
               },
-            },
-          });
+            });
+          }
         }
       }
     }
@@ -387,8 +393,8 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
         
         return {
           id: item.productId,
-          name: item.product.name,
-          category1: (item.product as any).category?.name || "Genel",
+          name: item.product?.name || "Ürün",
+          category1: (item.product as any)?.category?.name || "Genel",
           itemType: "PHYSICAL",
           price: parseFloat(itemTotalWithTax.toFixed(2)).toFixed(2),
         };

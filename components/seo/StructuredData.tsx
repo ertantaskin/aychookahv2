@@ -2,12 +2,8 @@
 
 import { 
   OrganizationJsonLd, 
-  ProductJsonLd, 
   BreadcrumbJsonLd, 
-  ReviewJsonLd, 
   AggregateRatingJsonLd,
-  LocalBusinessJsonLd,
-  JsonLd,
 } from "next-seo";
 
 interface OrganizationData {
@@ -83,20 +79,34 @@ export function ProductStructuredData({ data }: { data: ProductData }) {
   // Ensure images array is not empty
   const images = Array.isArray(data.image) && data.image.length > 0 ? data.image : [];
   
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: data.name,
+    description: data.description,
+    image: images,
+    ...(data.brand && { brand: data.brand }),
+    ...(data.sku && { sku: data.sku }),
+    offers: {
+      "@type": "Offer",
+      price: data.offers.price,
+      priceCurrency: data.offers.priceCurrency,
+      availability: `https://schema.org/${data.offers.availability}`,
+      url: data.offers.url,
+    },
+    ...(data.aggregateRating && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: data.aggregateRating.ratingValue,
+        reviewCount: data.aggregateRating.reviewCount,
+      },
+    }),
+  };
+
   return (
-    <ProductJsonLd
-      productName={data.name}
-      description={data.description}
-      images={images}
-      brand={data.brand}
-      sku={data.sku}
-      offers={{
-        price: data.offers.price,
-        priceCurrency: data.offers.priceCurrency,
-        availability: data.offers.availability,
-        url: data.offers.url,
-      }}
-      aggregateRating={data.aggregateRating}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }
@@ -123,12 +133,27 @@ export function BreadcrumbStructuredData({ data }: { data: BreadcrumbData }) {
 }
 
 export function ReviewStructuredData({ data }: { data: ReviewData }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    author: {
+      "@type": "Person",
+      name: data.author,
+    },
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: data.reviewRating.ratingValue,
+      bestRating: data.reviewRating.bestRating || 5,
+      worstRating: data.reviewRating.worstRating || 1,
+    },
+    ...(data.reviewBody && { reviewBody: data.reviewBody }),
+    ...(data.datePublished && { datePublished: data.datePublished }),
+  };
+
   return (
-    <ReviewJsonLd
-      author={data.author}
-      reviewRating={data.reviewRating}
-      reviewBody={data.reviewBody}
-      datePublished={data.datePublished}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }
@@ -163,22 +188,23 @@ export function FAQStructuredData({ data }: { data: FAQData }) {
     return null;
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: data.questions.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+
   return (
-    <JsonLd
-      type="FAQPage"
-      scriptKey="FAQPage"
-      data={{
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: data.questions.map((item) => ({
-          "@type": "Question",
-          name: item.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: item.answer,
-          },
-        })),
-      }}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }
@@ -206,25 +232,40 @@ interface LocalBusinessData {
 }
 
 export function LocalBusinessStructuredData({ data }: { data: LocalBusinessData }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name: data.name,
+    url: data.url,
+    ...(data.description && { description: data.description }),
+    ...(data.telephone && { telephone: data.telephone }),
+    ...(data.email && { email: data.email }),
+    ...(data.address && {
+      address: {
+        "@type": "PostalAddress",
+        ...(data.address.streetAddress && { streetAddress: data.address.streetAddress }),
+        ...(data.address.addressLocality && { addressLocality: data.address.addressLocality }),
+        ...(data.address.addressRegion && { addressRegion: data.address.addressRegion }),
+        ...(data.address.postalCode && { postalCode: data.address.postalCode }),
+        ...(data.address.addressCountry && { addressCountry: data.address.addressCountry }),
+      },
+    }),
+    ...(data.geo && {
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: data.geo.latitude,
+        longitude: data.geo.longitude,
+      },
+    }),
+    ...(data.openingHours && { openingHours: data.openingHours }),
+    ...(data.priceRange && { priceRange: data.priceRange }),
+    ...(data.image && { image: data.image }),
+  };
+
   return (
-    <LocalBusinessJsonLd
-      type="Store"
-      name={data.name}
-      url={data.url}
-      description={data.description}
-      telephone={data.telephone}
-      email={data.email}
-      address={{
-        streetAddress: data.address?.streetAddress,
-        addressLocality: data.address?.addressLocality,
-        addressRegion: data.address?.addressRegion,
-        postalCode: data.address?.postalCode,
-        addressCountry: data.address?.addressCountry,
-      }}
-      geo={data.geo}
-      openingHours={data.openingHours}
-      priceRange={data.priceRange}
-      images={data.image ? [data.image] : undefined}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }
@@ -240,25 +281,28 @@ interface WebSiteData {
 }
 
 export function WebSiteStructuredData({ data }: { data: WebSiteData }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    url: data.url,
+    name: data.name,
+    description: data.description,
+    ...(data.potentialAction && {
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: data.potentialAction.target,
+        },
+        "query-input": data.potentialAction.queryInput,
+      },
+    }),
+  };
+
   return (
-    <JsonLd
-      type="WebPage"
-      scriptKey="WebPage"
-      data={{
-        "@context": "https://schema.org",
-        "@type": "WebPage",
-        url: data.url,
-        name: data.name,
-        description: data.description,
-        potentialAction: data.potentialAction ? {
-          "@type": "SearchAction",
-          target: {
-            "@type": "EntryPoint",
-            urlTemplate: data.potentialAction.target,
-          },
-          "query-input": data.potentialAction.queryInput,
-        } : undefined,
-      }}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }

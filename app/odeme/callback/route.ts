@@ -119,15 +119,17 @@ export async function POST(request: NextRequest) {
           if (order) {
             // Stokları geri ver (rezerve edilmiş stokları geri ekle)
             for (const item of order.items) {
-              await prisma.product.update({
-                where: { id: item.productId },
-                data: {
-                  stock: {
-                    increment: item.quantity,
+              if (item.productId) {
+                await prisma.product.update({
+                  where: { id: item.productId },
+                  data: {
+                    stock: {
+                      increment: item.quantity,
+                    },
                   },
-              },
-            });
-          }
+                });
+              }
+            }
           
             // Siparişi güncelle - PENDING olarak bırak (kullanıcı tekrar deneyebilir)
             await prisma.order.update({

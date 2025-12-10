@@ -473,10 +473,10 @@ export default function CheckoutClient({ cart, retryOrder, addresses, userEmail 
                 {(retryOrder ? retryOrder.items : cart?.items || []).map((item) => (
                   <div key={item.id} className="flex justify-between text-sm font-sans">
                     <span className="text-gray-700">
-                      {(retryOrder ? (item.product?.name || "Silinmiş Ürün") : item.product.name) || "Ürün"} x {item.quantity}
+                      {(retryOrder ? (item.product?.name || "Silinmiş Ürün") : (item.product?.name || "Silinmiş Ürün")) || "Ürün"} x {item.quantity}
                     </span>
                     <span className="font-medium text-gray-900">
-                      {((retryOrder ? item.price : item.product.price) * item.quantity).toLocaleString("tr-TR")} ₺
+                      {((retryOrder && 'price' in item ? item.price : (item.product?.price || 0)) * item.quantity).toLocaleString("tr-TR")} ₺
                     </span>
                   </div>
                 ))}
