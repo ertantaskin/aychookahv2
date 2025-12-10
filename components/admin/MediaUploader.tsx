@@ -74,6 +74,7 @@ export default function MediaUploader({
         await uploadFileToR2(uploadFile);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [maxSize, allowedTypes]
   );
 

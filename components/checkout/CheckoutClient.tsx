@@ -99,6 +99,7 @@ export default function CheckoutClient({ cart, retryOrder, addresses, userEmail 
       }
     };
     loadPaymentMethods();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Retry durumunda mevcut sipariş adresini yükle

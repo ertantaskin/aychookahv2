@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import WhatsAppWidget from "./WhatsAppWidget";
 
@@ -29,9 +30,11 @@ const Footer: React.FC = () => {
             <div className="lg:col-span-5">
               <Link href="/" className="inline-block group">
                 <div className="relative mb-4">
-                  <img 
+                  <Image 
                     src="/images/logo/ayc-hookah-logo.png" 
                     alt="AYC HOOKAH Logo" 
+                    width={200}
+                    height={64}
                     className="h-12 sm:h-16 w-auto transition-all duration-300 group-hover:scale-105"
                   />
                   <div className="h-1 w-20 bg-luxury-goldLight rounded-full group-hover:w-32 transition-all duration-300" />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { getGuestCartItemCount } from "@/lib/utils/cart-client";
@@ -220,8 +221,10 @@ const Header: React.FC = () => {
             {/* Logo */}
             <Link href="/" className="flex items-center group relative">
               <div className="relative">
-                <img 
-                  src="/images/logo/ayc-hookah-logo.png" 
+                <Image 
+                  src="/images/logo/ayc-hookah-logo.png"
+                  width={200}
+                  height={64} 
                   alt="AYC HOOKAH Logo" 
                   className="h-14 md:h-16 w-auto transition-all duration-300 group-hover:scale-105"
                 />
@@ -415,9 +418,11 @@ const Header: React.FC = () => {
         <div className="h-full flex flex-col">
           {/* Menu Header */}
           <div className="flex justify-between items-center p-6 border-b border-luxury-goldLight/10">
-            <img 
+            <Image 
               src="/images/logo/ayc-hookah-logo.png" 
               alt="AYC HOOKAH Logo" 
+              width={200}
+              height={48}
               className="h-12 w-auto"
             />
             <button

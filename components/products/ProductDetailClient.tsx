@@ -98,6 +98,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     } else if (availableStock === 0 && quantity > 0) {
       setQuantity(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableStock]);
   const averageRating =
     reviews.length > 0

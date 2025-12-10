@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import ProductsGridClient from "@/components/products/ProductsGridClient";
 import { getCategoryBySlug } from "@/lib/actions/admin/categories";
 import { getProducts } from "@/lib/actions/products";
@@ -94,9 +95,11 @@ export default async function CategoryPage({ params }: PageProps) {
           </Link>
           <div className="flex items-center gap-4">
             {category.image && (
-              <img
+              <Image
                 src={category.image}
                 alt={category.name}
+                width={80}
+                height={80}
                 className="w-20 h-20 rounded-lg object-cover"
               />
             )}

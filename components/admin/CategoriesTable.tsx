@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { deleteCategory } from "@/lib/actions/admin/categories";
@@ -91,9 +92,11 @@ export default function CategoriesTable({ categories }: CategoriesTableProps) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       {category.image && (
-                        <img
+                        <Image
                           src={category.image}
                           alt={category.name}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 rounded object-cover"
                         />
                       )}
