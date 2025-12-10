@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { getSiteSEO, getPageSEO } from "@/lib/actions/seo";
-import { NextSeo } from "next-seo";
 
 export async function getDefaultMetadata(): Promise<Metadata> {
   const siteSEO = await getSiteSEO();
@@ -86,7 +85,7 @@ export async function getPageMetadata(pagePath: string): Promise<Metadata | null
       },
     },
     openGraph: {
-      type: (pageSEO.ogType as "website" | "article" | "product") || "website",
+      type: (pageSEO.ogType === "product" ? "website" : (pageSEO.ogType as "website" | "article")) || "website",
       title: pageSEO.ogTitle || pageSEO.title || pageSEO.pageName,
       description: pageSEO.ogDescription || pageSEO.description || undefined,
       images: pageSEO.ogImage
