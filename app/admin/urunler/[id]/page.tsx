@@ -33,9 +33,20 @@ export default async function EditProductPage({ params }: PageProps) {
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-luxury-black mb-8">Ürün Düzenle</h1>
-      <ProductForm product={product} categories={categories} />
+    <div className="min-h-screen bg-gray-100">
+      {/* WordPress benzeri üst bar */}
+      <div className="bg-white border-b border-gray-300 px-6 py-4">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-xl font-semibold text-gray-800">
+            {product ? "Ürünü Düzenle" : "Yeni Ürün Ekle"}
+          </h1>
+        </div>
+      </div>
+      
+      {/* Ana içerik alanı */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <ProductForm product={product} categories={categories} />
+      </div>
     </div>
   );
 }

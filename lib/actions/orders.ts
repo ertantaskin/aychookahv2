@@ -83,14 +83,14 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
     // Stokları güncelle
     for (const item of cart.items) {
       if (item.productId) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity,
           },
-        });
+        },
+      });
       }
     }
 
@@ -290,14 +290,14 @@ export const createOrderFromPayment = async (
     // Stokları güncelle
     for (const item of cart.items) {
       if (item.productId) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity,
           },
-        });
+        },
+      });
       }
     }
 

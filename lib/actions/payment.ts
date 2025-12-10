@@ -233,14 +233,14 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
       for (const item of pendingOrder.items) {
         if (item.productId) {
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
-              },
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
             },
-          });
+          },
+        });
         }
       }
     } else {
@@ -310,14 +310,14 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
           // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
           for (const item of pendingOrder.items) {
             if (item.productId) {
-              await prisma.product.update({
-                where: { id: item.productId },
-                data: {
-                  stock: {
-                    decrement: item.quantity,
-                  },
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: item.quantity,
                 },
-              });
+              },
+            });
             }
           }
           
@@ -366,14 +366,14 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
         // Ödeme başarısız olursa callback'te geri verilecek
         for (const item of cart.items) {
           if (item.productId) {
-            await prisma.product.update({
-              where: { id: item.productId },
-              data: {
-                stock: {
-                  decrement: item.quantity,
-                },
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
               },
-            });
+            },
+          });
           }
         }
       }

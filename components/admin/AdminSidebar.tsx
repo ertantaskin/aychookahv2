@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -14,12 +15,25 @@ import {
   Search,
   MessageSquare,
   Image,
+  ChevronDown,
+  ChevronRight,
+  FolderTree,
+  BarChart3,
 } from "lucide-react";
 import CacheClearButton from "./CacheClearButton";
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/urunler", label: "Ürünler", icon: Package },
+  { href: "/admin/analiz", label: "Analiz", icon: BarChart3 },
+  {
+    href: "/admin/urunler",
+    label: "Ürünler",
+    icon: Package,
+    subItems: [
+      { href: "/admin/urunler", label: "Tüm Ürünler" },
+      { href: "/admin/urunler/kategoriler", label: "Kategoriler" },
+    ],
+  },
   { href: "/admin/siparisler", label: "Siparişler", icon: ShoppingBag },
   { href: "/admin/kullanicilar", label: "Kullanıcılar", icon: Users },
   { href: "/admin/yorumlar", label: "Yorumlar", icon: MessageSquare },
@@ -30,6 +44,19 @@ const menuItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const [expandedItems, setExpandedItems] = useState<string[]>(() => {
+    // Eğer kategori sayfasındaysak, ürünler menüsünü açık tut
+    if (pathname.startsWith("/admin/urunler")) {
+      return ["/admin/urunler"];
+    }
+    return [];
+  });
+
+  const toggleExpanded = (href: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(href) ? prev.filter((item) => item !== href) : [...prev, href]
+    );
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-white flex flex-col">
@@ -37,23 +64,71 @@ export default function AdminSidebar() {
         <h1 className="text-xl font-sans font-semibold text-white">Admin Panel</h1>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           const IconComponent = item.icon;
+          const isExpanded = expandedItems.includes(item.href);
+          const hasSubItems = item.subItems && item.subItems.length > 0;
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-sans ${
-                isActive
-                  ? "bg-gray-800 text-white font-medium"
-                  : "hover:bg-gray-800 text-gray-300"
-              }`}
-            >
-              <IconComponent className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
-            </Link>
+            <div key={item.href}>
+              {hasSubItems ? (
+                <>
+                  <button
+                    onClick={() => toggleExpanded(item.href)}
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors font-sans ${
+                      isActive
+                        ? "bg-gray-800 text-white font-medium"
+                        : "hover:bg-gray-800 text-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <IconComponent className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      {item.subItems?.map((subItem) => {
+                        const isSubActive = pathname === subItem.href || pathname.startsWith(subItem.href + "/");
+                        return (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors font-sans text-sm ${
+                              isSubActive
+                                ? "bg-gray-800 text-white font-medium"
+                                : "hover:bg-gray-800 text-gray-300"
+                            }`}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-gray-500"></span>
+                            <span>{subItem.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-sans ${
+                    isActive
+                      ? "bg-gray-800 text-white font-medium"
+                      : "hover:bg-gray-800 text-gray-300"
+                  }`}
+                >
+                  <IconComponent className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              )}
+            </div>
           );
         })}
       </nav>

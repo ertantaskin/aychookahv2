@@ -211,7 +211,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           </li>
           <li>
             <Link
-              href={`/urunler?category=${product.category.slug}`}
+              href={`/kategori/${product.category.slug}`}
               className="font-sans text-gray-500 hover:text-luxury-goldLight transition-colors"
             >
               {product.category.name}
@@ -315,12 +315,12 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         <div className="space-y-6">
           {/* Kategori */}
           <div>
-            <a
-              href={`/urunler?category=${product.category.slug}`}
+            <Link
+              href={`/kategori/${product.category.slug}`}
               className="font-sans text-sm text-luxury-goldLight hover:text-luxury-gold font-medium"
             >
               {product.category.name}
-            </a>
+            </Link>
           </div>
 
           {/* Başlık */}

@@ -100,10 +100,10 @@ export function ProductStructuredData({ data }: { data: ProductData }) {
     ...(data.sku && { sku: data.sku }),
     offers: {
       "@type": "Offer",
-      price: data.offers.price,
-      priceCurrency: data.offers.priceCurrency,
+        price: data.offers.price,
+        priceCurrency: data.offers.priceCurrency,
       availability: `https://schema.org/${data.offers.availability}`,
-      url: data.offers.url,
+        url: data.offers.url,
     },
     ...(data.aggregateRating && {
       aggregateRating: {
@@ -209,16 +209,16 @@ export function FAQStructuredData({ data }: { data: FAQData }) {
   }
 
   const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: data.questions.map((item) => ({
-      "@type": "Question",
-      name: item.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.answer,
-      },
-    })),
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: data.questions.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+          },
+        })),
   };
 
   return (
@@ -302,19 +302,19 @@ interface WebSiteData {
 
 export function WebSiteStructuredData({ data }: { data: WebSiteData }) {
   const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    url: data.url,
-    name: data.name,
-    description: data.description,
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        url: data.url,
+        name: data.name,
+        description: data.description,
     ...(data.potentialAction && {
       potentialAction: {
-        "@type": "SearchAction",
-        target: {
-          "@type": "EntryPoint",
-          urlTemplate: data.potentialAction.target,
-        },
-        "query-input": data.potentialAction.queryInput,
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: data.potentialAction.target,
+          },
+          "query-input": data.potentialAction.queryInput,
       },
     }),
   };
