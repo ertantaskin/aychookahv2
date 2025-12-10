@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import ProductsGridClient from "@/components/products/ProductsGridClient";
 import ProductsHero from "@/components/products/ProductsHero";
 import ProductsError from "@/components/products/ProductsError";
@@ -48,12 +49,19 @@ export default async function ProductsPage() {
     <>
         <BreadcrumbStructuredData data={breadcrumbData} />
       <ProductsHero />
-        <ProductsGridClient
-          initialProducts={products}
-          categories={categories}
-          total={products.length}
-          totalPages={1}
-        />
+        <Suspense fallback={
+          <div className="py-12 text-center">
+            <div className="inline-block w-8 h-8 border-2 border-luxury-goldLight border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-sm font-sans text-gray-600">Yükleniyor...</p>
+          </div>
+        }>
+          <ProductsGridClient
+            initialProducts={products}
+            categories={categories}
+            total={products.length}
+            totalPages={1}
+          />
+        </Suspense>
     </>
   );
   } catch (error) {
