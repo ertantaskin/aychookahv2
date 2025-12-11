@@ -74,6 +74,18 @@ const ProductsGridClient: React.FC<ProductsGridClientProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug]);
 
+  // Mobil filtre modal açıkken body scroll'unu engelle
+  useEffect(() => {
+    if (showMobileFilters) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showMobileFilters]);
+
   const activeCategory = categorySlug 
     ? categories.find(cat => cat.slug === categorySlug)
     : null;
@@ -162,7 +174,7 @@ const ProductsGridClient: React.FC<ProductsGridClientProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Ara..."
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-luxury-goldLight/50 focus:border-luxury-goldLight text-sm transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-luxury-goldLight/50 focus:border-luxury-goldLight text-sm text-gray-800 transition-all font-sans"
                   />
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -389,6 +401,134 @@ const ProductsGridClient: React.FC<ProductsGridClientProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Mobile Filter Modal */}
+      {showMobileFilters && (
+        <div 
+          className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-fadeIn" 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowMobileFilters(false);
+            }
+          }}
+        >
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-white shadow-2xl overflow-y-auto animate-slideInRight"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between z-20 shadow-sm">
+              <h3 className="font-sans text-lg font-bold text-luxury-black">
+                Filtreler
+                {activeFiltersCount > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-luxury-goldLight text-luxury-black text-xs font-bold rounded-full">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </h3>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMobileFilters(false);
+                }}
+                className="flex-shrink-0 p-2 sm:p-2.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-all duration-200 touch-manipulation"
+                aria-label="Filtreleri Kapat"
+                type="button"
+              >
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Search */}
+              <div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Ara..."
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-luxury-goldLight/50 focus:border-luxury-goldLight text-sm text-gray-800 transition-all font-sans"
+                  />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div>
+                <h4 className="font-sans text-sm font-semibold text-luxury-black mb-3">Kategori</h4>
+                <div className="space-y-2">
+                  {categories.map((category) => (
+                    <label key={category.id} className="flex items-center gap-3 cursor-pointer group py-2 px-1 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.includes(category.id)}
+                          onChange={() => toggleCategory(category.id)}
+                          className="w-5 h-5 rounded border-2 border-gray-300 text-luxury-goldLight focus:ring-2 focus:ring-luxury-goldLight/30 cursor-pointer transition-all appearance-none checked:bg-luxury-goldLight checked:border-luxury-goldLight"
+                        />
+                        {selectedCategories.includes(category.id) && (
+                          <svg className="absolute inset-0 w-5 h-5 text-luxury-black pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="font-sans text-sm font-medium text-gray-700 group-hover:text-luxury-black transition-colors flex-1">
+                        {category.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200" />
+
+              {/* Price Range */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-sans text-sm font-semibold text-luxury-black">Fiyat</h4>
+                  <span className="font-sans text-sm font-medium text-luxury-goldLight">
+                    ≤ {maxPrice.toLocaleString('tr-TR')} ₺
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max={maxProductPrice}
+                  step={maxProductPrice > 10000 ? 1000 : 500}
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-luxury-goldLight"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                  <span className="font-sans">0 ₺</span>
+                  <span className="font-sans">{maxProductPrice.toLocaleString('tr-TR')} ₺</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-3">
+              <button
+                onClick={clearFilters}
+                className="font-sans flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
+              >
+                Temizle
+              </button>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="font-sans flex-1 px-6 py-3 bg-luxury-black text-white font-semibold rounded-xl hover:bg-luxury-darkGray transition-all"
+              >
+                Uygula
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
