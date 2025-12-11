@@ -7,7 +7,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     const baseUrl = siteSEO.siteUrl;
 
     // Parse robots.txt content if exists
-    let disallowPaths = ['/api/', '/admin/', '/giris', '/kayit'];
+    let disallowPaths = ['/api/', '/admin/', '/giris', '/kayit', '/hesabim/', '/sepet', '/odeme/'];
     
     if (siteSEO.robotsTxt) {
       // Simple parsing - you can enhance this
@@ -28,21 +28,54 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
           allow: '/',
           disallow: disallowPaths,
         },
+        {
+          userAgent: 'Googlebot',
+          allow: '/',
+          disallow: ['/api/', '/admin/'],
+        },
+        {
+          userAgent: 'Bingbot',
+          allow: '/',
+          disallow: ['/api/', '/admin/'],
+        },
+        {
+          userAgent: 'Slurp',
+          allow: '/',
+          disallow: ['/api/', '/admin/'],
+        },
       ],
-      sitemap: `${baseUrl}/sitemap.xml`,
+      sitemap: [
+        `${baseUrl}/sitemap.xml`,
+        `${baseUrl}/sitemap-image.xml`,
+      ],
     };
   } catch (error) {
     console.error('Error generating robots.txt:', error);
     // Fallback robots.txt
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
-  return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-        disallow: ['/api/', '/admin/'],
-    },
-      sitemap: `${baseUrl}/sitemap.xml`,
-  };
+    return {
+      rules: [
+        {
+          userAgent: '*',
+          allow: '/',
+          disallow: ['/api/', '/admin/', '/giris', '/kayit'],
+        },
+        {
+          userAgent: 'Googlebot',
+          allow: '/',
+          disallow: ['/api/', '/admin/'],
+        },
+        {
+          userAgent: 'Bingbot',
+          allow: '/',
+          disallow: ['/api/', '/admin/'],
+        },
+      ],
+      sitemap: [
+        `${baseUrl}/sitemap.xml`,
+        `${baseUrl}/sitemap-image.xml`,
+      ],
+    };
   }
 }
 

@@ -6,7 +6,7 @@ import Image from "next/image";
 import ProductsGridClient from "@/components/products/ProductsGridClient";
 import { getCategoryBySlug } from "@/lib/actions/admin/categories";
 import { getProducts } from "@/lib/actions/products";
-import { BreadcrumbStructuredData } from "@/components/seo/StructuredData";
+import { BreadcrumbStructuredData, CollectionPageStructuredData } from "@/components/seo/StructuredData";
 import { getSiteSEO } from "@/lib/actions/seo";
 
 type PageProps = {
@@ -33,11 +33,48 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: category.seoTitle || category.name,
     description: category.seoDescription || category.description || `${category.name} kategorisindeki ürünler`,
     keywords: category.metaKeywords?.split(",").map(k => k.trim()) || [category.name],
+    metadataBase: new URL(baseUrl),
+    alternates: {
+      canonical: `${baseUrl}/kategori/${category.slug}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
     openGraph: {
+      type: "website",
       title: category.seoTitle || category.name,
       description: category.seoDescription || category.description || `${category.name} kategorisindeki ürünler`,
-      images: category.ogImage ? [category.ogImage] : category.image ? [category.image] : undefined,
+      images: category.ogImage ? [
+        {
+          url: category.ogImage,
+          width: 1200,
+          height: 630,
+          alt: category.name,
+        }
+      ] : category.image ? [
+        {
+          url: category.image,
+          width: 1200,
+          height: 630,
+          alt: category.name,
+        }
+      ] : [],
       url: `${baseUrl}/kategori/${category.slug}`,
+      siteName: siteSEO.siteName,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: category.seoTitle || category.name,
+      description: category.seoDescription || category.description || `${category.name} kategorisindeki ürünler`,
+      images: category.ogImage ? [category.ogImage] : category.image ? [category.image] : [],
     },
   };
 }
@@ -81,9 +118,19 @@ export default async function CategoryPage({ params }: PageProps) {
     ],
   };
 
+  // CollectionPage structured data
+  const collectionData = {
+    name: category.name,
+    description: category.seoDescription || category.description || `${category.name} kategorisindeki ürünler`,
+    url: `${baseUrl}/kategori/${category.slug}`,
+    image: category.ogImage || category.image || undefined,
+    numberOfItems: products.length,
+  };
+
   return (
     <>
       <BreadcrumbStructuredData data={breadcrumbData} />
+      <CollectionPageStructuredData data={collectionData} />
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Link

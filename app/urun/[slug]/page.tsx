@@ -32,8 +32,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       keywords,
+      metadataBase: new URL(baseUrl),
       alternates: {
         canonical: `${baseUrl}/urun/${product.slug}`,
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-video-preview": -1,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
       },
       openGraph: {
         type: "website",
@@ -48,6 +60,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           },
         ] : [],
         url: `${baseUrl}/urun/${product.slug}`,
+        siteName: siteSEO.siteName,
       },
       twitter: {
         card: "summary_large_image",
@@ -90,7 +103,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       offers: {
         price: product.price,
         priceCurrency: "TRY",
-        availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        availability: product.stock > 0 ? "InStock" : "OutOfStock",
         url: `${baseUrl}/urun/${product.slug}`,
       },
       ...(avgRating > 0 && {

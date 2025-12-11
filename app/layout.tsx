@@ -5,6 +5,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Toaster } from "sonner";
 import { getDefaultMetadata } from "@/lib/seo";
+import { getSiteSEO } from "@/lib/actions/seo";
+import GoogleAnalytics from "@/components/seo/GoogleAnalytics";
+import { headers } from "next/headers";
 
 const poppins = Poppins({ 
   subsets: ["latin"],
@@ -36,12 +39,26 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-const RootLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const RootLayout: React.FC<{ children: React.ReactNode }> = async ({ children }) => {
+  let analyticsId: string | null = null;
+  try {
+    const siteSEO = await getSiteSEO();
+    analyticsId = siteSEO.analyticsId;
+  } catch (error) {
+    console.error("Error fetching analytics ID:", error);
+  }
+
+  // Admin sayfalarını kontrol et (padding'i kaldırmak için)
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAdminPage = pathname.startsWith("/admin") && pathname !== "/admin/giris";
+
   return (
     <html lang="tr" className={`${poppins.variable} ${cormorant.variable}`}>
       <body className="min-h-screen flex flex-col">
+        {analyticsId && <GoogleAnalytics analyticsId={analyticsId} />}
         <Header />
-        <main className="flex-grow pt-20">
+        <main className={`flex-grow ${isAdminPage ? 'pt-0' : 'pt-20'} admin-main`}>
           {children}
         </main>
         <Footer />

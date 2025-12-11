@@ -5,7 +5,7 @@ import ProductsHero from "@/components/products/ProductsHero";
 import ProductsError from "@/components/products/ProductsError";
 import { getProducts, getCategories } from "@/lib/actions/products";
 import { getPageMetadata } from "@/lib/seo";
-import { BreadcrumbStructuredData } from "@/components/seo/StructuredData";
+import { BreadcrumbStructuredData, CollectionPageStructuredData } from "@/components/seo/StructuredData";
 import { getSiteSEO } from "@/lib/actions/seo";
 
 // Cache'i devre dışı bırak - her istekte yeniden oluştur
@@ -19,11 +19,41 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   // Fallback metadata
+  const siteSEO = await getSiteSEO();
+  const baseUrl = siteSEO.siteUrl;
+  
   return {
-  title: "Ürünler",
-  description: "Aychookah lüks nargile takımları, orijinal Rus nargile ekipmanları ve premium aksesuarlar. El işçiliği ve kaliteli tasarımlar.",
-  keywords: ["nargile satış", "rus nargile takımı", "lüks nargile", "nargile aksesuarları", "premium nargile"],
-};
+    title: "Ürünler",
+    description: "Aychookah lüks nargile takımları, orijinal Rus nargile ekipmanları ve premium aksesuarlar. El işçiliği ve kaliteli tasarımlar.",
+    keywords: ["nargile satış", "rus nargile takımı", "lüks nargile", "nargile aksesuarları", "premium nargile"],
+    metadataBase: new URL(baseUrl),
+    alternates: {
+      canonical: `${baseUrl}/urunler`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
+    openGraph: {
+      type: "website",
+      title: "Ürünler",
+      description: "Aychookah lüks nargile takımları, orijinal Rus nargile ekipmanları ve premium aksesuarlar. El işçiliği ve kaliteli tasarımlar.",
+      url: `${baseUrl}/urunler`,
+      siteName: siteSEO.siteName,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Ürünler",
+      description: "Aychookah lüks nargile takımları, orijinal Rus nargile ekipmanları ve premium aksesuarlar. El işçiliği ve kaliteli tasarımlar.",
+    },
+  };
 }
 
 export default async function ProductsPage() {
@@ -49,9 +79,18 @@ export default async function ProductsPage() {
       ],
     };
 
+  // CollectionPage structured data
+  const collectionData = {
+    name: "Ürünler",
+    description: "Aychookah lüks nargile takımları, orijinal Rus nargile ekipmanları ve premium aksesuarlar. El işçiliği ve kaliteli tasarımlar.",
+    url: `${baseUrl}/urunler`,
+    numberOfItems: products.length,
+  };
+
   return (
     <>
-        <BreadcrumbStructuredData data={breadcrumbData} />
+      <BreadcrumbStructuredData data={breadcrumbData} />
+      <CollectionPageStructuredData data={collectionData} />
       <ProductsHero />
         <Suspense fallback={
           <div className="py-12 text-center">

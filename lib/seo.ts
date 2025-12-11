@@ -12,6 +12,15 @@ export async function getDefaultMetadata(): Promise<Metadata> {
     description: siteSEO.defaultDescription,
     keywords: siteSEO.defaultKeywords?.split(",").map((k) => k.trim()),
     metadataBase: new URL(siteSEO.siteUrl),
+    alternates: {
+      languages: {
+        'tr': siteSEO.siteUrl,
+        'tr-TR': siteSEO.siteUrl,
+      },
+    },
+    authors: [{ name: siteSEO.siteName }],
+    creator: siteSEO.siteName,
+    publisher: siteSEO.siteName,
     icons: siteSEO.favicon ? {
       icon: siteSEO.favicon,
       shortcut: siteSEO.favicon,
@@ -73,6 +82,7 @@ export async function getPageMetadata(pagePath: string): Promise<Metadata | null
     title: pageSEO.title || pageSEO.pageName,
     description: pageSEO.description || undefined,
     keywords: pageSEO.keywords?.split(",").map((k) => k.trim()),
+    metadataBase: new URL(baseUrl),
     alternates: {
       canonical: pageSEO.canonical || `${baseUrl}${pageSEO.pagePath}`,
     },
@@ -82,12 +92,17 @@ export async function getPageMetadata(pagePath: string): Promise<Metadata | null
       googleBot: {
         index: !pageSEO.noindex,
         follow: !pageSEO.nofollow,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
       },
     },
     openGraph: {
       type: (pageSEO.ogType === "product" ? "website" : (pageSEO.ogType as "website" | "article")) || "website",
       title: pageSEO.ogTitle || pageSEO.title || pageSEO.pageName,
       description: pageSEO.ogDescription || pageSEO.description || undefined,
+      url: `${baseUrl}${pageSEO.pagePath}`,
+      siteName: siteSEO.siteName,
       images: pageSEO.ogImage
         ? [
             {
@@ -98,6 +113,12 @@ export async function getPageMetadata(pagePath: string): Promise<Metadata | null
             },
           ]
         : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pageSEO.ogTitle || pageSEO.title || pageSEO.pageName,
+      description: pageSEO.ogDescription || pageSEO.description || undefined,
+      images: pageSEO.ogImage ? [pageSEO.ogImage] : [],
     },
   };
 

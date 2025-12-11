@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useContext, createContext } from "react";
 import { RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { clearAllCache } from "@/lib/actions/admin/cache";
 
-export default function CacheClearButton() {
+const SidebarContext = createContext<{ isCollapsed: boolean }>({ isCollapsed: false });
+
+export const useSidebar = () => useContext(SidebarContext);
+
+export default function CacheClearButton({ isCollapsed = false }: { isCollapsed?: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -47,17 +51,19 @@ export default function CacheClearButton() {
       <button
         onClick={handleClearCache}
         disabled={isLoading}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left font-sans ${
+        className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded transition-colors font-sans ${
           isLoading
-            ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+            ? "bg-gray-900 text-gray-500 cursor-not-allowed"
             : "bg-orange-600 hover:bg-orange-700 text-white"
         }`}
-        title="Tüm site cache'ini temizle"
+        title={isCollapsed ? "Cache Temizle" : undefined}
       >
         <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
-        <span className="font-medium">
-          {isLoading ? "Temizleniyor..." : "Cache Temizle"}
-        </span>
+        {!isCollapsed && (
+          <span className="font-medium text-sm">
+            {isLoading ? "Temizleniyor..." : "Cache Temizle"}
+          </span>
+        )}
       </button>
 
       {message && (

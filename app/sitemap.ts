@@ -21,6 +21,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: 'daily',
         priority: 0.9,
       },
+      {
+        url: `${baseUrl}/hakkimizda`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly',
+        priority: 0.7,
+      },
+      {
+        url: `${baseUrl}/iletisim`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly',
+        priority: 0.7,
+      },
     ];
 
     // Get all active products
@@ -37,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const productPages: MetadataRoute.Sitemap = products.map((product) => ({
       url: `${baseUrl}/urun/${product.slug}`,
       lastModified: product.updatedAt,
-      changeFrequency: 'weekly',
+      changeFrequency: 'weekly' as const,
       priority: 0.8,
     }));
 
@@ -49,9 +61,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     });
 
-    // Category pages (if you have category detail pages)
+    // Category pages
     const categoryPages: MetadataRoute.Sitemap = categories.map((category) => ({
-      url: `${baseUrl}/urunler?kategori=${category.slug}`,
+      url: `${baseUrl}/kategori/${category.slug}`,
       lastModified: category.updatedAt,
       changeFrequency: 'weekly',
       priority: 0.7,

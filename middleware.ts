@@ -32,7 +32,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Pathname'i header'a ekle (admin sayfaları için padding kontrolü için)
+  const response = NextResponse.next();
+  response.headers.set("x-pathname", path);
+  return response;
 }
 
 export const config = {

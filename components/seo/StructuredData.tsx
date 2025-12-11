@@ -96,14 +96,20 @@ export function ProductStructuredData({ data }: { data: ProductData }) {
     name: data.name,
     description: data.description,
     image: images,
-    ...(data.brand && { brand: data.brand }),
+    ...(data.brand && { 
+      brand: {
+        "@type": "Brand",
+        name: data.brand
+      }
+    }),
     ...(data.sku && { sku: data.sku }),
     offers: {
       "@type": "Offer",
-        price: data.offers.price,
-        priceCurrency: data.offers.priceCurrency,
+      price: data.offers.price,
+      priceCurrency: data.offers.priceCurrency,
       availability: `https://schema.org/${data.offers.availability}`,
-        url: data.offers.url,
+      url: data.offers.url,
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     },
     ...(data.aggregateRating && {
       aggregateRating: {
@@ -302,21 +308,48 @@ interface WebSiteData {
 
 export function WebSiteStructuredData({ data }: { data: WebSiteData }) {
   const jsonLd = {
-        "@context": "https://schema.org",
-        "@type": "WebPage",
-        url: data.url,
-        name: data.name,
-        description: data.description,
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    url: data.url,
+    name: data.name,
+    ...(data.description && { description: data.description }),
     ...(data.potentialAction && {
       potentialAction: {
-          "@type": "SearchAction",
-          target: {
-            "@type": "EntryPoint",
-            urlTemplate: data.potentialAction.target,
-          },
-          "query-input": data.potentialAction.queryInput,
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: data.potentialAction.target,
+        },
+        "query-input": data.potentialAction.queryInput,
       },
     }),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
+
+interface CollectionPageData {
+  name: string;
+  description?: string;
+  url: string;
+  image?: string;
+  numberOfItems?: number;
+}
+
+export function CollectionPageStructuredData({ data }: { data: CollectionPageData }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: data.name,
+    ...(data.description && { description: data.description }),
+    url: data.url,
+    ...(data.image && { image: data.image }),
+    ...(data.numberOfItems !== undefined && { numberOfItems: data.numberOfItems }),
   };
 
   return (
