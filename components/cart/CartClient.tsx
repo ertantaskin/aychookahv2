@@ -45,7 +45,7 @@ interface CartClientProps {
   };
   shippingSettings: {
     defaultShippingCost: number;
-    freeShippingThreshold: number | null;
+    freeShippingThreshold?: number | null;
     estimatedDeliveryDays: number;
   };
 }

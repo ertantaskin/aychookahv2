@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateSiteSEO, createOrUpdatePageSEO, deletePageSEO } from "@/lib/actions/seo";
 import { createFAQ, updateFAQ, deleteFAQ } from "@/lib/actions/faq";
-import { Settings, FileText, Plus, Trash2, Save, HelpCircle, MapPin, Phone, Mail, Globe, Edit } from "lucide-react";
+import { Settings, FileText, Plus, Trash2, Save, HelpCircle, MapPin, Phone, Mail, Globe, Edit, X } from "lucide-react";
+import MediaSelector from "@/components/admin/MediaSelector";
 
 interface SiteSEO {
   id: string;
@@ -74,12 +75,32 @@ export default function SEOClient({ initialSiteSEO, initialPageSEOList, initialF
   const [isEditingFAQ, setIsEditingFAQ] = useState<string | null>(null);
   const [newFAQ, setNewFAQ] = useState<Partial<FAQ> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  type FaviconType = { url: string; alt?: string | null };
+  const [selectedFavicon, setSelectedFavicon] = useState<FaviconType | null>(
+    siteSEO.favicon ? { url: siteSEO.favicon, alt: "Favicon" } : null
+  );
+
+  // SiteSEO güncellendiğinde selectedFavicon'u güncelle
+  useEffect(() => {
+    if (siteSEO.favicon) {
+      setSelectedFavicon({ url: siteSEO.favicon, alt: "Favicon" });
+    } else {
+      setSelectedFavicon(null);
+    }
+  }, [siteSEO.favicon]);
 
   const handleSiteSEOSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
+    // Seçilen favicon URL'ini ekle
+    if (selectedFavicon) {
+      formData.set("favicon", selectedFavicon.url);
+    } else {
+      formData.set("favicon", "");
+    }
+    
     const result = await updateSiteSEO(formData);
 
     if (result.success && result.data) {
@@ -304,16 +325,89 @@ export default function SEOClient({ initialSiteSEO, initialPageSEOList, initialF
 
               <div>
                 <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                  Favicon URL
+                  Favicon
                 </label>
+                <div className="space-y-3">
+                  {selectedFavicon ? (
+                    <div className="relative inline-block">
+                      <div className="relative w-16 h-16 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={selectedFavicon.url}
+                          alt={selectedFavicon.alt || "Favicon"}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            // Hata durumunda placeholder göster
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFavicon(null)}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        title="Favicon'u kaldır"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <MediaSelector
+                        onSelect={(media) => {
+                          if (media.length > 0) {
+                            setSelectedFavicon({
+                              url: media[0].url,
+                              alt: media[0].alt || "Favicon",
+                            });
+                          }
+                        }}
+                        multiple={false}
+                        currentSelection={
+                          selectedFavicon
+                            ? (() => {
+                                const fav: FaviconType = selectedFavicon;
+                                return [
+                                  {
+                                    id: "",
+                                    name: "",
+                                    url: fav.url,
+                                    type: "image",
+                                    size: 0,
+                                    mimeType: "image/png",
+                                    alt: fav.alt || null,
+                                    createdAt: new Date(),
+                                    usageCount: 0,
+                                  },
+                                ];
+                              })()
+                            : undefined
+                        }
+                      />
+                      <span className="text-sm font-sans text-gray-500">veya</span>
+                      <input
+                        type="url"
+                        name="favicon"
+                        defaultValue={siteSEO.favicon || ""}
+                        placeholder="https://example.com/favicon.ico"
+                        className="flex-1 px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setSelectedFavicon({ url: e.target.value, alt: "Favicon" });
+                          } else {
+                            setSelectedFavicon(null);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1 text-xs font-sans text-gray-500">Medya kütüphanesinden seçin veya URL girin (örn: .ico, .png, .svg)</p>
                 <input
-                  type="url"
+                  type="hidden"
                   name="favicon"
-                  defaultValue={siteSEO.favicon || ""}
-                  placeholder="https://example.com/favicon.ico"
-                  className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                  value={selectedFavicon?.url || ""}
                 />
-                <p className="mt-1 text-xs font-sans text-gray-500">Favicon görselinin URL&apos;ini girin (örn: .ico, .png, .svg)</p>
               </div>
 
               <div>
