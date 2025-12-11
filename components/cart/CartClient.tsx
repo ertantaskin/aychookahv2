@@ -362,126 +362,241 @@ export default function CartClient({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 md:py-8 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-sans font-bold text-luxury-black">Sepetim</h1>
-          <p className="text-sm font-sans text-gray-600 mt-2">
-            {displayCart.items.length} ürün
-          </p>
-          {isGuest && (
-            <p className="text-xs font-sans text-yellow-600 mt-1">
-              Sepetinizi kaydetmek için giriş yapın
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-sans font-bold text-luxury-black">Sepetim</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <p className="text-sm sm:text-base font-sans text-gray-600">
+              {displayCart.items.length} {displayCart.items.length === 1 ? 'ürün' : 'ürün'}
             </p>
-          )}
+            {isGuest && (
+              <span className="text-xs font-sans text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">
+                Giriş yapın
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Sepet Kalemleri */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3 sm:space-y-4">
             {displayCart.items.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
+                className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow relative"
               >
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Ürün Görseli */}
-                  <Link
-                    href={`/urun/${item.product.slug}`}
-                    className="relative w-full sm:w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0"
+                {/* Desktop: Sil Butonu - Sağ üst köşe */}
+                <button
+                  onClick={() => handleRemove(item.id)}
+                  disabled={isUpdating === item.id}
+                  className="hidden sm:block absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 touch-manipulation z-10"
+                  title="Sepetten Çıkar"
+                  aria-label="Sepetten Çıkar"
+                >
+                  <svg
+                    className="w-4 h-4 sm:w-5 sm:h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <Image
-                      src={item.product.images[0]?.url || "/images/placeholder.jpg"}
-                      alt={item.product.images[0]?.alt || item.product.name}
-                      fill
-                      className="object-cover"
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                  </Link>
+                  </svg>
+                </button>
 
-                  {/* Ürün Bilgileri */}
-                  <div className="flex-1 min-w-0">
+                <div className="p-3 sm:p-4 md:p-6">
+                  {/* Mobil: Üst Kısım - Görsel ve Ürün Adı */}
+                  <div className="flex gap-3 sm:gap-4 mb-3 sm:mb-0 sm:items-end">
+                    {/* Ürün Görseli */}
                     <Link
                       href={`/urun/${item.product.slug}`}
-                      className="text-lg font-sans font-semibold text-luxury-black hover:text-luxury-goldLight transition-colors"
+                      className="relative w-24 h-24 sm:w-24 sm:h-24 md:w-28 md:h-28 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0"
                     >
-                      {item.product.name}
+                      <Image
+                        src={item.product.images[0]?.url || "/images/placeholder.jpg"}
+                        alt={item.product.images[0]?.alt || item.product.name}
+                        fill
+                        className="object-cover"
+                      />
                     </Link>
-                    <p className="text-xl font-sans font-bold text-luxury-black mt-2">
-                      {item.product.price.toLocaleString("tr-TR")} ₺
-                    </p>
-                    {item.product.stock < item.quantity && (
-                      <p className="text-sm font-sans text-red-600 mt-1">
-                        Stok yetersiz (Stok: {item.product.stock})
-                      </p>
-                    )}
+
+                    {/* Ürün Bilgileri */}
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      {/* Ürün Adı ve Sil Butonu (Mobil) */}
+                      <div className="flex items-start justify-between gap-2 mb-1.5 sm:mb-2">
+                        <Link
+                          href={`/urun/${item.product.slug}`}
+                          className="flex-1 min-w-0"
+                        >
+                          <h3 className="font-sans text-sm sm:text-base font-semibold text-luxury-black hover:text-luxury-goldLight transition-colors line-clamp-2 leading-snug">
+                            {item.product.name}
+                          </h3>
+                        </Link>
+                        {/* Mobil: Sil Butonu */}
+                        <button
+                          onClick={() => handleRemove(item.id)}
+                          disabled={isUpdating === item.id}
+                          className="sm:hidden flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 touch-manipulation"
+                          title="Sepetten Çıkar"
+                          aria-label="Sepetten Çıkar"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Desktop: Birim Fiyat - Ürün adının hemen altında */}
+                      <div className="hidden sm:flex flex-col gap-1 mt-1">
+                        <span className="text-[10px] sm:text-xs font-sans text-gray-400">KDV dahil</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs sm:text-sm font-sans text-gray-500">Adet:</span>
+                          <span className="text-sm sm:text-base font-sans font-semibold text-gray-700">
+                            {item.product.price.toLocaleString("tr-TR")} ₺
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Stok Uyarısı */}
+                      {item.product.stock < item.quantity && (
+                        <p className="text-xs font-sans text-red-600 mb-2 flex items-center gap-1 mt-2 sm:mt-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          Stok yetersiz (Stok: {item.product.stock})
+                        </p>
+                      )}
+
+                      {/* Mobil: Birim Fiyat - Sadece mobilde görünür */}
+                      <div className="sm:hidden mb-3">
+                        <span className="text-[10px] font-sans text-gray-400">KDV dahil</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs font-sans text-gray-500">Adet:</span>
+                          <span className="text-sm font-sans font-semibold text-gray-700">
+                            {item.product.price.toLocaleString("tr-TR")} ₺
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Desktop: Miktar ve Toplam Fiyat - Görselle aynı hizada */}
+                    <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+                      {/* Miktar Kontrolü */}
+                      <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                          disabled={isUpdating === item.id || item.quantity <= 1}
+                          className="px-4 py-2.5 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-bold text-lg touch-manipulation"
+                          aria-label="Azalt"
+                        >
+                          −
+                        </button>
+                        <span className="px-5 py-2.5 min-w-[60px] text-center font-sans text-base font-semibold text-gray-900 bg-white border-x-2 border-gray-200">
+                          {isUpdating === item.id ? (
+                            <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                          ) : (
+                            item.quantity
+                          )}
+                        </span>
+                        <button
+                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                          disabled={
+                            isUpdating === item.id ||
+                            item.quantity >= item.product.stock
+                          }
+                          className="px-4 py-2.5 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-bold text-lg touch-manipulation"
+                          aria-label="Artır"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Toplam Fiyat */}
+                      <div className="text-left flex flex-col items-start">
+                        <span className="text-[10px] sm:text-xs font-sans text-gray-400 mb-0.5">KDV dahil</span>
+                        <span className="text-lg md:text-xl font-sans font-bold text-luxury-black">
+                          {(item.product.price * item.quantity).toLocaleString("tr-TR")} ₺
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Miktar ve İşlemler */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    {/* Miktar */}
-                    <div className="flex items-center border border-gray-300 rounded-lg">
-                      <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                        disabled={isUpdating === item.id || item.quantity <= 1}
-                        className="px-3 py-2 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 font-semibold text-lg"
-                      >
-                        -
-                      </button>
-                      <span className="px-4 py-2 min-w-[60px] text-center font-sans text-gray-900 border-x border-gray-300">
-                        {isUpdating === item.id ? "..." : item.quantity}
-                      </span>
-                      <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                        disabled={
-                          isUpdating === item.id ||
-                          item.quantity >= item.product.stock
-                        }
-                        className="px-3 py-2 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 font-semibold text-lg"
-                      >
-                        +
-                      </button>
-                    </div>
+                  {/* Mobil: Alt Kısım - Miktar ve Toplam Fiyat */}
+                  <div className="flex flex-col sm:hidden gap-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between gap-3">
+                      {/* Miktar Kontrolü */}
+                      <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                          disabled={isUpdating === item.id || item.quantity <= 1}
+                          className="px-4 py-2.5 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-bold text-lg touch-manipulation"
+                          aria-label="Azalt"
+                        >
+                          −
+                        </button>
+                        <span className="px-5 py-2.5 min-w-[60px] text-center font-sans text-base font-semibold text-gray-900 bg-white border-x-2 border-gray-200">
+                          {isUpdating === item.id ? (
+                            <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                          ) : (
+                            item.quantity
+                          )}
+                        </span>
+                        <button
+                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                          disabled={
+                            isUpdating === item.id ||
+                            item.quantity >= item.product.stock
+                          }
+                          className="px-4 py-2.5 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-bold text-lg touch-manipulation"
+                          aria-label="Artır"
+                        >
+                          +
+                        </button>
+                      </div>
 
-                    {/* Toplam */}
-                    <div className="text-right">
-                      <p className="text-lg font-sans font-bold text-luxury-black">
-                        {(item.product.price * item.quantity).toLocaleString("tr-TR")} ₺
-                      </p>
+                      {/* Toplam Fiyat */}
+                      <div className="text-right flex flex-col items-end">
+                        <span className="text-[10px] font-sans text-gray-400 mb-0.5">KDV dahil</span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-xs font-sans text-gray-500">Toplam:</span>
+                          <span className="text-lg font-sans font-bold text-luxury-black">
+                            {(item.product.price * item.quantity).toLocaleString("tr-TR")} ₺
+                          </span>
+                        </div>
+                      </div>
                     </div>
-
-                    {/* Sil */}
-                    <button
-                      onClick={() => handleRemove(item.id)}
-                      disabled={isUpdating === item.id}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                      title="Sepetten Çıkar"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
                   </div>
                 </div>
               </div>
             ))}
 
             {/* Sepeti Temizle */}
-            <button
-              onClick={handleClearCart}
-              className="text-red-600 hover:text-red-700 font-sans font-medium text-sm"
-            >
-              Sepeti Temizle
-            </button>
+            <div className="pt-2 sm:pt-4">
+              <button
+                onClick={handleClearCart}
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 font-sans font-medium text-sm sm:text-base transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Sepeti Temizle
+              </button>
+            </div>
           </div>
 
           {/* Özet */}
