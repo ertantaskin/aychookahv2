@@ -6,14 +6,27 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get("host") || "";
   
-  // www'den non-www'ye yönlendirme (dinamik domain)
-  if (hostname.startsWith("www.")) {
-    const nonWwwHostname = hostname.replace(/^www\./, "");
-    const nonWwwUrl = new URL(url);
-    nonWwwUrl.hostname = nonWwwHostname;
-    // Protocol'ü koru (http veya https)
-    nonWwwUrl.protocol = url.protocol;
-    return NextResponse.redirect(nonWwwUrl, 301); // 301 Permanent Redirect
+  // Production'da çalış (localhost ve development'ta çalışma)
+  const isProduction = process.env.NODE_ENV === "production" && 
+                       hostname !== "localhost" && 
+                       !hostname.includes("localhost:") &&
+                       !hostname.includes("127.0.0.1");
+  
+  if (isProduction) {
+    // 1. HTTP'den HTTPS'e zorunlu yönlendirme
+    if (url.protocol === "http:") {
+      url.protocol = "https:";
+      return NextResponse.redirect(url, 301); // 301 Permanent Redirect
+    }
+    
+    // 2. www'den non-www'ye yönlendirme (dinamik domain)
+    if (hostname.startsWith("www.")) {
+      const nonWwwHostname = hostname.replace(/^www\./, "");
+      const nonWwwUrl = new URL(url);
+      nonWwwUrl.hostname = nonWwwHostname;
+      nonWwwUrl.protocol = "https:"; // Her zaman HTTPS kullan
+      return NextResponse.redirect(nonWwwUrl, 301); // 301 Permanent Redirect
+    }
   }
   
   const path = url.pathname;

@@ -5,18 +5,14 @@ const manifest = async (): Promise<MetadataRoute.Manifest> => {
   try {
   const siteSEO = await getSiteSEO();
   
-  // Favicon URL'i varsa onu kullan, yoksa varsayılan icon'ları kullan
+  // Favicon URL'i varsa onu kullan
+    // Icon boyutlarını ve type'ı belirtmek yerine, tarayıcının otomatik algılamasına izin veriyoruz
+    // Bu, "Resource size is not correct" hatasını önler
     const icons: MetadataRoute.Manifest['icons'] = siteSEO?.favicon
     ? [
         {
           src: siteSEO.favicon,
-          sizes: '192x192',
-          type: 'image/png',
-        },
-        {
-          src: siteSEO.favicon,
-          sizes: '512x512',
-          type: 'image/png',
+          // sizes ve type belirtilmezse tarayıcı otomatik algılar ve boyut hatası vermez
         },
       ]
     : [];

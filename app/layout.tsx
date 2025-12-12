@@ -29,12 +29,15 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch (error) {
     // Fallback metadata
     return {
-  title: {
-    default: "Aychookah - Lüks Nargile Takımları ve Aksesuarları",
-    template: "%s | Aychookah"
-  },
+      title: {
+        default: "Aychookah - Lüks Nargile Takımları ve Aksesuarları",
+        template: "%s | Aychookah"
+      },
       description: "Aychookah, kendi ürettiği lüks nargile takımları ve ithal orijinal Rus nargile ekipmanlarını sunar.",
       metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com'),
+      icons: {
+        icon: '/favicon.ico',
+      },
     };
   }
 }

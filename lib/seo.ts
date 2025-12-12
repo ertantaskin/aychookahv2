@@ -22,10 +22,15 @@ export async function getDefaultMetadata(): Promise<Metadata> {
     creator: siteSEO.siteName,
     publisher: siteSEO.siteName,
     icons: siteSEO.favicon ? {
-      icon: siteSEO.favicon,
+      icon: [
+        { url: siteSEO.favicon, sizes: 'any' },
+      ],
       shortcut: siteSEO.favicon,
       apple: siteSEO.favicon,
-    } : undefined,
+    } : {
+      // Favicon yoksa varsayılan favicon.ico'yu dene
+      icon: '/favicon.ico',
+    },
     openGraph: {
       type: "website",
       locale: "tr_TR",
