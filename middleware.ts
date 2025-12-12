@@ -13,18 +13,21 @@ export async function middleware(request: NextRequest) {
                        !hostname.includes("127.0.0.1");
   
   if (isProduction) {
+    // Hostname'den port'u temizle (varsa)
+    const cleanHostname = hostname.split(":")[0];
+    
     // 1. HTTP'den HTTPS'e zorunlu yönlendirme
     if (url.protocol === "http:") {
-      url.protocol = "https:";
-      return NextResponse.redirect(url, 301); // 301 Permanent Redirect
+      // Port olmadan yeni URL oluştur
+      const httpsUrl = new URL(url.pathname + url.search, `https://${cleanHostname}`);
+      return NextResponse.redirect(httpsUrl, 301); // 301 Permanent Redirect
     }
     
     // 2. www'den non-www'ye yönlendirme (dinamik domain)
-    if (hostname.startsWith("www.")) {
-      const nonWwwHostname = hostname.replace(/^www\./, "");
-      const nonWwwUrl = new URL(url);
-      nonWwwUrl.hostname = nonWwwHostname;
-      nonWwwUrl.protocol = "https:"; // Her zaman HTTPS kullan
+    if (cleanHostname.startsWith("www.")) {
+      const nonWwwHostname = cleanHostname.replace(/^www\./, "");
+      // Port olmadan yeni URL oluştur
+      const nonWwwUrl = new URL(url.pathname + url.search, `https://${nonWwwHostname}`);
       return NextResponse.redirect(nonWwwUrl, 301); // 301 Permanent Redirect
     }
   }
