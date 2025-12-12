@@ -76,7 +76,7 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-luxury-black pt-20">
+    <section className="relative overflow-hidden bg-luxury-black -mt-20 pt-20">
       {/* Slider Container */}
       <div className="relative h-[70vh]">
         {/* Slides */}
