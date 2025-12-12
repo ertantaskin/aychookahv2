@@ -16,18 +16,35 @@ export async function middleware(request: NextRequest) {
     // Hostname'den port'u temizle (varsa)
     const cleanHostname = hostname.split(":")[0];
     
+    // Base URL'i environment variable'dan al veya hostname'den oluştur
+    // NEXT_PUBLIC_APP_URL varsa onu kullan, yoksa hostname'den oluştur
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl || baseUrl.includes("localhost") || baseUrl.includes(":3000")) {
+      // Environment variable yoksa veya localhost ise, hostname'den oluştur
+      baseUrl = `https://${cleanHostname.replace(/^www\./, "")}`;
+    }
+    
+    // Base URL'den port'u temizle (varsa)
+    try {
+      const baseUrlObj = new URL(baseUrl);
+      baseUrlObj.port = ""; // Port'u kaldır
+      baseUrl = baseUrlObj.toString().replace(/\/$/, ""); // Trailing slash'i kaldır
+    } catch {
+      // URL parse hatası durumunda, basit string işlemi yap
+      baseUrl = baseUrl.replace(/:\d+/, "").replace(/\/$/, "");
+    }
+    
     // 1. HTTP'den HTTPS'e zorunlu yönlendirme
     if (url.protocol === "http:") {
       // Port olmadan yeni URL oluştur
-      const httpsUrl = new URL(url.pathname + url.search, `https://${cleanHostname}`);
+      const httpsUrl = new URL(url.pathname + url.search, baseUrl);
       return NextResponse.redirect(httpsUrl, 301); // 301 Permanent Redirect
     }
     
     // 2. www'den non-www'ye yönlendirme (dinamik domain)
     if (cleanHostname.startsWith("www.")) {
-      const nonWwwHostname = cleanHostname.replace(/^www\./, "");
-      // Port olmadan yeni URL oluştur
-      const nonWwwUrl = new URL(url.pathname + url.search, `https://${nonWwwHostname}`);
+      // Base URL'i kullanarak non-www URL'i oluştur
+      const nonWwwUrl = new URL(url.pathname + url.search, baseUrl);
       return NextResponse.redirect(nonWwwUrl, 301); // 301 Permanent Redirect
     }
   }
