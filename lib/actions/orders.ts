@@ -6,9 +6,10 @@ import { revalidatePath } from "next/cache";
 import { getTaxSettings } from "@/lib/utils/tax-calculator";
 import { getShippingSettings, calculateShippingCost } from "@/lib/utils/shipping-calculator";
 import { calculateTaxForCartWithShipping } from "@/lib/utils/tax-calculator";
+import { calculateTotalWithCoupon, getFreeItemsFromCoupon } from "@/lib/utils/coupon-calculator";
 
 // Sipariş oluştur
-export const createOrder = async (shippingAddress: any, paymentId?: string) => {
+export const createOrder = async (shippingAddress: any, paymentId?: string, couponCode?: string, couponDiscountAmount?: number) => {
   try {
     const session = await auth();
 
@@ -60,11 +61,99 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
       taxSettings.taxIncluded
     );
 
-    // Toplam
-    const total = taxCalculation.total;
+    // Kupon indirimi varsa toplamı güncelle
+    const discountAmount = couponDiscountAmount || 0;
+    const totalCalculation = discountAmount > 0
+      ? calculateTotalWithCoupon(
+          cartSubtotal, // KDV dahil sepet toplamı
+          shippingCost,
+          discountAmount,
+          taxSettings.defaultTaxRate,
+          taxSettings.taxIncluded
+        )
+      : {
+          subtotal: taxCalculation.subtotal,
+          tax: taxCalculation.tax,
+          shippingCost: taxCalculation.shippingCost,
+          shippingTax: 0,
+          total: taxCalculation.total,
+        };
+    const total = totalCalculation.total;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Kupon bilgisini al (indirim tipini kontrol etmek için)
+    let coupon: any = null;
+    let couponDiscountType: string | null = null;
+    if (couponCode && discountAmount > 0) {
+      coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+      if (coupon) {
+        couponDiscountType = coupon.discountType;
+      }
+    }
+
+    // Bedava ürünleri tespit et (BUY_X_GET_Y kuponu için)
+    let freeItems: Array<{ productId: string; quantity: number; price: number; productName: string; productImageUrl: string | null }> = [];
+    if (coupon && coupon.discountType === "BUY_X_GET_Y") {
+        // Cart items'ı CartItem formatına çevir
+        const cartItemsForCoupon = cart.items.map((item) => ({
+          productId: item.productId || "",
+          quantity: item.quantity,
+          product: {
+            id: item.product.id,
+            price: item.product.price,
+            categoryId: (item.product as any).categoryId || null,
+          },
+        }));
+
+        const freeItemsData = getFreeItemsFromCoupon(coupon, cartItemsForCoupon, cartSubtotal);
+        
+        // Bedava ürünleri sipariş item formatına çevir
+        for (const freeItem of freeItemsData) {
+          const product = cart.items.find((item) => item.productId === freeItem.productId)?.product;
+          if (product) {
+            freeItems.push({
+              productId: freeItem.productId,
+              quantity: freeItem.quantity,
+              price: 0, // Bedava ürünler için fiyat 0
+              productName: product.name,
+              productImageUrl: (product as any).images?.find((img: any) => img.isPrimary)?.url || (product as any).images?.[0]?.url || null,
+            });
+          }
+        }
+    }
+
+    // Bedava ürünlerin miktarını normal ürünlerden çıkar
+    const freeItemsMap = new Map<string, number>();
+    freeItems.forEach((freeItem) => {
+      const existing = freeItemsMap.get(freeItem.productId) || 0;
+      freeItemsMap.set(freeItem.productId, existing + freeItem.quantity);
+    });
+
+    // Normal ürünler (bedava miktarı çıkarılmış) + bedava ürünler
+    const allOrderItems = [
+      ...cart.items.map((item) => {
+        const freeQty = freeItemsMap.get(item.productId) || 0;
+        const normalQty = item.quantity - freeQty;
+        
+        // Eğer tüm ürün bedava ise, normal item ekleme
+        if (normalQty <= 0) {
+          return null;
+        }
+        
+        return {
+          productId: item.productId,
+          quantity: normalQty,
+          price: item.product.price,
+          productName: item.product.name,
+          productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
+        };
+      }).filter((item): item is NonNullable<typeof item> => item !== null),
+      ...freeItems,
+    ];
 
     // Sipariş oluştur
     const order = await prisma.order.create({
@@ -72,21 +161,18 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
         orderNumber,
         userId: session.user.id,
         total,
-        subtotal: taxCalculation.subtotal,
-        shippingCost: taxCalculation.shippingCost,
-        tax: taxCalculation.tax,
+        subtotal: totalCalculation.subtotal,
+        shippingCost: totalCalculation.shippingCost,
+        tax: totalCalculation.tax,
+        couponCode: couponCode || null,
+        discountAmount,
+        couponDiscountType,
         shippingAddress,
         paymentId,
         paymentStatus: paymentId ? "COMPLETED" : "PENDING",
         status: "PENDING",
         items: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.product.price,
-            productName: item.product.name,
-            productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
-          })),
+          create: allOrderItems,
         },
       },
       include: {
@@ -116,6 +202,33 @@ export const createOrder = async (shippingAddress: any, paymentId?: string) => {
     await prisma.cartItem.deleteMany({
       where: { cartId: cart.id },
     });
+
+    // Kupon kullanımını kaydet
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+
+      if (coupon) {
+        await prisma.couponUsage.create({
+          data: {
+            couponId: coupon.id,
+            userId: session.user.id,
+            orderId: order.id,
+          },
+        });
+
+        // Kupon kullanım sayısını artır
+        await prisma.coupon.update({
+          where: { id: coupon.id },
+          data: {
+            usedCount: {
+              increment: 1,
+            },
+          },
+        });
+      }
+    }
 
     revalidatePath("/hesabim");
     revalidatePath("/hesabim/siparisler");
@@ -206,7 +319,9 @@ export const createOrderFromPayment = async (
   paymentId: string,
   total?: number,
   conversationId?: string,
-  userId?: string // Opsiyonel: Eğer session yoksa, userId'yi direkt al
+  userId?: string, // Opsiyonel: Eğer session yoksa, userId'yi direkt al
+  couponCode?: string,
+  couponDiscountAmount?: number
 ) => {
   try {
     // Güvenlik: Aynı paymentId ile daha önce sipariş oluşturulmuş mu kontrol et
@@ -280,11 +395,99 @@ export const createOrderFromPayment = async (
       taxSettings.taxIncluded
     );
 
-    // Toplam - eğer total parametresi verilmişse onu kullan
-    const calculatedTotal = total || taxCalculation.total;
+    // Kupon indirimi varsa toplamı güncelle
+    const discountAmount = couponDiscountAmount || 0;
+    const totalCalculation = discountAmount > 0
+      ? calculateTotalWithCoupon(
+          cartSubtotal, // KDV dahil sepet toplamı
+          shippingCost,
+          discountAmount,
+          taxSettings.defaultTaxRate,
+          taxSettings.taxIncluded
+        )
+      : {
+          subtotal: taxCalculation.subtotal,
+          tax: taxCalculation.tax,
+          shippingCost: taxCalculation.shippingCost,
+          shippingTax: 0,
+          total: taxCalculation.total,
+        };
+    const calculatedTotal = total || totalCalculation.total;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Kupon bilgisini al (indirim tipini kontrol etmek için)
+    let coupon: any = null;
+    let couponDiscountType: string | null = null;
+    if (couponCode && discountAmount > 0) {
+      coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+      if (coupon) {
+        couponDiscountType = coupon.discountType;
+      }
+    }
+
+    // Bedava ürünleri tespit et (BUY_X_GET_Y kuponu için)
+    let freeItems: Array<{ productId: string; quantity: number; price: number; productName: string; productImageUrl: string | null }> = [];
+    if (coupon && coupon.discountType === "BUY_X_GET_Y") {
+        // Cart items'ı CartItem formatına çevir
+        const cartItemsForCoupon = cart.items.map((item) => ({
+          productId: item.productId || "",
+          quantity: item.quantity,
+          product: {
+            id: item.product.id,
+            price: item.product.price,
+            categoryId: (item.product as any).categoryId || null,
+          },
+        }));
+
+        const freeItemsData = getFreeItemsFromCoupon(coupon, cartItemsForCoupon, cartSubtotal);
+        
+        // Bedava ürünleri sipariş item formatına çevir
+        for (const freeItem of freeItemsData) {
+          const product = cart.items.find((item) => item.productId === freeItem.productId)?.product;
+          if (product) {
+            freeItems.push({
+              productId: freeItem.productId,
+              quantity: freeItem.quantity,
+              price: 0, // Bedava ürünler için fiyat 0
+              productName: product.name,
+              productImageUrl: (product as any).images?.find((img: any) => img.isPrimary)?.url || (product as any).images?.[0]?.url || null,
+            });
+          }
+        }
+    }
+
+    // Bedava ürünlerin miktarını normal ürünlerden çıkar
+    const freeItemsMap = new Map<string, number>();
+    freeItems.forEach((freeItem) => {
+      const existing = freeItemsMap.get(freeItem.productId) || 0;
+      freeItemsMap.set(freeItem.productId, existing + freeItem.quantity);
+    });
+
+    // Normal ürünler (bedava miktarı çıkarılmış) + bedava ürünler
+    const allOrderItems = [
+      ...cart.items.map((item) => {
+        const freeQty = freeItemsMap.get(item.productId) || 0;
+        const normalQty = item.quantity - freeQty;
+        
+        // Eğer tüm ürün bedava ise, normal item ekleme
+        if (normalQty <= 0) {
+          return null;
+        }
+        
+        return {
+          productId: item.productId,
+          quantity: normalQty,
+          price: item.product.price,
+          productName: item.product.name,
+          productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
+        };
+      }).filter((item): item is NonNullable<typeof item> => item !== null),
+      ...freeItems,
+    ];
 
     // Sipariş oluştur
     const order = await prisma.order.create({
@@ -292,9 +495,12 @@ export const createOrderFromPayment = async (
         orderNumber,
         userId: finalUserId,
         total: calculatedTotal,
-        subtotal: taxCalculation.subtotal,
-        shippingCost: taxCalculation.shippingCost,
-        tax: taxCalculation.tax,
+        subtotal: totalCalculation.subtotal,
+        shippingCost: totalCalculation.shippingCost,
+        tax: totalCalculation.tax,
+        couponCode: couponCode || null,
+        discountAmount,
+        couponDiscountType,
         shippingAddress,
         paymentId,
         paymentMethod: "iyzico", // iyzico ödeme yöntemi
@@ -302,13 +508,7 @@ export const createOrderFromPayment = async (
         status: "PROCESSING", // Hazırlanıyor durumu
         notes: conversationId ? `iyzico Conversation ID: ${conversationId}` : null,
         items: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.product.price,
-            productName: item.product.name,
-            productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
-          })),
+          create: allOrderItems,
         },
       },
       include: {
@@ -339,6 +539,33 @@ export const createOrderFromPayment = async (
       where: { cartId: cart.id },
     });
 
+    // Kupon kullanımını kaydet
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+
+      if (coupon) {
+        await prisma.couponUsage.create({
+          data: {
+            couponId: coupon.id,
+            userId: finalUserId,
+            orderId: order.id,
+          },
+        });
+
+        // Kupon kullanım sayısını artır
+        await prisma.coupon.update({
+          where: { id: coupon.id },
+          data: {
+            usedCount: {
+              increment: 1,
+            },
+          },
+        });
+      }
+    }
+
     revalidatePath("/hesabim");
     revalidatePath("/hesabim/siparisler");
     revalidatePath("/odeme/basarili");
@@ -352,7 +579,9 @@ export const createOrderFromPayment = async (
 // EFT/Havale için sipariş oluştur
 export const createOrderForEftHavale = async (
   shippingAddress: any,
-  paymentMethod: string = "EFT/Havale"
+  paymentMethod: string = "EFT/Havale",
+  couponCode?: string,
+  couponDiscountAmount?: number
 ) => {
   try {
     const session = await auth();
@@ -405,11 +634,99 @@ export const createOrderForEftHavale = async (
       taxSettings.taxIncluded
     );
 
-    // Toplam
-    const total = taxCalculation.total;
+    // Kupon indirimi varsa toplamı güncelle
+    const discountAmount = couponDiscountAmount || 0;
+    const totalCalculation = discountAmount > 0
+      ? calculateTotalWithCoupon(
+          cartSubtotal, // KDV dahil sepet toplamı
+          shippingCost,
+          discountAmount,
+          taxSettings.defaultTaxRate,
+          taxSettings.taxIncluded
+        )
+      : {
+          subtotal: taxCalculation.subtotal,
+          tax: taxCalculation.tax,
+          shippingCost: taxCalculation.shippingCost,
+          shippingTax: 0,
+          total: taxCalculation.total,
+        };
+    const total = totalCalculation.total;
 
     // Sipariş numarası oluştur
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Kupon bilgisini al (indirim tipini kontrol etmek için)
+    let coupon: any = null;
+    let couponDiscountType: string | null = null;
+    if (couponCode && discountAmount > 0) {
+      coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+      if (coupon) {
+        couponDiscountType = coupon.discountType;
+      }
+    }
+
+    // Bedava ürünleri tespit et (BUY_X_GET_Y kuponu için)
+    let freeItems: Array<{ productId: string; quantity: number; price: number; productName: string; productImageUrl: string | null }> = [];
+    if (coupon && coupon.discountType === "BUY_X_GET_Y") {
+        // Cart items'ı CartItem formatına çevir
+        const cartItemsForCoupon = cart.items.map((item) => ({
+          productId: item.productId || "",
+          quantity: item.quantity,
+          product: {
+            id: item.product.id,
+            price: item.product.price,
+            categoryId: (item.product as any).categoryId || null,
+          },
+        }));
+
+        const freeItemsData = getFreeItemsFromCoupon(coupon, cartItemsForCoupon, cartSubtotal);
+        
+        // Bedava ürünleri sipariş item formatına çevir
+        for (const freeItem of freeItemsData) {
+          const product = cart.items.find((item) => item.productId === freeItem.productId)?.product;
+          if (product) {
+            freeItems.push({
+              productId: freeItem.productId,
+              quantity: freeItem.quantity,
+              price: 0, // Bedava ürünler için fiyat 0
+              productName: product.name,
+              productImageUrl: (product as any).images?.find((img: any) => img.isPrimary)?.url || (product as any).images?.[0]?.url || null,
+            });
+          }
+        }
+    }
+
+    // Bedava ürünlerin miktarını normal ürünlerden çıkar
+    const freeItemsMap = new Map<string, number>();
+    freeItems.forEach((freeItem) => {
+      const existing = freeItemsMap.get(freeItem.productId) || 0;
+      freeItemsMap.set(freeItem.productId, existing + freeItem.quantity);
+    });
+
+    // Normal ürünler (bedava miktarı çıkarılmış) + bedava ürünler
+    const allOrderItems = [
+      ...cart.items.map((item) => {
+        const freeQty = freeItemsMap.get(item.productId) || 0;
+        const normalQty = item.quantity - freeQty;
+        
+        // Eğer tüm ürün bedava ise, normal item ekleme
+        if (normalQty <= 0) {
+          return null;
+        }
+        
+        return {
+          productId: item.productId,
+          quantity: normalQty,
+          price: item.product.price,
+          productName: item.product.name,
+          productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
+        };
+      }).filter((item): item is NonNullable<typeof item> => item !== null),
+      ...freeItems,
+    ];
 
     // Sipariş oluştur (ödeme bekleniyor durumunda)
     const order = await prisma.order.create({
@@ -417,22 +734,19 @@ export const createOrderForEftHavale = async (
         orderNumber,
         userId: session.user.id,
         total,
-        subtotal: taxCalculation.subtotal,
-        shippingCost: taxCalculation.shippingCost,
-        tax: taxCalculation.tax,
+        subtotal: totalCalculation.subtotal,
+        shippingCost: totalCalculation.shippingCost,
+        tax: totalCalculation.tax,
+        couponCode: couponCode || null,
+        discountAmount,
+        couponDiscountType,
         shippingAddress,
         paymentMethod,
         paymentStatus: "PENDING", // Ödeme bekleniyor
         status: "PENDING", // Onay bekleniyor
         notes: `Ödeme yöntemi: ${paymentMethod}. Ödeme onayı bekleniyor.`,
         items: {
-          create: cart.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.product.price,
-            productName: item.product.name,
-            productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
-          })),
+          create: allOrderItems,
         },
       },
       include: {
@@ -444,22 +758,41 @@ export const createOrderForEftHavale = async (
       },
     });
 
-    // Stokları güncelle (rezerve et)
-    for (const item of cart.items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
-      });
-    }
+    // Stok düşürme işlemi SADECE ödeme durumu "COMPLETED" olduğunda yapılacak
+    // Admin panelden ödeme onaylandığında stok düşürülecek
+    // Burada stok düşürmüyoruz - ödeme onaylandığında updatePaymentStatus içinde düşülecek
 
     // Sepeti temizle
     await prisma.cartItem.deleteMany({
       where: { cartId: cart.id },
     });
+
+    // Kupon kullanımını kaydet
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+
+      if (coupon) {
+        await prisma.couponUsage.create({
+          data: {
+            couponId: coupon.id,
+            userId: session.user.id,
+            orderId: order.id,
+          },
+        });
+
+        // Kupon kullanım sayısını artır
+        await prisma.coupon.update({
+          where: { id: coupon.id },
+          data: {
+            usedCount: {
+              increment: 1,
+            },
+          },
+        });
+      }
+    }
 
     revalidatePath("/hesabim");
     revalidatePath("/hesabim/siparisler");

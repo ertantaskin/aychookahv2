@@ -108,7 +108,7 @@ const getIyzipay = async (gatewayId?: string) => {
 };
 
 // Ödeme formu oluştur
-export const createPayment = async (shippingAddress: any, paymentMethod?: string, retryOrderId?: string) => {
+export const createPayment = async (shippingAddress: any, paymentMethod?: string, retryOrderId?: string, couponCode?: string, couponDiscountAmount?: number) => {
   try {
     const session = await auth();
 
@@ -125,7 +125,7 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
     // EFT/Havale seçildiyse, özel işlem yap
     if (paymentMethod === "eft-havale") {
       const { createOrderForEftHavale } = await import("./orders");
-      const result = await createOrderForEftHavale(shippingAddress, "EFT/Havale");
+      const result = await createOrderForEftHavale(shippingAddress, "EFT/Havale", couponCode, couponDiscountAmount);
       return {
         type: "eft-havale",
         orderId: result.id,
@@ -208,9 +208,39 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       taxSettings.taxIncluded
     );
     
-    // Başlangıç değerleri (normal durum için)
-    total = taxCalculation.total;
-    finalShippingCost = taxCalculation.shippingCost;
+    // Kupon indirimi varsa toplamı güncelle
+    const discountAmount = couponDiscountAmount || 0;
+    
+    // Ücretsiz kargo kuponu kontrolü
+    let couponForTotal: any = null;
+    if (couponCode && discountAmount > 0) {
+      couponForTotal = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+    }
+    const isFreeShippingForTotal = couponForTotal?.discountType === "FREE_SHIPPING";
+    
+    // Ücretsiz kargo kuponu varsa shippingCost 0, değilse orijinal kargo ücreti
+    const shippingCostForCalculation = isFreeShippingForTotal ? 0 : taxCalculation.shippingCost;
+    
+    const { calculateTotalWithCoupon } = await import("@/lib/utils/coupon-calculator");
+    const totalCalculation = discountAmount > 0
+      ? calculateTotalWithCoupon(
+          cartSubtotal, // KDV dahil sepet toplamı
+          shippingCostForCalculation,
+          discountAmount,
+          taxSettings.defaultTaxRate,
+          taxSettings.taxIncluded
+        )
+      : {
+          subtotal: taxCalculation.subtotal,
+          tax: taxCalculation.tax,
+          shippingCost: taxCalculation.shippingCost,
+          shippingTax: 0,
+          total: taxCalculation.total,
+        };
+    total = totalCalculation.total;
+    finalShippingCost = isFreeShippingForTotal ? 0 : taxCalculation.shippingCost;
     
     if (retryOrderId) {
       // Mevcut PENDING siparişi getir
@@ -250,15 +280,50 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
         taxSettings.taxIncluded
       );
 
+      // Kupon indirimi varsa toplamı güncelle
+      const discountAmount = couponDiscountAmount || 0;
+      
+      // Ücretsiz kargo kuponu kontrolü
+      let couponForRetry: any = null;
+      if (couponCode && discountAmount > 0) {
+        couponForRetry = await prisma.coupon.findUnique({
+          where: { code: couponCode.toUpperCase() },
+        });
+      }
+      const isFreeShippingForRetry = couponForRetry?.discountType === "FREE_SHIPPING";
+      
+      // Ücretsiz kargo kuponu varsa shippingCost 0, değilse orijinal kargo ücreti
+      const retryShippingCostForCalculation = isFreeShippingForRetry ? 0 : retryShippingCost;
+      
+      const { calculateTotalWithCoupon } = await import("@/lib/utils/coupon-calculator");
+      const retryTotalCalculation = discountAmount > 0
+        ? calculateTotalWithCoupon(
+            retryCartSubtotal, // KDV dahil sepet toplamı
+            retryShippingCostForCalculation,
+            discountAmount,
+            taxSettings.defaultTaxRate,
+            taxSettings.taxIncluded
+          )
+        : {
+            subtotal: retryTaxCalculation.subtotal,
+            tax: retryTaxCalculation.tax,
+            shippingCost: retryTaxCalculation.shippingCost,
+            shippingTax: 0,
+            total: retryTaxCalculation.total,
+          };
+      const retryTotal = retryTotalCalculation.total;
+
       // Mevcut siparişi güncelle (yeni shipping address ve güncel tutarlar ile)
       pendingOrder = await prisma.order.update({
         where: { id: retryOrderId },
         data: {
           shippingAddress,
-          subtotal: retryTaxCalculation.subtotal,
-          shippingCost: retryTaxCalculation.shippingCost,
-          tax: retryTaxCalculation.tax,
-          total: retryTaxCalculation.total,
+          subtotal: retryTotalCalculation.subtotal,
+          shippingCost: retryTotalCalculation.shippingCost,
+          tax: retryTotalCalculation.tax,
+          total: retryTotal,
+          couponCode: couponCode || null,
+          discountAmount,
           notes: `Tekrar ödeme denemesi - ${new Date().toISOString()}`,
         },
         include: {
@@ -271,23 +336,14 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       });
 
       // Güncel hesaplanan değerleri kullan
-      finalShippingCost = retryTaxCalculation.shippingCost;
-      total = retryTaxCalculation.total;
+      finalShippingCost = isFreeShippingForRetry ? 0 : retryTaxCalculation.shippingCost;
+      total = retryTotal;
       taxCalculation = retryTaxCalculation;
 
-      // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
-      for (const item of pendingOrder.items) {
-        if (item.productId) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-        }
-      }
+      // Retry durumunda stok kontrolü yap
+      // Eğer sipariş zaten oluşturulmuşsa, stok zaten düşürülmüştür
+      // Stok düşürme işlemi sadece ödeme başarılı olduğunda yapılacak (callback'te)
+      // Burada stok düşürmüyoruz - ödeme başarılı olursa callback'te düşülecek
     } else {
       // retryOrderId yoksa, sepet ile eşleşen mevcut PENDING/FAILED siparişi ara
       const existingOrders = await prisma.order.findMany({
@@ -344,15 +400,37 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
             taxSettings.taxIncluded
           );
           
+          // Kupon indirimi varsa toplamı güncelle
+          const discountAmount = couponDiscountAmount || 0;
+          const { calculateTotalWithCoupon } = await import("@/lib/utils/coupon-calculator");
+          const existingTotalCalculation = discountAmount > 0
+            ? calculateTotalWithCoupon(
+                existingCartSubtotal, // KDV dahil sepet toplamı
+                existingShippingCost,
+                discountAmount,
+                taxSettings.defaultTaxRate,
+                taxSettings.taxIncluded
+              )
+            : {
+                subtotal: existingTaxCalculation.subtotal,
+                tax: existingTaxCalculation.tax,
+                shippingCost: existingTaxCalculation.shippingCost,
+                shippingTax: 0,
+                total: existingTaxCalculation.total,
+              };
+          const existingTotal = existingTotalCalculation.total;
+          
           // Siparişi güncelle (yeni shipping address ve güncel tutarlar ile)
           pendingOrder = await prisma.order.update({
             where: { id: order.id },
             data: {
               shippingAddress,
-              subtotal: existingTaxCalculation.subtotal,
-              shippingCost: existingTaxCalculation.shippingCost,
-              tax: existingTaxCalculation.tax,
-              total: existingTaxCalculation.total,
+              subtotal: existingTotalCalculation.subtotal,
+              shippingCost: existingTotalCalculation.shippingCost,
+              tax: existingTotalCalculation.tax,
+              total: existingTotal,
+              couponCode: couponCode || null,
+              discountAmount,
               notes: `Tekrar ödeme denemesi - ${new Date().toISOString()}`,
               paymentStatus: "PENDING", // PENDING'e geri al
             },
@@ -371,8 +449,11 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
 
           // Güncel hesaplanan değerleri kullan
           finalShippingCost = existingTaxCalculation.shippingCost;
-          total = existingTaxCalculation.total;
+          total = existingTotal;
           taxCalculation = existingTaxCalculation;
+          
+          // totalCalculation'ı güncelle (yeni sipariş oluşturma için)
+          const totalCalculation = existingTotalCalculation;
 
           // Stokları tekrar rezerve et (eğer daha önce geri verildiyse)
           for (const item of pendingOrder.items) {
@@ -394,9 +475,107 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
 
       // Eğer eşleşen sipariş bulunamadıysa, yeni sipariş oluştur
       if (!pendingOrder) {
-        // Normal durumda hesaplanan değerleri kullan
-        total = taxCalculation.total;
-        finalShippingCost = taxCalculation.shippingCost;
+        // Kupon indirimi varsa toplamı güncelle
+        const discountAmount = couponDiscountAmount || 0;
+        
+        // Ücretsiz kargo kuponu kontrolü
+        let couponForNewOrder: any = null;
+        let couponDiscountType: string | null = null;
+        if (couponCode && discountAmount > 0) {
+          couponForNewOrder = await prisma.coupon.findUnique({
+            where: { code: couponCode.toUpperCase() },
+          });
+          if (couponForNewOrder) {
+            couponDiscountType = couponForNewOrder.discountType;
+          }
+        }
+        const isFreeShippingForNewOrder = couponForNewOrder?.discountType === "FREE_SHIPPING";
+        
+        // Ücretsiz kargo kuponu varsa shippingCost 0, değilse orijinal kargo ücreti
+        const shippingCostForNewOrder = isFreeShippingForNewOrder ? 0 : taxCalculation.shippingCost;
+        
+        const { calculateTotalWithCoupon } = await import("@/lib/utils/coupon-calculator");
+        const totalCalculation = discountAmount > 0
+          ? calculateTotalWithCoupon(
+              cartSubtotal, // KDV dahil sepet toplamı
+              shippingCostForNewOrder,
+              discountAmount,
+              taxSettings.defaultTaxRate,
+              taxSettings.taxIncluded
+            )
+          : {
+              subtotal: taxCalculation.subtotal,
+              tax: taxCalculation.tax,
+              shippingCost: taxCalculation.shippingCost,
+              shippingTax: 0,
+              total: taxCalculation.total,
+            };
+        total = totalCalculation.total;
+        finalShippingCost = isFreeShippingForNewOrder ? 0 : taxCalculation.shippingCost;
+        // Kupon bilgisini al (indirim tipini kontrol etmek için) - zaten yukarıda alındı
+        // couponForNewOrder ve couponDiscountType zaten tanımlı
+
+        // Bedava ürünleri tespit et (BUY_X_GET_Y kuponu için)
+        let freeItems: Array<{ productId: string; quantity: number; price: number; productName: string; productImageUrl: string | null }> = [];
+        if (couponForNewOrder && couponForNewOrder.discountType === "BUY_X_GET_Y") {
+          // Cart items'ı CartItem formatına çevir
+          const cartItemsForCoupon = cart.items.map((item) => ({
+            productId: item.productId || "",
+            quantity: item.quantity,
+            product: {
+              id: item.product.id,
+              price: item.product.price,
+              categoryId: (item.product as any).categoryId || null,
+            },
+          }));
+
+          const { getFreeItemsFromCoupon } = await import("@/lib/utils/coupon-calculator");
+          const freeItemsData = getFreeItemsFromCoupon(couponForNewOrder, cartItemsForCoupon, cartSubtotal);
+          
+          // Bedava ürünleri sipariş item formatına çevir
+          for (const freeItem of freeItemsData) {
+            const product = cart.items.find((item) => item.productId === freeItem.productId)?.product;
+            if (product) {
+              freeItems.push({
+                productId: freeItem.productId,
+                quantity: freeItem.quantity,
+                price: 0, // Bedava ürünler için fiyat 0
+                productName: product.name,
+                productImageUrl: (product as any).images?.find((img: any) => img.isPrimary)?.url || (product as any).images?.[0]?.url || null,
+              });
+            }
+          }
+        }
+
+        // Bedava ürünlerin miktarını normal ürünlerden çıkar
+        const freeItemsMap = new Map<string, number>();
+        freeItems.forEach((freeItem) => {
+          const existing = freeItemsMap.get(freeItem.productId) || 0;
+          freeItemsMap.set(freeItem.productId, existing + freeItem.quantity);
+        });
+
+        // Normal ürünler (bedava miktarı çıkarılmış) + bedava ürünler
+        const allOrderItems = [
+          ...cart.items.map((item) => {
+            const freeQty = freeItemsMap.get(item.productId) || 0;
+            const normalQty = item.quantity - freeQty;
+            
+            // Eğer tüm ürün bedava ise, normal item ekleme
+            if (normalQty <= 0) {
+              return null;
+            }
+            
+            return {
+              productId: item.productId,
+              quantity: normalQty,
+              price: item.product.price,
+              productName: item.product.name,
+              productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
+            };
+          }).filter((item): item is NonNullable<typeof item> => item !== null),
+          ...freeItems,
+        ];
+
         // Yeni sipariş oluştur
         // Ödeme başlatılmadan önce PENDING durumunda sipariş oluştur (veritabanına kaydet)
         // Bu sayede callback'te userId ve tüm bilgileri veritabanından alabiliriz
@@ -405,22 +584,19 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
             orderNumber,
             userId: session.user.id,
             total,
-            subtotal: taxCalculation.subtotal,
+            subtotal: totalCalculation.subtotal,
             shippingCost: finalShippingCost,
-            tax: taxCalculation.tax,
+            tax: totalCalculation.tax,
+            couponCode: couponCode || null,
+            discountAmount,
+            couponDiscountType: couponForNewOrder?.discountType || null,
             shippingAddress,
             paymentMethod: "iyzico",
             paymentStatus: "PENDING",
             status: "PENDING",
             notes: `Ödeme başlatıldı. Token bekleniyor.`,
             items: {
-              create: cart.items.map((item) => ({
-                productId: item.productId,
-                quantity: item.quantity,
-                price: item.product.price,
-                productName: item.product.name,
-                productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
-              })),
+              create: allOrderItems,
             },
           },
           include: {
@@ -432,20 +608,9 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
           },
         });
 
-        // Stokları rezerve et (azalt) - ödeme başarılı olursa kalıcı olacak
-        // Ödeme başarısız olursa callback'te geri verilecek
-        for (const item of cart.items) {
-          if (item.productId) {
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
-              },
-            },
-          });
-          }
-        }
+        // Stok düşürme işlemi SADECE ödeme başarılı olduğunda yapılacak (callback'te)
+        // Ödeme başarısız olursa stok zaten düşürülmemiş olacak, geri vermeye gerek yok
+        // Burada stok düşürmüyoruz - ödeme başarılı olursa callback'te sipariş güncellenirken düşülecek
       }
     }
 
@@ -454,10 +619,13 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
 
     // BasketItems oluştur - retry durumunda mevcut siparişten, yeni siparişte sepetten
     // Ürün fiyatları KDV dahil olarak saklanıyor, iyzico'ya da KDV dahil gönderiyoruz
+    // NOT: Bedava ürünler (price: 0) basketItems'a eklenmemeli, iyzico 0 fiyat kabul etmez
     let basketItems;
     if (retryOrderId && pendingOrder) {
-      // Mevcut siparişten basketItems oluştur
-      basketItems = pendingOrder.items.map((item) => {
+      // Mevcut siparişten basketItems oluştur (bedava ürünleri hariç tut)
+      basketItems = pendingOrder.items
+        .filter((item: any) => item.price > 0) // Bedava ürünleri filtrele
+        .map((item: any) => {
         // item.price zaten KDV dahil, quantity ile çarpıyoruz
         const itemTotalWithTax = item.price * item.quantity;
         
@@ -471,6 +639,8 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       });
     } else {
       // Sepetten basketItems oluştur
+      // NOT: Sepette bedava ürünler olabilir, ama bunlar normal fiyatla gösterilir
+      // Bedava ürünler sipariş oluşturulurken price: 0 olarak kaydedilir, ama basketItems'da normal fiyat gösterilir
       basketItems = cart.items.map((item) => {
         // item.product.price zaten KDV dahil, quantity ile çarpıyoruz
         const itemTotalWithTax = item.product.price * item.quantity;
@@ -485,11 +655,24 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       });
     }
 
+    // Kupon bilgisini kontrol et (ücretsiz kargo için)
+    let couponForPayment: any = null;
+    if (couponCode && discountAmount > 0) {
+      couponForPayment = await prisma.coupon.findUnique({
+        where: { code: couponCode.toUpperCase() },
+      });
+    }
+    
+    const isFreeShippingCoupon = couponForPayment?.discountType === "FREE_SHIPPING";
+
     // Kargo ücretine KDV ekle (iyzico'ya KDV dahil gönderilmeli)
     // Kargo ücreti KDV hariç, KDV ekleyerek KDV dahil halini hesapla
-    // Her durumda: shippingCost * (1 + taxRate)
-    if (shippingCost > 0) {
-      const shippingWithTax = shippingCost * (1 + taxSettings.defaultTaxRate);
+    // Ücretsiz kargo kuponu varsa kargo ücreti 0 olmalı
+    // finalShippingCost kullanılmalı (ücretsiz kargo kuponu durumunda 0)
+    const finalShippingCostForBasket = isFreeShippingCoupon ? 0 : finalShippingCost;
+    
+    if (finalShippingCostForBasket > 0) {
+      const shippingWithTax = finalShippingCostForBasket * (1 + taxSettings.defaultTaxRate);
       
       basketItems.push({
         id: "SHIPPING",
@@ -501,23 +684,58 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
     }
 
     // BasketItems toplamını hesapla
-    const basketItemsSum = parseFloat(
+    let basketItemsSum = parseFloat(
       basketItems.reduce(
-        (sum, item) => sum + parseFloat(item.price),
+        (sum: number, item: any) => sum + parseFloat(item.price),
         0
       ).toFixed(2)
     );
 
-    // Toplam tutar - basketItems toplamını kullan (iyzico bunu bekliyor)
-    // BasketItems toplamı ile total'un eşit olması gerekiyor
+    // İyzico, price ve paidPrice'ın basketItems toplamına tam olarak eşit olmasını bekliyor
+    // Sepette zaten tüm hesaplamalar (kupon indirimi dahil) yapılmış
+    // basketItems toplamını total'e eşitle (indirim ve yuvarlama hatalarını düzelt)
+    const targetTotal = parseFloat(total.toFixed(2));
+    const difference = targetTotal - basketItemsSum;
+    
+    // Fark varsa (indirim veya yuvarlama hatası), tüm item'lara orantılı dağıt
+    if (Math.abs(difference) > 0.01 && basketItems.length > 0 && basketItemsSum > 0) {
+      // Orantılı dağıtım için oran hesapla
+      const adjustmentRatio = targetTotal / basketItemsSum;
+      let adjustedSum = 0;
+      
+      // Tüm item'ları güncelle (son item'da kalan farkı ekle)
+      basketItems = basketItems.map((item: any, index: number) => {
+        const originalPrice = parseFloat(item.price);
+        const adjustedPrice = originalPrice * adjustmentRatio;
+        
+        // Son item'da kalan farkı ekle (tam eşitlik için)
+        const finalPrice = index === basketItems.length - 1 
+          ? Math.max(0.01, parseFloat((targetTotal - adjustedSum).toFixed(2))) // Minimum 0.01
+          : parseFloat(adjustedPrice.toFixed(2));
+        
+        adjustedSum += finalPrice;
+        
+        return {
+          ...item,
+          price: finalPrice.toFixed(2),
+        };
+      });
+      
+      // Güncellenmiş toplamı hesapla
+      basketItemsSum = parseFloat(
+        basketItems.reduce(
+          (sum: number, item: any) => sum + parseFloat(item.price),
+          0
+        ).toFixed(2)
+      );
+    }
+    
+    // İyzico'ya gönderilecek tutar - basketItems toplamı (iyzico bunu bekliyor)
     const totalAmount = parseFloat(basketItemsSum.toFixed(2));
     
-    // Kontrol: basketItems toplamı ile hesaplanan total arasındaki fark
-    const calculatedTotal = total;
-    const difference = Math.abs(basketItemsSum - calculatedTotal);
-    if (difference > 0.01) {
-      console.warn(`BasketItems toplamı (${basketItemsSum}) ile hesaplanan total (${calculatedTotal}) eşit değil. Fark: ${difference}`);
-      // İyzico basketItems toplamını beklediği için, totalAmount'u basketItemsSum'a eşitle
+    // pendingOrder kontrolü
+    if (!pendingOrder) {
+      throw new Error("Sipariş oluşturulamadı");
     }
 
     // iyzico ödeme isteği
@@ -583,17 +801,75 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
 
     const iyzipay = await getIyzipay(selectedGateway?.id);
     
+    // Debug: Request detaylarını logla
+    const basketItemsTotal = request.basketItems.reduce((sum: number, item: any) => sum + parseFloat(item.price), 0);
+    const priceValue = parseFloat(request.price);
+    const priceDifference = Math.abs(priceValue - basketItemsTotal);
+    
+    console.log("İyzico Request Detayları:", {
+      price: request.price,
+      paidPrice: request.paidPrice,
+      basketItemsCount: request.basketItems.length,
+      basketItemsTotal: basketItemsTotal.toFixed(2),
+      priceDifference: priceDifference.toFixed(2),
+      basketItems: request.basketItems.map((item: any) => ({ name: item.name, price: item.price })),
+      total: total.toFixed(2),
+      targetTotal: targetTotal.toFixed(2),
+      couponCode: couponCode || "Yok",
+      discountAmount: discountAmount || 0,
+      discountType: couponForPayment?.discountType || "Yok",
+    });
+    
+    // Kritik kontrol: price ve basketItemsTotal eşit olmalı
+    if (priceDifference > 0.01) {
+      console.error("❌ İyzico Request Hatası: price ile basketItemsTotal eşit değil!", {
+        price: request.price,
+        basketItemsTotal: basketItemsTotal.toFixed(2),
+        priceDifference: priceDifference.toFixed(2),
+      });
+      // Hata durumunda siparişi iptal et
+      prisma.order.delete({ where: { id: pendingOrder.id } }).catch(console.error);
+      throw new Error(`Ödeme tutarı uyumsuz: price (${request.price}) ≠ basketItemsTotal (${basketItemsTotal.toFixed(2)})`);
+    }
+    
     return new Promise((resolve, reject) => {
       iyzipay.checkoutFormInitialize.create(request, (err: any, result: any) => {
         if (err) {
-          console.error("iyzico error:", err);
+          console.error("İyzico API Hatası:", {
+            error: err,
+            errorMessage: err?.errorMessage,
+            errorCode: err?.errorCode,
+            status: err?.status,
+            request: {
+              price: request.price,
+              paidPrice: request.paidPrice,
+              basketItemsTotal: basketItemsTotal.toFixed(2),
+            },
+          });
           // Hata durumunda siparişi iptal et
           prisma.order.delete({ where: { id: pendingOrder.id } }).catch(console.error);
-          reject(new Error("Ödeme formu oluşturulamadı"));
+          reject(new Error(err?.errorMessage || "Ödeme formu oluşturulamadı"));
           return;
         }
 
+        console.log("İyzico API Yanıtı:", {
+          status: result.status,
+          errorMessage: result.errorMessage,
+          errorCode: result.errorCode,
+          token: result.token ? "Var" : "Yok",
+          checkoutFormContent: result.checkoutFormContent ? "Var" : "Yok",
+          checkoutFormContentLength: result.checkoutFormContent?.length || 0,
+          checkoutFormContentPreview: result.checkoutFormContent?.substring(0, 200) || "Yok",
+        });
+
         if (result.status === "success") {
+          if (!result.token) {
+            console.error("İyzico token bulunamadı:", result);
+            prisma.order.delete({ where: { id: pendingOrder.id } }).catch(console.error);
+            reject(new Error("Ödeme token'ı alınamadı"));
+            return;
+          }
+          
           // Token'ı siparişe kaydet (notes'a ekle)
           prisma.order.update({
             where: { id: pendingOrder.id },
@@ -609,6 +885,17 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
             orderId: pendingOrder.id, // Order ID'yi döndür
           });
         } else {
+          console.error("İyzico API Başarısız:", {
+            status: result.status,
+            errorMessage: result.errorMessage,
+            errorCode: result.errorCode,
+            errorGroup: result.errorGroup,
+            request: {
+              price: request.price,
+              paidPrice: request.paidPrice,
+              basketItemsTotal: basketItemsTotal.toFixed(2),
+            },
+          });
           // Hata durumunda siparişi iptal et
           prisma.order.delete({ where: { id: pendingOrder.id } }).catch(console.error);
           reject(new Error(result.errorMessage || "Ödeme formu oluşturulamadı"));

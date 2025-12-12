@@ -1,25 +1,32 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { getGuestCart } from "@/lib/utils/cart-client";
+import { mergeGuestCart } from "@/lib/actions/cart";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const callbackUrl = searchParams.get("callbackUrl");
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    error === "login_required"
-      ? "Bu sayfaya erişmek için giriş yapmalısınız."
-      : null
-  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // URL'deki error parametresini sadece ilk yüklemede göster
+  useEffect(() => {
+    if (error === "login_required") {
+      // Bu mesajı göstermeyelim, çünkü kullanıcı zaten giriş yapmaya çalışıyor
+      // setErrorMessage("Bu sayfaya erişmek için giriş yapmalısınız.");
+    }
+  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +34,7 @@ function LoginForm() {
     setErrorMessage(null);
 
     try {
+      // Giriş işlemini başlat
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
@@ -34,13 +42,78 @@ function LoginForm() {
         redirect: false,
       });
 
+      // NextAuth v5'te bazen result güvenilir olmayabiliyor
+      // Bu yüzden session kontrolünü öncelikli yapıyoruz
+      // Session cookie'sinin set edilmesi için kısa bir gecikme
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      // Session kontrolü yap - bu en güvenilir yöntem
+      let sessionData = null;
+      let sessionCheckAttempts = 0;
+      const maxAttempts = 3;
+      
+      while (sessionCheckAttempts < maxAttempts && !sessionData?.user) {
+        try {
+          const sessionResponse = await fetch("/api/auth/session", {
+            cache: "no-store",
+            headers: {
+              "Cache-Control": "no-cache",
+            },
+          });
+          sessionData = await sessionResponse.json();
+          
+          if (sessionData?.user) {
+            break; // Session bulundu, döngüden çık
+          }
+          
+          // Session henüz oluşmadıysa biraz bekle ve tekrar dene
+          if (sessionCheckAttempts < maxAttempts - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        } catch (error) {
+          console.error("Session check error:", error);
+        }
+        sessionCheckAttempts++;
+      }
+      
+      // Session kontrolü sonucu
+      if (sessionData?.user) {
+        // Başarılı giriş - misafir sepetini kullanıcı sepetine aktar
+        try {
+          const guestCart = getGuestCart();
+          if (guestCart.length > 0) {
+            await mergeGuestCart(guestCart);
+            // Misafir sepetini temizle
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("aychookah_guest_cart");
+            }
+          }
+        } catch (error) {
+          console.error("Error merging guest cart:", error);
+          // Sepet aktarımı hatası olsa bile girişe devam et
+        }
+
+        // Yönlendirme: callbackUrl varsa oraya, yoksa sepet sayfasına
+        const redirectPath = callbackUrl || "/sepet";
+        
+        // Sepet sayfasına yönlendiriyorsak, sepetin güncellenmesi için event gönder
+        if (redirectPath === "/sepet" || redirectPath === "/odeme") {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("cartUpdated"));
+          }
+        }
+        
+        router.push(redirectPath);
+        router.refresh();
+      } else {
+        // Session oluşmadı - giriş başarısız
+        // result.error kontrolü de yap (fallback)
       if (result?.error) {
         setErrorMessage("Email veya şifre hatalı.");
+        } else {
+          setErrorMessage("Giriş yapılamadı. Lütfen tekrar deneyin.");
+        }
         setLoading(false);
-      } else if (result?.ok) {
-        // Başarılı giriş - kullanıcı paneline yönlendir
-        router.push("/hesabim");
-        router.refresh();
       }
     } catch (error) {
       console.error("Login error:", error);

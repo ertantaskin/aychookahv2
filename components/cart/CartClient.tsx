@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,8 @@ import {
 import { calculateTaxForCartWithShipping } from "@/lib/utils/tax-calculator";
 import { calculateShippingCost } from "@/lib/utils/shipping-calculator";
 import { toast } from "sonner";
+import CouponInput from "./CouponInput";
+import { calculateTotalWithCoupon, getFreeItemsFromCoupon } from "@/lib/utils/coupon-calculator";
 
 interface CartClientProps {
   cart: {
@@ -69,6 +71,50 @@ export default function CartClient({
     shipping: 0,
     total: 0,
   });
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    discountType: string;
+    discountValue: number;
+  } | null>(null);
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [freeItemsMap, setFreeItemsMap] = useState<Map<string, number>>(new Map()); // productId -> freeQuantity
+
+  // Client-side'da localStorage'dan kupon bilgisini yükle
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("appliedCoupon");
+      if (saved) {
+        try {
+          setAppliedCoupon(JSON.parse(saved));
+        } catch (error) {
+          console.error("Error parsing saved coupon:", error);
+          localStorage.removeItem("appliedCoupon");
+        }
+      }
+    }
+  }, []);
+
+  // Kupon uygulandığında localStorage'a kaydet
+  const handleCouponApplied = (coupon: {
+    code: string;
+    discountAmount: number;
+    discountType: string;
+    discountValue: number;
+  }) => {
+    setAppliedCoupon(coupon);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("appliedCoupon", JSON.stringify(coupon));
+    }
+  };
+
+  // Kupon kaldırıldığında localStorage'dan sil
+  const handleCouponRemoved = () => {
+    setAppliedCoupon(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("appliedCoupon");
+    }
+  };
 
   // Guest sepet için ürün bilgilerini yükle
   useEffect(() => {
@@ -95,6 +141,8 @@ export default function CartClient({
                   slug: product.slug,
                   price: product.price,
                   stock: product.stock,
+                  categoryId: product.category?.id || null,
+                  category: product.category,
                   images: product.images.map((img: any) => ({ url: img.url, alt: img.alt })),
                 },
               } : null;
@@ -144,8 +192,146 @@ export default function CartClient({
     }
   }, [cart, guestCartItems, taxSettings, shippingSettings]);
 
-  const displayCart = cart || { items: guestCartItems };
+  const displayCart = useMemo(() => cart || { items: guestCartItems }, [cart, guestCartItems]);
   const isGuest = !cart;
+
+  // Kupon indirim tutarını güncelle (useCallback ile sarmalanmış)
+  const updateCouponDiscount = useCallback(async (cartItems: typeof displayCart.items) => {
+    // Eğer kupon uygulanmışsa ve sepet doluysa
+    if (appliedCoupon && cartItems.length > 0) {
+      const currentCartSubtotal = cartItems.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0
+      );
+      const currentShippingCost = calculateShippingCost(currentCartSubtotal, shippingSettings);
+      const currentProductIds = cartItems.map((item) => item.product.id);
+
+      try {
+        // Kuponu yeniden doğrula ve indirim tutarını güncelle
+        const response = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            code: appliedCoupon.code,
+            cartSubtotal: currentCartSubtotal,
+            productIds: currentProductIds,
+            shippingCost: currentShippingCost,
+            cartItems: cartItems.map((item) => ({
+              productId: item.product.id,
+              product: {
+                id: item.product.id,
+                price: item.product.price,
+                categoryId: (item.product as any).categoryId || (item.product as any).category?.id || null,
+              },
+              quantity: item.quantity,
+            })),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.valid) {
+          // Yeni indirim tutarını güncelle (sadece tutar değiştiyse)
+          const newDiscountAmount = data.discountAmount;
+          if (Math.abs(newDiscountAmount - appliedCoupon.discountAmount) > 0.01) {
+            const updatedCoupon = {
+              code: data.coupon.code,
+              discountAmount: newDiscountAmount,
+              discountType: data.coupon.discountType,
+              discountValue: data.coupon.discountValue,
+            };
+            setAppliedCoupon(updatedCoupon);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("appliedCoupon", JSON.stringify(updatedCoupon));
+            }
+          }
+        } else {
+          // Kupon artık geçerli değilse kaldır
+          setAppliedCoupon(null);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("appliedCoupon");
+          }
+          toast.error(data.error || "Kupon artık geçerli değil");
+        }
+      } catch (error) {
+        console.error("Error updating coupon discount:", error);
+        // Hata durumunda sessizce devam et, kullanıcıyı rahatsız etme
+      }
+    }
+  }, [appliedCoupon, shippingSettings, displayCart]);
+
+  // Sepet değiştiğinde kupon indirim tutarını otomatik güncelle
+  // Sepet öğelerinin toplam fiyatını hesapla (dependency olarak kullan)
+  const cartItemsKey = displayCart.items
+    .map(item => `${item.id}-${item.quantity}-${item.product.price}`)
+    .join('|');
+  
+  useEffect(() => {
+    if (appliedCoupon && displayCart.items.length > 0) {
+      // Debounce: 300ms bekle, hızlı değişikliklerde gereksiz API çağrılarını önle
+      const timeoutId = setTimeout(() => {
+        updateCouponDiscount(displayCart.items);
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [cartItemsKey, appliedCoupon, updateCouponDiscount, displayCart.items]);
+
+  // Bedava ürünleri tespit et (BUY_X_GET_Y kuponu için)
+  useEffect(() => {
+    const fetchFreeItems = async () => {
+      if (appliedCoupon && appliedCoupon.discountType === "BUY_X_GET_Y" && displayCart.items.length > 0) {
+        try {
+          // Kupon bilgisini API'den çek
+          const response = await fetch(`/api/coupons/${appliedCoupon.code}`);
+          if (response.ok) {
+            const data = await response.json();
+            const coupon = data.coupon;
+            
+            if (coupon && coupon.discountType === "BUY_X_GET_Y") {
+              // Cart items'ı CartItem formatına çevir
+              const cartItemsForCoupon = displayCart.items.map((item) => ({
+                productId: item.product.id,
+                quantity: item.quantity,
+                product: {
+                  id: item.product.id,
+                  price: item.product.price,
+                  categoryId: (item.product as any).categoryId || null,
+                },
+              }));
+
+              const cartSubtotal = displayCart.items.reduce(
+                (sum, item) => sum + item.product.price * item.quantity,
+                0
+              );
+
+              const freeItemsData = getFreeItemsFromCoupon(coupon, cartItemsForCoupon, cartSubtotal);
+              
+              // Free items map oluştur
+              const newFreeItemsMap = new Map<string, number>();
+              freeItemsData.forEach((freeItem) => {
+                const existing = newFreeItemsMap.get(freeItem.productId) || 0;
+                newFreeItemsMap.set(freeItem.productId, existing + freeItem.quantity);
+              });
+              
+              setFreeItemsMap(newFreeItemsMap);
+            } else {
+              setFreeItemsMap(new Map());
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching free items:", error);
+          setFreeItemsMap(new Map());
+        }
+      } else {
+        setFreeItemsMap(new Map());
+      }
+    };
+
+    fetchFreeItems();
+  }, [appliedCoupon, displayCart.items]);
 
   if (isLoadingGuestCart) {
     return (
@@ -193,10 +379,98 @@ export default function CartClient({
   }
 
   // Hesaplanmış değerleri kullan - misafir kullanıcılar için guestCalculations'ı kullan
-  const subtotal = isGuest ? guestCalculations.subtotal : calculatedSubtotal;
+  // Önce KDV dahil sepet toplamını hesapla (ürün fiyatları toplamı)
+  const cartSubtotalWithTax = displayCart.items.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  );
+  
   const shippingCost = isGuest ? guestCalculations.shipping : calculatedShipping;
-  const tax = isGuest ? guestCalculations.tax : calculatedTax;
-  const total = isGuest ? guestCalculations.total : calculatedTotal;
+  
+  // Orijinal kargo ücretini hesapla (kupon olmadan)
+  const originalShippingCost = calculateShippingCost(cartSubtotalWithTax, shippingSettings);
+  
+  // Ücretsiz kargo kuponu var mı?
+  const hasFreeShippingCoupon = appliedCoupon?.discountType === "FREE_SHIPPING";
+  
+  // Kupon indirimi varsa toplamı güncelle
+  const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  
+  let finalSubtotal = isGuest ? guestCalculations.subtotal : calculatedSubtotal;
+  let finalTax = isGuest ? guestCalculations.tax : calculatedTax;
+  let finalTotal = isGuest ? guestCalculations.total : calculatedTotal;
+  
+  // Kupon varsa doğru hesaplama yap
+  if (appliedCoupon && couponDiscount > 0) {
+    const calculation = calculateTotalWithCoupon(
+      cartSubtotalWithTax,
+      shippingCost,
+      couponDiscount,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+    finalSubtotal = calculation.subtotal;
+    finalTax = calculation.tax;
+    finalTotal = calculation.total;
+  }
+  
+  const subtotal = finalSubtotal;
+  const tax = finalTax;
+  const total = finalTotal;
+
+  // Ürün ID'lerini topla (kupon doğrulama için)
+  const productIds = displayCart.items.map((item) => item.product.id);
+
+  // Ürün bazında indirimli fiyat hesapla
+  const calculateDiscountedPrice = (
+    productPrice: number,
+    productId: string,
+    quantity: number
+  ): { originalPrice: number; discountedPrice: number; hasDiscount: boolean } => {
+    if (!appliedCoupon || couponDiscount <= 0) {
+      return {
+        originalPrice: productPrice,
+        discountedPrice: productPrice,
+        hasDiscount: false,
+      };
+    }
+
+    // Ücretsiz kargo kuponu ürün fiyatlarını etkilemez
+    if (appliedCoupon.discountType === "FREE_SHIPPING") {
+      return {
+        originalPrice: productPrice,
+        discountedPrice: productPrice,
+        hasDiscount: false,
+      };
+    }
+
+    // Kupon belirli ürünlere uygulanıyorsa kontrol et
+    // Not: Bu bilgi şu an localStorage'da yok, ama API'den alınabilir
+    // Şimdilik tüm ürünlere uyguluyoruz
+
+    let discountAmount = 0;
+
+    if (appliedCoupon.discountType === "PERCENTAGE") {
+      // Yüzdelik indirim: ürün fiyatına aynı yüzdeyi uygula
+      discountAmount = productPrice * (appliedCoupon.discountValue / 100);
+    } else if (appliedCoupon.discountType === "FIXED_AMOUNT") {
+      // Sabit tutar: ürün fiyatına orantılı olarak dağıt
+      // Ürünün sepet toplamındaki payına göre indirim dağıt
+      const productTotal = productPrice * quantity;
+      const productRatio = cartSubtotalWithTax > 0 ? productTotal / cartSubtotalWithTax : 0;
+      discountAmount = couponDiscount * productRatio;
+      // Ürün fiyatından fazla indirim olamaz
+      discountAmount = Math.min(discountAmount, productPrice);
+    }
+
+    const discountedPrice = Math.max(0, productPrice - discountAmount);
+
+    return {
+      originalPrice: productPrice,
+      discountedPrice: discountedPrice,
+      hasDiscount: discountAmount > 0,
+    };
+  };
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     // Stok kontrolü - client-side
@@ -254,12 +528,29 @@ export default function CartClient({
                 } : null;
               }).filter(Boolean);
               setGuestCartItems(items);
+              // Kupon indirim tutarını güncelle
+              if (appliedCoupon && items.length > 0) {
+                updateCouponDiscount(items);
+              } else if (items.length === 0 && appliedCoupon) {
+                // Sepet boşsa kuponu kaldır
+                setAppliedCoupon(null);
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem("appliedCoupon");
+                }
+              }
             })
             .catch(error => {
               console.error("Error updating guest cart items:", error);
             });
         } else {
           setGuestCartItems([]);
+          // Sepet boşsa kuponu kaldır
+          if (appliedCoupon) {
+            setAppliedCoupon(null);
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("appliedCoupon");
+            }
+          }
         }
         
         toast.dismiss();
@@ -316,8 +607,25 @@ export default function CartClient({
             } : null;
           }).filter(Boolean);
           setGuestCartItems(items);
+          // Kupon indirim tutarını güncelle
+          if (appliedCoupon && items.length > 0) {
+            updateCouponDiscount(items);
+          } else if (items.length === 0 && appliedCoupon) {
+            // Sepet boşsa kuponu kaldır
+            setAppliedCoupon(null);
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("appliedCoupon");
+            }
+          }
         } else {
           setGuestCartItems([]);
+          // Sepet boşsa kuponu kaldır
+          if (appliedCoupon) {
+            setAppliedCoupon(null);
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("appliedCoupon");
+            }
+          }
         }
         window.dispatchEvent(new CustomEvent("cartUpdated"));
         toast.dismiss();
@@ -466,9 +774,37 @@ export default function CartClient({
                         <span className="text-[10px] sm:text-xs font-sans text-gray-400">KDV dahil</span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs sm:text-sm font-sans text-gray-500">Adet:</span>
+                          {(() => {
+                            const freeQty = freeItemsMap.get(item.product.id) || 0;
+                            const normalQty = item.quantity - freeQty;
+                            const hasFree = freeQty > 0;
+                            
+                            return (
+                              <div className="flex flex-col">
+                                {hasFree ? (
+                                  <>
+                                    {normalQty > 0 && (
+                                      <span className="text-sm sm:text-base font-sans font-semibold text-gray-700">
+                                        {normalQty} × {item.product.price.toLocaleString("tr-TR")} ₺
+                                      </span>
+                                    )}
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-xs font-sans text-gray-500 line-through">
+                                        {freeQty} × {item.product.price.toLocaleString("tr-TR")} ₺
+                                      </span>
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
+                                        Bedava
+                                      </span>
+                                    </div>
+                                  </>
+                                ) : (
                           <span className="text-sm sm:text-base font-sans font-semibold text-gray-700">
                             {item.product.price.toLocaleString("tr-TR")} ₺
                           </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -487,9 +823,37 @@ export default function CartClient({
                         <span className="text-[10px] font-sans text-gray-400">KDV dahil</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="text-xs font-sans text-gray-500">Adet:</span>
+                          {(() => {
+                            const freeQty = freeItemsMap.get(item.product.id) || 0;
+                            const normalQty = item.quantity - freeQty;
+                            const hasFree = freeQty > 0;
+                            
+                            return (
+                              <div className="flex flex-col">
+                                {hasFree ? (
+                                  <>
+                                    {normalQty > 0 && (
+                                      <span className="text-sm font-sans font-semibold text-gray-700">
+                                        {normalQty} × {item.product.price.toLocaleString("tr-TR")} ₺
+                                      </span>
+                                    )}
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-xs font-sans text-gray-500 line-through">
+                                        {freeQty} × {item.product.price.toLocaleString("tr-TR")} ₺
+                                      </span>
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
+                                        Bedava
+                                      </span>
+                                    </div>
+                                  </>
+                                ) : (
                           <span className="text-sm font-sans font-semibold text-gray-700">
                             {item.product.price.toLocaleString("tr-TR")} ₺
                           </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -529,9 +893,62 @@ export default function CartClient({
                       {/* Toplam Fiyat */}
                       <div className="text-left flex flex-col items-start">
                         <span className="text-[10px] sm:text-xs font-sans text-gray-400 mb-0.5">KDV dahil</span>
+                        {(() => {
+                          const freeQty = freeItemsMap.get(item.product.id) || 0;
+                          const normalQty = item.quantity - freeQty;
+                          const hasFree = freeQty > 0;
+                          const normalTotal = normalQty * item.product.price;
+                          const freeTotal = freeQty * item.product.price;
+                          
+                          if (hasFree) {
+                            return (
+                              <div className="flex flex-col items-start gap-0.5">
+                                {normalQty > 0 && (
+                                  <span className="text-lg md:text-xl font-sans font-bold text-luxury-black">
+                                    {normalTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                  </span>
+                                )}
+                                {freeQty > 0 && (
+                                  <div className="flex flex-col items-start gap-0.5">
+                                    <span className="text-sm font-sans text-gray-500 line-through">
+                                      {freeTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                    </span>
+                                    <span className="text-xs font-sans font-medium text-green-700">
+                                      Bedava
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          
+                          const priceInfo = calculateDiscountedPrice(
+                            item.product.price,
+                            item.product.id,
+                            item.quantity
+                          );
+                          const originalTotal = priceInfo.originalPrice * item.quantity;
+                          const discountedTotal = priceInfo.discountedPrice * item.quantity;
+                          
+                          if (priceInfo.hasDiscount) {
+                            return (
+                              <div className="flex flex-col items-start gap-0.5">
+                                <span className="text-lg md:text-xl font-sans font-bold text-luxury-black line-through text-gray-400">
+                                  {originalTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                </span>
+                                <span className="text-lg md:text-xl font-sans font-bold text-green-600">
+                                  {discountedTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                </span>
+                              </div>
+                            );
+                          }
+                          
+                          return (
                         <span className="text-lg md:text-xl font-sans font-bold text-luxury-black">
-                          {(item.product.price * item.quantity).toLocaleString("tr-TR")} ₺
+                              {originalTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
                         </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -574,9 +991,62 @@ export default function CartClient({
                         <span className="text-[10px] font-sans text-gray-400 mb-0.5">KDV dahil</span>
                         <div className="flex flex-col items-end gap-1">
                           <span className="text-xs font-sans text-gray-500">Toplam:</span>
+                          {(() => {
+                          const freeQty = freeItemsMap.get(item.product.id) || 0;
+                          const normalQty = item.quantity - freeQty;
+                          const hasFree = freeQty > 0;
+                          const normalTotal = normalQty * item.product.price;
+                          const freeTotal = freeQty * item.product.price;
+                          
+                          if (hasFree) {
+                            return (
+                              <div className="flex flex-col items-end gap-0.5">
+                                {normalQty > 0 && (
+                                  <span className="text-lg font-sans font-bold text-luxury-black">
+                                    {normalTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                  </span>
+                                )}
+                                {freeQty > 0 && (
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    <span className="text-sm font-sans text-gray-500 line-through">
+                                      {freeTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                    </span>
+                                    <span className="text-xs font-sans font-medium text-green-700">
+                                      Bedava
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          
+                            const priceInfo = calculateDiscountedPrice(
+                              item.product.price,
+                              item.product.id,
+                              item.quantity
+                            );
+                            const originalTotal = priceInfo.originalPrice * item.quantity;
+                            const discountedTotal = priceInfo.discountedPrice * item.quantity;
+                            
+                            if (priceInfo.hasDiscount) {
+                              return (
+                                <div className="flex flex-col items-end gap-0.5">
+                                  <span className="text-lg font-sans font-bold text-luxury-black line-through text-gray-400">
+                                    {originalTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                  </span>
+                                  <span className="text-lg font-sans font-bold text-green-600">
+                                    {discountedTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                                  </span>
+                                </div>
+                              );
+                            }
+                            
+                            return (
                           <span className="text-lg font-sans font-bold text-luxury-black">
-                            {(item.product.price * item.quantity).toLocaleString("tr-TR")} ₺
+                                {originalTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
                           </span>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -596,6 +1066,47 @@ export default function CartClient({
                 </svg>
                 Sepeti Temizle
               </button>
+            </div>
+
+            {/* Kupon Girişi */}
+            <div className="pt-4 sm:pt-6">
+              {!appliedCoupon && !showCouponInput ? (
+                <button
+                  onClick={() => setShowCouponInput(true)}
+                  className="flex items-center gap-2 text-luxury-goldLight hover:text-luxury-gold font-sans font-medium text-sm sm:text-base transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  İndirim Kuponu Ekle
+                </button>
+              ) : (
+                <div>
+                  <CouponInput
+                    onCouponApplied={(coupon) => {
+                      handleCouponApplied(coupon);
+                      setShowCouponInput(false);
+                    }}
+                    onCouponRemoved={() => {
+                      handleCouponRemoved();
+                      setShowCouponInput(false);
+                    }}
+                    appliedCoupon={appliedCoupon}
+                    cartSubtotal={cartSubtotalWithTax}
+                    productIds={productIds}
+                    shippingCost={shippingCost}
+                    cartItems={displayCart.items.map((item) => ({
+                      productId: item.product.id,
+                      product: {
+                        id: item.product.id,
+                        price: item.product.price,
+                        categoryId: (item.product as any).categoryId || (item.product as any).category?.id || null,
+                      },
+                      quantity: item.quantity,
+                    }))}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -628,13 +1139,26 @@ export default function CartClient({
                       </svg>
                       <span className="text-gray-700 font-sans font-medium">Kargo Ücreti</span>
                 </div>
+                    {hasFreeShippingCoupon && originalShippingCost > 0 ? (
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-sm font-sans text-gray-500 line-through">
+                          {originalShippingCost.toLocaleString("tr-TR")} ₺
+                        </span>
+                        <span className="text-sm font-sans font-semibold text-green-700 whitespace-nowrap">
+                          Bedava
+                        </span>
+                      </div>
+                    ) : (
                     <span className={`font-sans font-semibold whitespace-nowrap ${shippingCost === 0 ? 'text-green-600' : 'text-gray-900'}`}>
                     {shippingCost === 0
                       ? "Ücretsiz"
                       : `${shippingCost.toLocaleString("tr-TR")} ₺`}
                   </span>
+                    )}
                 </div>
-                  {shippingCost === 0 ? (
+                  {hasFreeShippingCoupon && originalShippingCost > 0 ? (
+                    <p className="text-xs text-green-600 font-sans ml-7">✓ Ücretsiz kargo uygulandı</p>
+                  ) : shippingCost === 0 ? (
                     <p className="text-xs text-green-600 font-sans ml-7">✓ Ücretsiz kargo uygulandı</p>
                   ) : (
                     <p className="text-xs text-gray-500 font-sans ml-7">Kargo ücreti (KDV hariç)</p>
@@ -656,6 +1180,24 @@ export default function CartClient({
                   </div>
                   <p className="text-xs text-gray-500 font-sans ml-7">Katma Değer Vergisi (ürünler + kargo üzerinden)</p>
                 </div>
+
+                {/* Kupon İndirimi - Ücretsiz kargo kuponlarında gösterilmez */}
+                {appliedCoupon && couponDiscount > 0 && appliedCoupon.discountType !== "FREE_SHIPPING" && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-green-700 font-sans font-medium">İndirim ({appliedCoupon.code})</span>
+                      </div>
+                      <span className="text-green-600 font-sans font-semibold whitespace-nowrap">-{couponDiscount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                    </div>
+                    <p className="text-xs text-green-600 font-sans ml-7">
+                      ✓ Kupon indirimi uygulandı {taxSettings.taxIncluded ? "(KDV dahil fiyata)" : "(KDV hariç fiyata)"}
+                    </p>
+                  </div>
+                )}
 
                 {/* Toplam */}
                 <div className="border-t-2 border-gray-300 pt-4 mt-2">
@@ -679,7 +1221,7 @@ export default function CartClient({
 
               {isGuest ? (
                 <Link
-                  href="/giris?redirect=/sepet"
+                  href="/giris?error=login_required&callbackUrl=/odeme"
                   className="block w-full text-center px-6 py-4 font-sans bg-luxury-black text-white font-semibold rounded-xl hover:bg-luxury-darkGray transition-all"
                 >
                   Giriş Yap ve Ödemeye Geç

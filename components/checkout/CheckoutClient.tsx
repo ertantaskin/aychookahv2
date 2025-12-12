@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createPayment } from "@/lib/actions/payment";
 import { getAvailablePaymentMethods } from "@/lib/actions/admin/payment-gateways";
 import { toast } from "sonner";
+import { calculateTotalWithCoupon } from "@/lib/utils/coupon-calculator";
+import { calculateShippingCost } from "@/lib/utils/shipping-calculator";
 
 interface Address {
   id: string;
@@ -61,6 +63,11 @@ interface CheckoutClientProps {
     defaultTaxRate: number;
     taxIncluded: boolean;
   };
+  shippingSettings: {
+    defaultShippingCost: number;
+    freeShippingThreshold?: number | null;
+    estimatedDeliveryDays: number;
+  };
 }
 
 interface PaymentMethod {
@@ -81,6 +88,7 @@ export default function CheckoutClient({
   calculatedShipping,
   calculatedTotal,
   taxSettings,
+  shippingSettings,
 }: CheckoutClientProps) {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -88,6 +96,12 @@ export default function CheckoutClient({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("new");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    discountType: string;
+    discountValue: number;
+  } | null>(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -98,6 +112,16 @@ export default function CheckoutClient({
     district: "",
     postalCode: "",
   });
+
+  // localStorage'dan kupon bilgisini yükle
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("appliedCoupon");
+      if (saved) {
+        setAppliedCoupon(JSON.parse(saved));
+      }
+    }
+  }, []);
 
   // Ödeme yöntemlerini yükle
   useEffect(() => {
@@ -192,11 +216,48 @@ export default function CheckoutClient({
     }
   };
 
+  // KDV dahil sepet toplamını hesapla
+  const cartSubtotalWithTax = (retryOrder ? retryOrder.items : cart?.items || []).reduce(
+    (sum, item) => {
+      const itemPrice = retryOrder && 'price' in item ? item.price : (item.product?.price || 0);
+      return sum + itemPrice * item.quantity;
+    },
+    0
+  );
+
   // Hesaplanmış değerleri kullan
   const subtotal = calculatedSubtotal;
   const shippingCost = calculatedShipping;
   const tax = calculatedTax;
-  const total = calculatedTotal;
+  
+  // Orijinal kargo ücretini hesapla (kupon olmadan)
+  const originalShippingCost = calculateShippingCost(cartSubtotalWithTax, shippingSettings);
+  
+  // Ücretsiz kargo kuponu var mı?
+  const hasFreeShippingCoupon = appliedCoupon?.discountType === "FREE_SHIPPING";
+  
+  // Kupon indirimi varsa toplamı güncelle
+  const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  
+  let finalSubtotal = subtotal;
+  let finalTax = tax;
+  let finalTotal = calculatedTotal;
+  
+  // Kupon varsa doğru hesaplama yap
+  if (appliedCoupon && couponDiscount > 0) {
+    const calculation = calculateTotalWithCoupon(
+      cartSubtotalWithTax,
+      shippingCost,
+      couponDiscount,
+      taxSettings.defaultTaxRate,
+      taxSettings.taxIncluded
+    );
+    finalSubtotal = calculation.subtotal;
+    finalTax = calculation.tax;
+    finalTotal = calculation.total;
+  }
+  
+  const total = finalTotal;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,13 +284,21 @@ export default function CheckoutClient({
       // Retry durumunda retryOrderId'yi ekle
       const retryOrderId = retryOrder?.id;
 
+      // Kupon bilgisini hazırla
+      const couponCode = appliedCoupon?.code;
+      const couponDiscountAmount = appliedCoupon?.discountAmount;
+
       // EFT/Havale seçildiyse
       if (selectedPaymentMethod === "eft-havale") {
-        const paymentResult = await createPayment(shippingAddress, "eft-havale", retryOrderId);
+        const paymentResult = await createPayment(shippingAddress, "eft-havale", retryOrderId, couponCode, couponDiscountAmount);
         
         if (paymentResult && typeof paymentResult === "object" && "type" in paymentResult && paymentResult.type === "eft-havale") {
           const orderId = (paymentResult as any).orderId;
           const orderNumber = (paymentResult as any).orderNumber;
+          // Kupon kullanımını kaydet
+          if (couponCode && typeof window !== "undefined") {
+            localStorage.removeItem("appliedCoupon");
+          }
           // Ortak başarı sayfasına yönlendir (paymentMethod parametresi ile)
           router.push(`/odeme/basarili?orderId=${encodeURIComponent(orderId)}&orderNumber=${encodeURIComponent(orderNumber)}&paymentMethod=eft-havale`);
           return;
@@ -237,7 +306,12 @@ export default function CheckoutClient({
       }
 
       // Cookie'ye gerek yok - artık veritabanından çalışıyoruz
-      const paymentResult = await createPayment(shippingAddress, selectedPaymentMethod, retryOrderId);
+      const paymentResult = await createPayment(shippingAddress, selectedPaymentMethod, retryOrderId, couponCode, couponDiscountAmount);
+      
+      // Kupon kullanımını kaydet (başarılı ödeme başlatıldığında)
+      if (couponCode && typeof window !== "undefined") {
+        localStorage.removeItem("appliedCoupon");
+      }
 
       console.log("Payment result:", paymentResult);
 
@@ -251,9 +325,13 @@ export default function CheckoutClient({
           // checkoutFormContent varsa, onu da gönder
           if (checkoutFormContent) {
             // checkoutFormContent'i sessionStorage'a kaydet
+            // Token'ı da kaydet - sonraki kontroller için
             sessionStorage.setItem("iyzico_checkoutFormContent", checkoutFormContent);
+            sessionStorage.setItem("iyzico_token", token);
           }
-          router.push(`/odeme/iframe?token=${encodeURIComponent(token)}`);
+          // Router push yerine window.location kullan - tam sayfa yenileme için
+          // Bu, eski iframe state'ini temizler
+          window.location.href = `/odeme/iframe?token=${encodeURIComponent(token)}`;
         } else {
           throw new Error("Ödeme token'ı alınamadı");
         }
@@ -523,13 +601,26 @@ export default function CheckoutClient({
                         </svg>
                         <span className="text-gray-700 font-sans font-medium">Kargo Ücreti</span>
                   </div>
+                      {hasFreeShippingCoupon && originalShippingCost > 0 ? (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-sm font-sans text-gray-500 line-through">
+                            {originalShippingCost.toLocaleString("tr-TR")} ₺
+                          </span>
+                          <span className="text-sm font-sans font-semibold text-green-700 whitespace-nowrap">
+                            Bedava
+                          </span>
+                        </div>
+                      ) : (
                       <span className={`font-sans font-semibold whitespace-nowrap ${shippingCost === 0 ? 'text-green-600' : 'text-gray-900'}`}>
                       {shippingCost === 0
                         ? "Ücretsiz"
                         : `${shippingCost.toLocaleString("tr-TR")} ₺`}
                     </span>
+                      )}
                   </div>
-                    {shippingCost === 0 ? (
+                    {hasFreeShippingCoupon && originalShippingCost > 0 ? (
+                      <p className="text-xs text-green-600 font-sans ml-7">✓ Ücretsiz kargo uygulandı</p>
+                    ) : shippingCost === 0 ? (
                       <p className="text-xs text-green-600 font-sans ml-7">✓ Ücretsiz kargo uygulandı</p>
                     ) : (
                       <p className="text-xs text-gray-500 font-sans ml-7">Kargo ücreti (KDV hariç)</p>
@@ -551,6 +642,22 @@ export default function CheckoutClient({
                     </div>
                     <p className="text-xs text-gray-500 font-sans ml-7">Katma Değer Vergisi (ürünler + kargo üzerinden)</p>
                   </div>
+
+                  {/* Kupon İndirimi - Ücretsiz kargo kuponlarında gösterilmez */}
+                  {appliedCoupon && couponDiscount > 0 && appliedCoupon.discountType !== "FREE_SHIPPING" && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-green-700 font-sans font-medium">İndirim ({appliedCoupon.code})</span>
+                        </div>
+                        <span className="text-green-600 font-sans font-semibold whitespace-nowrap">-{couponDiscount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</span>
+                      </div>
+                      <p className="text-xs text-green-600 font-sans ml-7">✓ Kupon indirimi uygulandı</p>
+                    </div>
+                  )}
 
                   {/* Toplam */}
                   <div className="border-t-2 border-gray-300 pt-4 mt-2">

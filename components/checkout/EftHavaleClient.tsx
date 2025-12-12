@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { CheckCircle, Copy, Home } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 interface EftHavaleClientProps {
   order: {
@@ -12,6 +13,9 @@ interface EftHavaleClientProps {
     subtotal: number;
     tax: number;
     shippingCost: number;
+    couponCode?: string | null;
+    discountAmount?: number;
+    couponDiscountType?: string | null;
   };
   orderNumber: string;
   bankInfo?: {
@@ -25,6 +29,36 @@ interface EftHavaleClientProps {
 
 export default function EftHavaleClient({ order, orderNumber, bankInfo }: EftHavaleClientProps) {
   const router = useRouter();
+  
+  // Ücretsiz kargo kuponu kontrolü ve orijinal kargo ücreti hesaplama
+  const hasFreeShippingCoupon = order?.couponDiscountType === "FREE_SHIPPING" && order?.shippingCost === 0;
+  const [originalShippingCost, setOriginalShippingCost] = useState(0);
+  
+  useEffect(() => {
+    if (hasFreeShippingCoupon && order) {
+      // Sipariş item'larından toplamı hesapla (kupon öncesi)
+      const orderSubtotal = order.subtotal + (order.discountAmount || 0);
+      
+      // Orijinal kargo ücretini hesapla (API'den çek)
+      const fetchOriginalShipping = async () => {
+        try {
+          const response = await fetch("/api/shipping/calculate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subtotal: orderSubtotal }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setOriginalShippingCost(data.shippingCost || 0);
+          }
+        } catch (error) {
+          console.error("Error fetching original shipping cost:", error);
+        }
+      };
+      
+      fetchOriginalShipping();
+    }
+  }, [hasFreeShippingCoupon, order]);
 
   // Varsayılan banka bilgileri (eğer veritabanından gelmemişse)
   const defaultBankInfo = {
@@ -140,10 +174,29 @@ export default function EftHavaleClient({ order, orderNumber, bankInfo }: EftHav
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="font-sans text-gray-700">Kargo:</span>
+                {hasFreeShippingCoupon && originalShippingCost > 0 ? (
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-sm font-sans text-gray-500 line-through">
+                      {originalShippingCost.toLocaleString("tr-TR")} ₺
+                    </span>
+                    <span className="text-sm font-sans font-semibold text-green-700 whitespace-nowrap">
+                      Bedava
+                    </span>
+                  </div>
+                ) : (
                 <span className="font-sans font-semibold text-gray-900">
                   {order.shippingCost === 0 ? "Ücretsiz" : `${order.shippingCost.toLocaleString("tr-TR")} ₺`}
                 </span>
+                )}
               </div>
+              {order.couponCode && order.discountAmount && order.discountAmount > 0 && order.couponDiscountType !== "FREE_SHIPPING" && (
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-sans text-green-700">İndirim ({order.couponCode}):</span>
+                  <span className="font-sans font-semibold text-green-600">
+                    -{order.discountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                  </span>
+                </div>
+              )}
               <div className="border-t border-gray-300 pt-4 mt-4">
                 <div className="flex justify-between items-center">
                   <span className="font-sans font-bold text-lg text-luxury-black">Toplam:</span>

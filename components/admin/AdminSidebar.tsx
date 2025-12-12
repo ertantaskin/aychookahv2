@@ -23,6 +23,7 @@ import {
   Store,
   Menu,
   X,
+  Tag,
 } from "lucide-react";
 import CacheClearButton from "./CacheClearButton";
 
@@ -48,6 +49,14 @@ const menuItems = [
   { href: "/admin/siparisler", label: "Siparişler", icon: ShoppingBag },
   { href: "/admin/kullanicilar", label: "Kullanıcılar", icon: Users },
   { href: "/admin/yorumlar", label: "Yorumlar", icon: MessageSquare },
+  {
+    href: "/admin/kampanyalar",
+    label: "Kampanyalar",
+    icon: Tag,
+    subItems: [
+      { href: "/admin/kampanyalar/kuponlar", label: "Kuponlar" },
+    ],
+  },
   { href: "/admin/medya", label: "Medya Kütüphanesi", icon: Image },
   { href: "/admin/odeme-sistemleri", label: "Ödeme Sistemleri", icon: CreditCard },
   { href: "/admin/seo", label: "SEO Yönetimi", icon: Search },
@@ -72,6 +81,10 @@ export default function AdminSidebar() {
     // Eğer mağaza ayarları sayfasındaysak, mağaza ayarları menüsünü açık tut
     if (pathname.startsWith("/admin/magaza-ayarlari")) {
       return ["/admin/magaza-ayarlari"];
+    }
+    // Eğer kampanyalar sayfasındaysak, kampanyalar menüsünü açık tut
+    if (pathname.startsWith("/admin/kampanyalar")) {
+      return ["/admin/kampanyalar"];
     }
     return [];
   });

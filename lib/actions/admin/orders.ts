@@ -26,6 +26,14 @@ export const getAllOrders = async (
   await checkAdmin();
 
   try {
+    // Varsayılan sıralama: en yeni önce (createdAt DESC)
+    if (!sortBy || sortBy === "") {
+      sortBy = "createdAt";
+    }
+    if (!sortOrder || (sortOrder !== "asc" && sortOrder !== "desc")) {
+      sortOrder = "desc";
+    }
+
     const skip = (page - 1) * limit;
     let where: any = {};
 
@@ -100,15 +108,30 @@ export const getAllOrders = async (
       where.paymentStatus = paymentStatus;
     }
 
-    // Sıralama
-    const orderBy: any = {};
+    // Sıralama - varsayılan: en yeni önce (createdAt DESC)
+    // Prisma'da çoklu sıralama için array kullanılmalı
+    let orderBy: any;
     if (sortBy === "total") {
-      orderBy.total = sortOrder;
+      // Tutara göre sıralama + ikincil sıralama: tarih (en yeni önce)
+      orderBy = [
+        { total: sortOrder },
+        { createdAt: "desc" },
+      ];
     } else if (sortBy === "orderNumber") {
-      orderBy.orderNumber = sortOrder;
+      // Sipariş numarasına göre sıralama + ikincil sıralama: tarih (en yeni önce)
+      orderBy = [
+        { orderNumber: sortOrder },
+        { createdAt: "desc" },
+      ];
     } else {
-      orderBy.createdAt = sortOrder;
+      // Varsayılan: oluşturulma tarihine göre (en yeni önce)
+      // Tek sıralama için object kullanılmalı
+      // Her zaman DESC olmalı (en yeni önce)
+      orderBy = { createdAt: "desc" };
     }
+
+    // Debug: Sıralama parametrelerini logla
+    console.log("Order sorting:", { sortBy, sortOrder, orderBy });
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
@@ -280,10 +303,16 @@ export const updatePaymentStatus = async (orderId: string, paymentStatus: string
   const adminId = await checkAdmin();
 
   try {
-    // Mevcut siparişi al
+    // Mevcut siparişi al (items dahil)
     const currentOrder = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { paymentStatus: true },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+      },
     });
 
     if (!currentOrder) {
@@ -295,6 +324,40 @@ export const updatePaymentStatus = async (orderId: string, paymentStatus: string
       where: { id: adminId },
       select: { name: true, email: true },
     });
+
+    // Ödeme durumu "COMPLETED" yapılıyorsa ve daha önce "COMPLETED" değilse, stok düşür
+    if (paymentStatus === "COMPLETED" && currentOrder.paymentStatus !== "COMPLETED") {
+      console.log("✅ Payment status changed to COMPLETED, deducting stock for order:", orderId);
+      for (const item of currentOrder.items) {
+        if (item.productId) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    // Ödeme durumu "PENDING" veya "FAILED" yapılıyorsa ve daha önce "COMPLETED" ise, stok geri ver
+    if ((paymentStatus === "PENDING" || paymentStatus === "FAILED") && currentOrder.paymentStatus === "COMPLETED") {
+      console.log("⚠️ Payment status changed from COMPLETED to", paymentStatus, ", restoring stock for order:", orderId);
+      for (const item of currentOrder.items) {
+        if (item.productId) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
+            },
+          });
+        }
+      }
+    }
 
     // Siparişi güncelle
     const order = await prisma.order.update({

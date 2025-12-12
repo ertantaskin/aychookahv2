@@ -209,6 +209,90 @@ export const updateCartItemQuantity = async (cartItemId: string, quantity: numbe
   }
 };
 
+// Misafir sepetini kullanıcı sepetine aktar
+export const mergeGuestCart = async (guestCartItems: Array<{ productId: string; quantity: number }>) => {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      throw new Error("Giriş yapmanız gerekiyor");
+    }
+
+    // Kullanıcı sepetini bul veya oluştur
+    let cart = await prisma.cart.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!cart) {
+      cart = await prisma.cart.create({
+        data: {
+          userId: session.user.id,
+        },
+        include: {
+          items: true,
+        },
+      });
+    }
+
+    // Misafir sepetindeki her ürünü kullanıcı sepetine ekle
+    for (const guestItem of guestCartItems) {
+      // Ürünü kontrol et
+      const product = await prisma.product.findUnique({
+        where: { id: guestItem.productId },
+      });
+
+      if (!product || !product.isActive) {
+        continue; // Ürün bulunamazsa veya aktif değilse atla
+      }
+
+      // Mevcut sepet kalemini kontrol et
+      const existingItem = await prisma.cartItem.findUnique({
+        where: {
+          cartId_productId: {
+            cartId: cart.id,
+            productId: guestItem.productId,
+          },
+        },
+      });
+
+      if (existingItem) {
+        // Mevcut kalemi güncelle - toplam miktar stoktan fazla olamaz
+        const totalQuantity = existingItem.quantity + guestItem.quantity;
+        const finalQuantity = Math.min(totalQuantity, product.stock);
+        
+        await prisma.cartItem.update({
+          where: { id: existingItem.id },
+          data: {
+            quantity: finalQuantity,
+          },
+        });
+      } else {
+        // Yeni kalem ekle - miktar stoktan fazla olamaz
+        const finalQuantity = Math.min(guestItem.quantity, product.stock);
+        
+        if (finalQuantity > 0) {
+          await prisma.cartItem.create({
+            data: {
+              cartId: cart.id,
+              productId: guestItem.productId,
+              quantity: finalQuantity,
+            },
+          });
+        }
+      }
+    }
+
+    revalidatePath("/sepet");
+    return { success: true };
+  } catch (error) {
+    console.error("Error merging guest cart:", error);
+    throw error;
+  }
+};
+
 // Sepeti temizle
 export const clearCart = async () => {
   try {

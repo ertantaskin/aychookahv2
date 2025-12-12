@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
             await prisma.order.update({
               where: { id: orderId },
               data: {
-                notes: `Ödeme başarısız. Hata: ${errorMessage} (Kod: ${errorCode}). Stoklar geri verildi, sepet korundu.`,
+                notes: `Ödeme başarısız. Hata: ${errorMessage} (Kod: ${errorCode}). Sepet korundu.`,
                 paymentStatus: "FAILED",
                 status: "PENDING", // PENDING olarak bırak - kullanıcı tekrar deneyebilir
               },
@@ -400,6 +400,26 @@ export async function POST(request: NextRequest) {
         });
       }
           
+      // Stokları düşür - ödeme başarılı olduğunda
+      // Sadece daha önce düşürülmemişse düşür (duplicate ödeme kontrolü)
+      if (order.paymentStatus !== "COMPLETED") {
+        console.log("✅ Deducting stock for order:", order.id);
+        for (const item of order.items) {
+          if (item.productId) {
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: item.quantity,
+                },
+              },
+            });
+          }
+        }
+      } else {
+        console.log("⚠️ Order already completed, skipping stock deduction");
+      }
+          
       // Siparişi güncelle - ödeme başarılı
       console.log("✅ Updating order:", order.id, "with paymentId:", paymentResult.paymentId);
       const updatedOrder = await prisma.order.update({
@@ -421,6 +441,48 @@ export async function POST(request: NextRequest) {
       });
 
       console.log("Order updated successfully:", updatedOrder.id);
+
+      // Kupon kullanımını kaydet
+      if (updatedOrder.couponCode) {
+        try {
+          const coupon = await prisma.coupon.findUnique({
+            where: { code: updatedOrder.couponCode },
+          });
+
+          if (coupon) {
+            // Kupon kullanımını kaydet (eğer daha önce kaydedilmemişse)
+            const existingUsage = await prisma.couponUsage.findFirst({
+              where: {
+                couponId: coupon.id,
+                orderId: updatedOrder.id,
+              },
+            });
+
+            if (!existingUsage) {
+              await prisma.couponUsage.create({
+                data: {
+                  couponId: coupon.id,
+                  userId: updatedOrder.userId,
+                  orderId: updatedOrder.id,
+                },
+              });
+
+              // Kupon kullanım sayısını artır
+              await prisma.coupon.update({
+                where: { id: coupon.id },
+                data: {
+                  usedCount: {
+                    increment: 1,
+                  },
+                },
+              });
+            }
+          }
+        } catch (couponError) {
+          console.error("Error recording coupon usage:", couponError);
+          // Kupon hatası ödeme başarısını etkilemez
+        }
+      }
 
       // Cache'i yenile - siparişler sayfasının güncel veriyi göstermesi için
       revalidatePath("/hesabim");

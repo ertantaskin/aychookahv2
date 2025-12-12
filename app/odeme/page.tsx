@@ -23,7 +23,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
   const session = await auth();
 
   if (!session?.user) {
-    redirect("/giris?error=login_required");
+    redirect("/giris?error=login_required&callbackUrl=/odeme");
   }
 
   const params = await searchParams;
@@ -103,6 +103,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
         calculatedShipping={taxCalculation.shippingCost}
         calculatedTotal={total}
         taxSettings={taxSettings}
+        shippingSettings={shippingSettings}
       />
     );
   }
@@ -139,6 +140,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       calculatedShipping={taxCalculation.shippingCost}
       calculatedTotal={total}
       taxSettings={taxSettings}
+      shippingSettings={shippingSettings}
     />
   );
 }

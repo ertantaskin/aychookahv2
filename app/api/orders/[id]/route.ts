@@ -98,6 +98,17 @@ export async function GET(
       },
     });
 
+    // Kupon bilgisini ekle (eğer varsa)
+    if (order?.couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: order.couponCode },
+        select: { discountType: true },
+      });
+      if (coupon) {
+        (order as any).couponDiscountType = coupon.discountType;
+      }
+    }
+
     if (!order || order.userId !== session.user.id) {
       return NextResponse.json(
         { error: "Order not found" },

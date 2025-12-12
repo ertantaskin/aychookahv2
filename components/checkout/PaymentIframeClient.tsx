@@ -28,6 +28,25 @@ export default function PaymentIframeClient({
   useEffect(() => {
     let isMounted = true;
 
+    // Önceki iframe'i temizle
+    const container = iframeRef.current || document.getElementById("iyzipay-checkout-form");
+    if (container) {
+      container.innerHTML = "";
+    }
+    
+    // Eski script'leri temizle (iyzipay script'leri)
+    const existingScripts = document.querySelectorAll('script[src*="iyzipay"]');
+    existingScripts.forEach(script => {
+      // Script'i kaldırma, sadece işaretle
+      console.log("Found existing iyzico script, will reuse");
+    });
+    
+    // window.Iyzipay ve window.iyziInit'i temizle (yeniden başlatmak için)
+    if (typeof window !== "undefined") {
+      delete (window as any).Iyzipay;
+      delete (window as any).iyziInit;
+    }
+
     // Container'ın hazır olmasını bekle
     const waitForContainer = (callback: () => void, maxAttempts = 100) => {
       let attempts = 0;
@@ -55,9 +74,20 @@ export default function PaymentIframeClient({
     };
 
     // checkoutFormContent'i sessionStorage'dan al (eğer prop olarak gelmediyse)
+    // Ama önce eski içeriği temizle - yeni ödeme için
     const storedContent = typeof window !== "undefined" 
       ? sessionStorage.getItem("iyzico_checkoutFormContent") 
       : null;
+    
+    // Eğer storedContent varsa ve token değiştiyse, eski içeriği temizle
+    if (storedContent && typeof window !== "undefined") {
+      const storedToken = sessionStorage.getItem("iyzico_token");
+      if (storedToken !== token) {
+        console.log("Token changed, clearing old checkoutFormContent");
+        sessionStorage.removeItem("iyzico_checkoutFormContent");
+        sessionStorage.removeItem("iyzico_token");
+      }
+    }
     
     const formContent = checkoutFormContent || storedContent;
 
@@ -183,6 +213,7 @@ export default function PaymentIframeClient({
                 // sessionStorage'dan temizle
                 if (typeof window !== "undefined") {
                   sessionStorage.removeItem("iyzico_checkoutFormContent");
+                  sessionStorage.removeItem("iyzico_token");
                 }
               } else if (checkCount >= maxChecks) {
                 console.error("Payment form not loaded after timeout");

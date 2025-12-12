@@ -8,19 +8,20 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String?
-  password  String
-  role      String    @default("user")
-  phone     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  addresses Address[]
-  cart      Cart?
-  media     Media[]
-  orders    Order[]
-  reviews   Review[]
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String?
+  password     String
+  role         String        @default("user")
+  phone        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  addresses    Address[]
+  cart         Cart?
+  media        Media[]
+  orders       Order[]
+  reviews      Review[]
+  couponUsages CouponUsage[]
 
   @@map("users")
 }
@@ -112,28 +113,34 @@ model ProductImage {
 }
 
 model Order {
-  id              String        @id @default(cuid())
-  orderNumber     String        @unique
-  status          OrderStatus   @default(PENDING)
-  total           Float
-  subtotal        Float
-  shippingCost    Float         @default(0)
-  tax             Float         @default(0)
-  paymentMethod   String?
-  paymentStatus   PaymentStatus @default(PENDING)
-  paymentId       String?
-  shippingAddress Json
-  notes           String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  userId          String
-  items           OrderItem[]
-  logs            OrderLog[]
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String        @id @default(cuid())
+  orderNumber        String        @unique
+  status             OrderStatus   @default(PENDING)
+  total              Float
+  subtotal           Float
+  shippingCost       Float         @default(0)
+  tax                Float         @default(0)
+  paymentMethod      String?
+  paymentStatus      PaymentStatus @default(PENDING)
+  paymentId          String?
+  shippingAddress    Json
+  notes              String?
+  couponCode         String?
+  discountAmount     Float         @default(0)
+  couponDiscountType String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  userId             String
+  items              OrderItem[]
+  logs               OrderLog[]
+  couponUsages       CouponUsage[]
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([orderNumber])
   @@index([status])
+  @@index([couponCode])
+  @@index([createdAt])
   @@map("orders")
 }
 
@@ -367,4 +374,61 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+  BUY_X_GET_Y
+}
+
+model Coupon {
+  id                   String        @id @default(cuid())
+  code                 String        @unique
+  discountType         DiscountType
+  discountValue        Float
+  buyMode              String? // BUY_X_GET_Y için: "CATEGORY", "PRODUCT", "CONDITIONAL_FREE"
+  buyTargetId          String? // Alınması gereken kategori/ürün ID
+  getTargetId          String? // Bedava verilecek kategori/ürün ID
+  buyQuantity          Int? // Alınması gereken adet (N)
+  getQuantity          Int? // Bedava verilecek adet (M) - CONDITIONAL_FREE'de kullanılmaz
+  maxFreeQuantity      Int? // Bedava ürün sayısı için maksimum limit (null ise sınırsız)
+  isActive             Boolean       @default(true)
+  totalUsageLimit      Int?
+  customerUsageLimit   Int           @default(1)
+  usedCount            Int           @default(0)
+  startDate            DateTime?
+  endDate              DateTime?
+  minimumAmount        Float?
+  applicableProducts   Json? // Array of product IDs (geriye dönük uyumluluk için)
+  applicableCategories Json? // Array of category IDs (geriye dönük uyumluluk için)
+  applicableUsers      Json? // Array of user IDs
+  description          String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  usages               CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id       String   @id @default(cuid())
+  couponId String
+  userId   String?
+  orderId  String?
+  usedAt   DateTime @default(now())
+  coupon   Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  order    Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
+  @@index([usedAt])
+  @@map("coupon_usages")
 }

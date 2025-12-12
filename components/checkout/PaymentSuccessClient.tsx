@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle, Copy, Home } from "lucide-react";
@@ -16,13 +16,18 @@ interface PaymentSuccessClientProps {
     shippingCost: number;
     paymentMethod?: string | null;
     paymentStatus?: string;
+    couponCode?: string | null;
+    discountAmount?: number;
+    couponDiscountType?: string | null;
     items: Array<{
       id: string;
       quantity: number;
       price: number;
+      productId: string | null;
       product: {
         id: string;
         name: string;
+        price: number;
       } | null;
     }>;
     shippingAddress?: any;
@@ -47,6 +52,36 @@ export default function PaymentSuccessClient({
   requiresAuth = false,
 }: PaymentSuccessClientProps) {
   const router = useRouter();
+  
+  // Ücretsiz kargo kuponu kontrolü ve orijinal kargo ücreti hesaplama
+  const hasFreeShippingCoupon = order?.couponDiscountType === "FREE_SHIPPING" && order?.shippingCost === 0;
+  const [originalShippingCost, setOriginalShippingCost] = useState(0);
+  
+  useEffect(() => {
+    if (hasFreeShippingCoupon && order) {
+      // Sipariş item'larından toplamı hesapla (kupon öncesi)
+      const orderSubtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Orijinal kargo ücretini hesapla (API'den çek)
+      const fetchOriginalShipping = async () => {
+        try {
+          const response = await fetch("/api/shipping/calculate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subtotal: orderSubtotal }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setOriginalShippingCost(data.shippingCost || 0);
+          }
+        } catch (error) {
+          console.error("Error fetching original shipping cost:", error);
+        }
+      };
+      
+      fetchOriginalShipping();
+    }
+  }, [hasFreeShippingCoupon, order]);
   
   // Yönlendirme kontrolünü kaldırdık - parent component'te loading state var
   // Order fetch edilirken yönlendirme yapmıyoruz
@@ -185,12 +220,31 @@ export default function PaymentSuccessClient({
                 </div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-sans text-gray-700">Kargo:</span>
+                  {hasFreeShippingCoupon && originalShippingCost > 0 ? (
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-sm font-sans text-gray-500 line-through">
+                        {originalShippingCost.toLocaleString("tr-TR")} ₺
+                      </span>
+                      <span className="text-sm font-sans font-semibold text-green-700 whitespace-nowrap">
+                        Bedava
+                      </span>
+                    </div>
+                  ) : (
                   <span className="font-sans font-semibold text-gray-900">
                     {order.shippingCost === 0
                       ? "Ücretsiz"
                       : `${order.shippingCost.toLocaleString("tr-TR")} ₺`}
                   </span>
+                  )}
                 </div>
+                {order.couponCode && order.discountAmount && order.discountAmount > 0 && order.couponDiscountType !== "FREE_SHIPPING" && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-sans text-green-700">İndirim ({order.couponCode}):</span>
+                    <span className="font-sans font-semibold text-green-600">
+                      -{order.discountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                    </span>
+                  </div>
+                )}
                 <div className="border-t border-gray-300 pt-4 mt-4">
                   <div className="flex justify-between items-center">
                     <span className="font-sans font-bold text-lg text-luxury-black">Toplam:</span>
@@ -251,19 +305,87 @@ export default function PaymentSuccessClient({
                   Sipariş Özeti
                 </h3>
                 <div className="space-y-2">
-                  {order.items.map((item) => (
+                  {(() => {
+                    // Aynı ürünün normal ve bedava versiyonlarını birleştir
+                    const itemsMap = new Map<string, { item: any; freeQuantity: number; normalQuantity: number; originalPrice: number }>();
+                    
+                    order.items.forEach((item) => {
+                      const productId = item.productId || item.product?.id || "";
+                      const isFree = item.price === 0;
+                      
+                      if (!itemsMap.has(productId)) {
+                        // Orijinal fiyatı bul (bedava değilse item.price, bedava ise product.price)
+                        const originalPrice = isFree && item.product?.price 
+                          ? item.product.price 
+                          : item.price;
+                        
+                        itemsMap.set(productId, {
+                          item,
+                          freeQuantity: isFree ? item.quantity : 0,
+                          normalQuantity: isFree ? 0 : item.quantity,
+                          originalPrice,
+                        });
+                      } else {
+                        const existing = itemsMap.get(productId)!;
+                        if (isFree) {
+                          existing.freeQuantity += item.quantity;
+                        } else {
+                          existing.normalQuantity += item.quantity;
+                        }
+                      }
+                    });
+
+                    return Array.from(itemsMap.values()).map(({ item, freeQuantity, normalQuantity, originalPrice }) => {
+                      const totalQuantity = normalQuantity + freeQuantity;
+                      const hasFree = freeQuantity > 0;
+                      const normalPrice = normalQuantity * originalPrice;
+                      
+                      return (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center text-sm font-sans"
+                          className="flex justify-between items-start text-sm font-sans"
                     >
+                          <div className="flex-1">
                       <span className="text-gray-700">
-                        {item.product?.name || (item as any).productName || "Silinmiş Ürün"} x {item.quantity}
+                              {item.product?.name || (item as any).productName || "Silinmiş Ürün"} x {totalQuantity}
+                            </span>
+                            {hasFree && (
+                              <div className="mt-1">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                  {freeQuantity} adet bedava
                       </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            {hasFree ? (
+                              <div className="flex flex-col items-end">
+                                {normalQuantity > 0 && (
                       <span className="font-medium text-gray-900">
-                        {(item.price * item.quantity).toLocaleString("tr-TR")} ₺
+                                    {normalPrice.toLocaleString("tr-TR")} ₺
+                                  </span>
+                                )}
+                                {freeQuantity > 0 && (
+                                  <div className="mt-1">
+                                    <span className="text-xs text-gray-500 line-through">
+                                      {(originalPrice * freeQuantity).toLocaleString("tr-TR")} ₺
+                                    </span>
+                                    <span className="ml-2 text-xs font-medium text-green-700">
+                                      Bedava
                       </span>
                     </div>
-                  ))}
+                                )}
+                              </div>
+                            ) : (
+                              <span className="font-medium text-gray-900">
+                                {normalPrice.toLocaleString("tr-TR")} ₺
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -280,12 +402,31 @@ export default function PaymentSuccessClient({
                   </div>
                   <div className="flex justify-between text-gray-700 font-sans">
                     <span>Kargo</span>
+                    {hasFreeShippingCoupon && originalShippingCost > 0 ? (
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-sm font-sans text-gray-500 line-through">
+                          {originalShippingCost.toLocaleString("tr-TR")} ₺
+                        </span>
+                        <span className="text-sm font-sans font-semibold text-green-700 whitespace-nowrap">
+                          Bedava
+                        </span>
+                      </div>
+                    ) : (
                     <span>
                       {order.shippingCost === 0
                         ? "Ücretsiz"
                         : `${order.shippingCost.toLocaleString("tr-TR")} ₺`}
                     </span>
+                    )}
                   </div>
+                  {order.couponCode && order.discountAmount && order.discountAmount > 0 && order.couponDiscountType !== "FREE_SHIPPING" && (
+                    <div className="flex justify-between text-green-700 font-sans">
+                      <span>İndirim ({order.couponCode})</span>
+                      <span className="font-semibold">
+                        -{order.discountAmount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                      </span>
+                    </div>
+                  )}
                   <div className="border-t border-gray-200 pt-4 flex justify-between text-xl font-sans font-bold text-luxury-black">
                     <span>Toplam</span>
                     <span>{order.total.toLocaleString("tr-TR")} ₺</span>
