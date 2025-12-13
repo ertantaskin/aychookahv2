@@ -73,7 +73,21 @@ const HomePage: React.FC = async () => {
   }
 
   // Load hero slides server-side
-  let heroSlides = [];
+  let heroSlides: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    image: string;
+    mobileImage?: string | null;
+    ctaText: string;
+    ctaLink: string;
+    position: string;
+    order: number;
+    isActive: boolean;
+    showContent?: boolean;
+    showOverlay?: boolean;
+  }> = [];
   try {
     heroSlides = await getHeroSlides();
   } catch (error) {

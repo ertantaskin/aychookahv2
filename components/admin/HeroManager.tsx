@@ -22,18 +22,33 @@ interface HeroSlide {
   mobileImage?: string | null;
   ctaText: string;
   ctaLink: string;
-  position: "left" | "center" | "right";
+  position: string;
   order: number;
   isActive: boolean;
   showContent?: boolean;
   showOverlay?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export default function HeroManager() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    subtitle: string;
+    description: string;
+    image: string;
+    mobileImage: string;
+    ctaText: string;
+    ctaLink: string;
+    position: string;
+    order: number;
+    isActive: boolean;
+    showContent: boolean;
+    showOverlay: boolean;
+  }>({
     title: "",
     subtitle: "",
     description: "",
@@ -41,7 +56,7 @@ export default function HeroManager() {
     mobileImage: "",
     ctaText: "",
     ctaLink: "",
-    position: "center" as "left" | "center" | "right",
+    position: "center",
     order: 0,
     isActive: true,
     showContent: true,
@@ -76,6 +91,7 @@ export default function HeroManager() {
         ...formData,
         image: selectedImage?.url || formData.image,
         mobileImage: selectedMobileImage?.url || formData.mobileImage || null,
+        position: formData.position as "left" | "center" | "right",
       };
       await createHeroSlide(dataToSubmit);
       await loadSlides();
@@ -97,6 +113,7 @@ export default function HeroManager() {
         ...formData,
         image: selectedImage?.url || formData.image,
         mobileImage: selectedMobileImage?.url || formData.mobileImage || null,
+        position: formData.position as "left" | "center" | "right",
       };
       await updateHeroSlide(dataToSubmit);
       await loadSlides();

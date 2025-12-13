@@ -140,23 +140,31 @@ export async function updateSectionTitle(location: string, title: string) {
 
     const titleLocation = `${location}-title`;
 
-    const item = await prisma.menuItem.upsert({
+    // Find existing section title
+    const existing = await prisma.menuItem.findFirst({
       where: {
         location: titleLocation,
         isSectionTitle: true,
       },
-      update: {
-        label: title,
-      },
-      create: {
-        label: title,
-        location: titleLocation,
-        isSectionTitle: true,
-        href: null,
-        order: 0,
-        isActive: true,
-      },
     });
+
+    const item = existing
+      ? await prisma.menuItem.update({
+          where: { id: existing.id },
+          data: {
+            label: title,
+          },
+        })
+      : await prisma.menuItem.create({
+          data: {
+            label: title,
+            location: titleLocation,
+            isSectionTitle: true,
+            href: null,
+            order: 0,
+            isActive: true,
+          },
+        });
 
     revalidatePath("/admin/menu");
     revalidatePath("/", "layout");

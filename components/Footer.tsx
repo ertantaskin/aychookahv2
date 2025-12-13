@@ -36,7 +36,7 @@ interface FooterData {
 
 interface FooterProps {
   footerData?: FooterData;
-  footerLogo?: string;
+  footerLogo?: string | null;
 }
 
 const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLogo: initialFooterLogo }) => {
@@ -65,7 +65,9 @@ const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLo
     initialFooterData || defaultFooterData
   );
   const [footerLogo, setFooterLogo] = useState<string>(
-    initialFooterLogo || "/images/logo/ayc-hookah-logo.png"
+    initialFooterLogo && initialFooterLogo.trim() !== "" 
+      ? initialFooterLogo 
+      : "/images/logo/ayc-hookah-logo.png"
   );
 
   // Load footer logo if not provided via props (fallback)
@@ -130,7 +132,11 @@ const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLo
 
         // Load contact info
         const contactRes = await fetch("/api/contact-info", { cache: "no-store" });
-        const contactInfo = contactRes.ok ? await contactRes.json() : defaultFooterData.contactInfo;
+        const contactInfo = contactRes.ok ? await contactRes.json() : {
+          email: "info@aychookah.com",
+          phone: "+90 XXX XXX XX XX",
+          footerDescription: "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
+        };
 
         setFooterData({
           links: links.filter((item: MenuItem) => item.isActive && item.href),
@@ -146,6 +152,7 @@ const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLo
     };
 
     loadFooterData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialFooterData]);
 
   const getSocialIcon = (iconName: string | null) => {

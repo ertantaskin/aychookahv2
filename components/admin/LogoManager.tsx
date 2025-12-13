@@ -246,7 +246,7 @@ export default function LogoManager() {
                 </div>
               </div>
               <p className="text-xs text-gray-500">
-                Footer'da görünecek logo. Önerilen boyut: 200x64px veya benzer oran.
+                Footer&apos;da görünecek logo. Önerilen boyut: 200x64px veya benzer oran.
               </p>
             </div>
           </div>

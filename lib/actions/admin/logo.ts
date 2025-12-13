@@ -66,11 +66,11 @@ export async function updateLogoSettings(data: LogoSettings) {
     await prisma.storeSettings.upsert({
       where: { key: "logo_settings" },
       update: {
-        config: data,
+        config: data as any,
       },
       create: {
         key: "logo_settings",
-        config: data,
+        config: data as any,
       },
     });
 

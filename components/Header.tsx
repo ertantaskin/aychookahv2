@@ -21,7 +21,7 @@ interface ContactInfo {
 interface HeaderProps {
   navigation?: NavigationItem[];
   contactInfo?: ContactInfo;
-  headerLogo?: string;
+  headerLogo?: string | null;
 }
 
 const Header: React.FC<HeaderProps> = ({ navigation: initialNavigation, contactInfo: initialContactInfo, headerLogo: initialHeaderLogo }) => {
@@ -242,12 +242,20 @@ const Header: React.FC<HeaderProps> = ({ navigation: initialNavigation, contactI
         if (response.ok) {
           const items = await response.json();
           if (items && items.length > 0) {
+            // Default navigation icons for mapping
+            const defaultNavIcons: Record<string, React.ReactNode> = {
+              "/": defaultNavigation[0].icon,
+              "/urunler": defaultNavigation[1].icon,
+              "/hakkimizda": defaultNavigation[2].icon,
+              "/iletisim": defaultNavigation[3].icon,
+            };
+            
             const navItems = items
               .filter((item: any) => item.isActive && item.href)
               .map((item: any) => ({
                 name: item.label,
                 href: item.href,
-                icon: defaultNavigation.find((n) => n.href === item.href)?.icon || defaultNavigation[0].icon,
+                icon: defaultNavIcons[item.href] || defaultNavigation[0].icon,
               }));
             if (navItems.length > 0) {
               setNavigation(navItems);
@@ -261,6 +269,7 @@ const Header: React.FC<HeaderProps> = ({ navigation: initialNavigation, contactI
     };
 
     loadNavigation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted, initialNavigation]);
 
   const socialLinks = [
@@ -279,7 +288,9 @@ const Header: React.FC<HeaderProps> = ({ navigation: initialNavigation, contactI
 
   // Logo state
   const [headerLogo, setHeaderLogo] = useState<string>(
-    initialHeaderLogo || "/images/logo/ayc-hookah-logo.png"
+    initialHeaderLogo && initialHeaderLogo.trim() !== "" 
+      ? initialHeaderLogo 
+      : "/images/logo/ayc-hookah-logo.png"
   );
 
   // Load contact info if not provided via props (fallback)
