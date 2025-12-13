@@ -8,6 +8,7 @@ import CTASection from "@/components/home/CTASection";
 import { getPageMetadata } from "@/lib/seo";
 import { OrganizationStructuredData, BreadcrumbStructuredData, WebSiteStructuredData } from "@/components/seo/StructuredData";
 import { getSiteSEO } from "@/lib/actions/seo";
+import { getHeroSlides } from "@/lib/actions/admin/hero";
 
 // Cache'i devre dışı bırak - her istekte yeniden oluştur
 export const dynamic = 'force-dynamic';
@@ -71,6 +72,14 @@ const HomePage: React.FC = async () => {
     };
   }
 
+  // Load hero slides server-side
+  let heroSlides = [];
+  try {
+    heroSlides = await getHeroSlides();
+  } catch (error) {
+    console.error('Error fetching hero slides:', error);
+  }
+
   const baseUrl = siteSEO?.siteUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
 
   // Organization structured data
@@ -108,7 +117,7 @@ const HomePage: React.FC = async () => {
       <OrganizationStructuredData data={organizationData} />
       <WebSiteStructuredData data={websiteData} />
       <BreadcrumbStructuredData data={breadcrumbData} />
-      <Hero />
+      <Hero slides={heroSlides} />
       <ComingSoonHMD />
       <FeaturedProducts />
       <CraftsmanshipSection />

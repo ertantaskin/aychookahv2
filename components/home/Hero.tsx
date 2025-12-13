@@ -9,16 +9,40 @@ interface Slide {
   subtitle: string;
   description: string;
   image: string;
+  mobileImage?: string | null;
   ctaText: string;
   ctaLink: string;
   position: 'left' | 'center' | 'right';
+  showContent?: boolean;
+  showOverlay?: boolean;
 }
 
-const Hero: React.FC = () => {
+interface HeroSlideData {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  image: string;
+  mobileImage?: string | null;
+  ctaText: string;
+  ctaLink: string;
+  position: string;
+  order: number;
+  isActive: boolean;
+  showContent?: boolean;
+  showOverlay?: boolean;
+}
+
+interface HeroProps {
+  slides?: HeroSlideData[];
+}
+
+const Hero: React.FC<HeroProps> = ({ slides: initialSlides }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-  const slides: Slide[] = [
+  // Default slides (fallback)
+  const defaultSlides: Slide[] = [
     {
       id: 1,
       title: "Lüks Nargile",
@@ -50,6 +74,71 @@ const Hero: React.FC = () => {
       position: "right"
     }
   ];
+
+  // Use initial slides from props or default
+  const [slides, setSlides] = useState<Slide[]>(
+    initialSlides && initialSlides.length > 0
+      ? initialSlides
+          .filter((slide) => slide.isActive)
+          .sort((a, b) => a.order - b.order)
+          .map((slide, index) => ({
+            id: index + 1,
+            title: slide.title,
+            subtitle: slide.subtitle,
+            description: slide.description,
+            image: slide.image,
+            mobileImage: slide.mobileImage,
+            ctaText: slide.ctaText,
+            ctaLink: slide.ctaLink,
+            position: slide.position as "left" | "center" | "right",
+            showContent: slide.showContent ?? true,
+            showOverlay: slide.showOverlay ?? true,
+          }))
+      : defaultSlides
+  );
+
+  // Load slides from database if not provided via props (fallback)
+  useEffect(() => {
+    if (initialSlides && initialSlides.length > 0) {
+      // Already have slides from props, no need to fetch
+      return;
+    }
+
+    const loadSlides = async () => {
+      try {
+        const response = await fetch("/api/hero", { cache: "no-store" });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            const formattedSlides: Slide[] = data
+              .filter((slide: any) => slide.isActive)
+              .sort((a: any, b: any) => a.order - b.order)
+              .map((slide: any, index: number) => ({
+                id: index + 1,
+                title: slide.title,
+                subtitle: slide.subtitle,
+                description: slide.description,
+                image: slide.image,
+                mobileImage: slide.mobileImage,
+                ctaText: slide.ctaText,
+                ctaLink: slide.ctaLink,
+                position: slide.position as "left" | "center" | "right",
+                showContent: slide.showContent ?? true,
+                showOverlay: slide.showOverlay ?? true,
+              }));
+            if (formattedSlides.length > 0) {
+              setSlides(formattedSlides);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading hero slides:", error);
+        // Keep default slides on error
+      }
+    };
+
+    loadSlides();
+  }, [initialSlides]);
 
   useEffect(() => {
     setIsVisible(true);
@@ -91,59 +180,77 @@ const Hero: React.FC = () => {
                 : 'opacity-0 translate-x-full'
             }`}
           >
-            {/* Background Image with Overlay */}
+            {/* Background Image with Optional Overlay */}
             <div className="absolute inset-0">
+              {/* Desktop Image */}
               <div 
-                className="w-full h-full bg-cover bg-center bg-no-repeat"
+                className="hidden md:block w-full h-full bg-cover bg-center bg-no-repeat"
                 style={{
-                  backgroundImage: `linear-gradient(rgba(10, 10, 10, 0.7), rgba(26, 26, 26, 0.5)), url(${slide.image})`
+                  backgroundImage: slide.showOverlay !== false
+                    ? `linear-gradient(rgba(10, 10, 10, 0.7), rgba(26, 26, 26, 0.5)), url(${slide.image})`
+                    : `url(${slide.image})`
+                }}
+              />
+              {/* Mobile Image */}
+              <div 
+                className="md:hidden w-full h-full bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: slide.showOverlay !== false
+                    ? `linear-gradient(rgba(10, 10, 10, 0.7), rgba(26, 26, 26, 0.5)), url(${slide.mobileImage || slide.image})`
+                    : `url(${slide.mobileImage || slide.image})`
                 }}
               />
             </div>
 
-            {/* Animated Background Elements */}
-            <div className="absolute inset-0">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(212,175,55,0.08),transparent_50%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(212,175,55,0.04),transparent_50%)]" />
-            </div>
+            {/* Animated Background Elements - Only if overlay is enabled */}
+            {slide.showOverlay !== false && (
+              <div className="absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(212,175,55,0.08),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(212,175,55,0.04),transparent_50%)]" />
+              </div>
+            )}
 
-            {/* Content */}
-            <div className={`relative z-10 h-full flex items-center ${
-              slide.position === 'left' ? 'justify-start' :
-              slide.position === 'right' ? 'justify-end' :
-              'justify-center'
-            }`}>
-              <div className={`px-8 sm:px-12 lg:px-16 py-12 max-w-2xl ${
-                slide.position === 'center' ? 'text-center' : 'text-left'
+            {/* Content - Only if showContent is true */}
+            {slide.showContent !== false && (
+              <div className={`relative z-10 h-full flex items-center ${
+                slide.position === 'left' ? 'justify-start' :
+                slide.position === 'right' ? 'justify-end' :
+                'justify-center'
               }`}>
-                {/* Description */}
-                <p 
-                  className={`font-sans text-lg sm:text-xl md:text-2xl text-white font-light mb-8 leading-relaxed transition-all duration-1000 ${
-                    isVisible && index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                >
-                  {slide.description}
-                </p>
-
-                {/* CTA Button */}
-                <div 
-                  className={`transition-all duration-1000 delay-200 ${
-                    isVisible && index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                >
-                  <Link 
-                    href={slide.ctaLink}
-                    className="group relative inline-flex items-center gap-3 px-8 py-4 bg-luxury-goldLight text-luxury-black font-semibold rounded-full overflow-hidden transition-all duration-300 uppercase tracking-wider text-sm shadow-2xl hover:shadow-luxury-goldLight/50 hover:scale-105"
+                <div className={`px-8 sm:px-12 lg:px-16 py-12 max-w-2xl ${
+                  slide.position === 'center' ? 'text-center' : 'text-left'
+                }`}>
+                  {/* Description */}
+                  <p 
+                    className={`font-sans text-lg sm:text-xl md:text-2xl text-white font-light mb-8 leading-relaxed transition-all duration-1000 ${
+                      isVisible && index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    }`}
                   >
-                    <span className="relative z-10">{slide.ctaText}</span>
-                    <svg className="relative z-10 w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                    <div className="absolute inset-0 bg-gradient-to-r from-luxury-gold to-luxury-goldLight opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </Link>
+                    {slide.description}
+                  </p>
+
+                  {/* CTA Button */}
+                  {slide.ctaText && slide.ctaLink && (
+                    <div 
+                      className={`transition-all duration-1000 delay-200 ${
+                        isVisible && index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                      }`}
+                    >
+                      <Link 
+                        href={slide.ctaLink}
+                        className="group relative inline-flex items-center gap-3 px-8 py-4 bg-luxury-goldLight text-luxury-black font-semibold rounded-full overflow-hidden transition-all duration-300 uppercase tracking-wider text-sm shadow-2xl hover:shadow-luxury-goldLight/50 hover:scale-105"
+                      >
+                        <span className="relative z-10">{slide.ctaText}</span>
+                        <svg className="relative z-10 w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                        <div className="absolute inset-0 bg-gradient-to-r from-luxury-gold to-luxury-goldLight opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         ))}
 

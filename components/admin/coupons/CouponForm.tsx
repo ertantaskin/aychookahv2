@@ -1290,7 +1290,7 @@ export default function CouponForm({ couponId }: CouponFormProps) {
           <button
             type="button"
             onClick={() => router.push("/admin/kampanyalar/kuponlar")}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-sans text-sm font-medium"
+            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-sans text-sm font-medium text-gray-700"
           >
             İptal Et
           </button>
@@ -1299,7 +1299,7 @@ export default function CouponForm({ couponId }: CouponFormProps) {
             disabled={loading}
             className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-sans text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Kaydediliyor..." : "Kaydet"}
+            {loading ? "Kaydediliyor..." : couponId ? "Güncelle" : "Yeni Kupon Oluştur"}
           </button>
         </div>
       </form>

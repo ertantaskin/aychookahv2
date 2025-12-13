@@ -432,3 +432,43 @@ model CouponUsage {
   @@index([usedAt])
   @@map("coupon_usages")
 }
+
+model MenuItem {
+  id             String   @id @default(cuid())
+  label          String
+  href           String?
+  location       String
+  order          Int      @default(0)
+  isActive       Boolean  @default(true)
+  isSectionTitle Boolean  @default(false)
+  icon           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([location])
+  @@index([order])
+  @@index([isSectionTitle])
+  @@map("menu_items")
+}
+
+model HeroSlide {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String
+  description String
+  image       String
+  mobileImage String?
+  ctaText     String
+  ctaLink     String
+  position    String
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  showContent Boolean  @default(true)
+  showOverlay Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+  @@map("hero_slides")
+}

@@ -24,6 +24,7 @@ import {
   Menu,
   X,
   Tag,
+  LayoutGrid,
 } from "lucide-react";
 import CacheClearButton from "./CacheClearButton";
 
@@ -60,11 +61,14 @@ const menuItems = [
   { href: "/admin/medya", label: "Medya Kütüphanesi", icon: Image },
   { href: "/admin/odeme-sistemleri", label: "Ödeme Sistemleri", icon: CreditCard },
   { href: "/admin/seo", label: "SEO Yönetimi", icon: Search },
+  { href: "/admin/menu", label: "Menü Yönetimi", icon: Menu },
+  { href: "/admin/hero", label: "Hero Slider", icon: LayoutGrid },
   {
     href: "/admin/magaza-ayarlari",
     label: "Mağaza Ayarları",
     icon: Settings,
     subItems: [
+      { href: "/admin/magaza-ayarlari/logo", label: "Logo Ayarları" },
       { href: "/admin/magaza-ayarlari/kargo", label: "Kargo Ayarları" },
       { href: "/admin/magaza-ayarlari/vergi", label: "Vergi Ayarları" },
     ],

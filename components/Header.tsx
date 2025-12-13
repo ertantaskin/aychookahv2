@@ -6,7 +6,25 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { getGuestCartItemCount } from "@/lib/utils/cart-client";
 
-const Header: React.FC = () => {
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon?: React.ReactNode;
+}
+
+interface ContactInfo {
+  email: string;
+  phone: string;
+  footerDescription?: string;
+}
+
+interface HeaderProps {
+  navigation?: NavigationItem[];
+  contactInfo?: ContactInfo;
+  headerLogo?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ navigation: initialNavigation, contactInfo: initialContactInfo, headerLogo: initialHeaderLogo }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [cartItemCount, setCartItemCount] = useState(0);
@@ -157,7 +175,8 @@ const Header: React.FC = () => {
     };
   }, [isMounted, user]);
 
-  const navigation = [
+  // Default navigation (fallback)
+  const defaultNavigation = [
     { 
       name: "Ana Sayfa", 
       href: "/",
@@ -196,11 +215,117 @@ const Header: React.FC = () => {
     },
   ];
 
+  // Use initial navigation from props or default
+  const [navigation, setNavigation] = useState<NavigationItem[]>(
+    initialNavigation && initialNavigation.length > 0
+      ? initialNavigation.map((item) => ({
+          ...item,
+          icon: defaultNavigation.find((n) => n.href === item.href)?.icon || defaultNavigation[0].icon,
+        }))
+      : defaultNavigation
+  );
+
+  // Load navigation from database if not provided via props (fallback)
+  useEffect(() => {
+    if (initialNavigation && initialNavigation.length > 0) {
+      // Already have navigation from props, no need to fetch
+      return;
+    }
+
+    if (!isMounted) return;
+
+    const loadNavigation = async () => {
+      try {
+        const response = await fetch("/api/menu?location=header", {
+          cache: "no-store",
+        });
+        if (response.ok) {
+          const items = await response.json();
+          if (items && items.length > 0) {
+            const navItems = items
+              .filter((item: any) => item.isActive && item.href)
+              .map((item: any) => ({
+                name: item.label,
+                href: item.href,
+                icon: defaultNavigation.find((n) => n.href === item.href)?.icon || defaultNavigation[0].icon,
+              }));
+            if (navItems.length > 0) {
+              setNavigation(navItems);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading navigation:", error);
+        // Keep default navigation on error
+      }
+    };
+
+    loadNavigation();
+  }, [isMounted, initialNavigation]);
+
   const socialLinks = [
     { name: "Instagram", icon: "instagram", href: "#" },
     { name: "Facebook", icon: "facebook", href: "#" },
     { name: "WhatsApp", icon: "whatsapp", href: "#" },
   ];
+
+  // Contact info state
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(
+    initialContactInfo || {
+      email: "info@aychookah.com",
+      phone: "+90 XXX XXX XX XX",
+    }
+  );
+
+  // Logo state
+  const [headerLogo, setHeaderLogo] = useState<string>(
+    initialHeaderLogo || "/images/logo/ayc-hookah-logo.png"
+  );
+
+  // Load contact info if not provided via props (fallback)
+  useEffect(() => {
+    if (initialContactInfo) {
+      setContactInfo(initialContactInfo);
+    } else if (isMounted) {
+      const loadContactInfo = async () => {
+        try {
+          const response = await fetch("/api/contact-info", { cache: "no-store" });
+          if (response.ok) {
+            const data = await response.json();
+            if (data) {
+              setContactInfo(data);
+            }
+          }
+        } catch (error) {
+          console.error("Error loading contact info:", error);
+        }
+      };
+      loadContactInfo();
+    }
+  }, [isMounted, initialContactInfo]);
+
+  // Load logo if not provided via props (fallback)
+  useEffect(() => {
+    if (initialHeaderLogo) {
+      setHeaderLogo(initialHeaderLogo);
+    } else if (isMounted) {
+      const loadLogo = async () => {
+        try {
+          const response = await fetch("/api/logo-settings", { cache: "no-store" });
+          if (response.ok) {
+            const data = await response.json();
+            setHeaderLogo(data?.headerLogo || "/images/logo/ayc-hookah-logo.png");
+          } else {
+            setHeaderLogo("/images/logo/ayc-hookah-logo.png");
+          }
+        } catch (error) {
+          console.error("Error loading logo settings:", error);
+          setHeaderLogo("/images/logo/ayc-hookah-logo.png");
+        }
+      };
+      loadLogo();
+    }
+  }, [isMounted, initialHeaderLogo]);
 
   // Admin sayfalarında header'ı gösterme (hooks'tan sonra kontrol et)
   if (isAdminPage) {
@@ -222,7 +347,7 @@ const Header: React.FC = () => {
             <Link href="/" className="flex items-center group relative">
               <div className="relative">
                 <Image 
-                  src="/images/logo/ayc-hookah-logo.png" 
+                  src={headerLogo}
                   width={200}
                   height={64} 
                   alt="AYC HOOKAH Logo" 
@@ -419,7 +544,7 @@ const Header: React.FC = () => {
           {/* Menu Header */}
           <div className="flex justify-between items-center p-6 border-b border-luxury-goldLight/10">
             <Image 
-              src="/images/logo/ayc-hookah-logo.png" 
+              src={headerLogo}
               alt="AYC HOOKAH Logo" 
               width={200}
               height={48}
@@ -506,22 +631,22 @@ const Header: React.FC = () => {
             {/* Contact Info */}
             <div className="space-y-3">
               <a 
-                href="tel:+90XXXXXXXXXX" 
+                href={`tel:${contactInfo.phone.replace(/\s/g, '')}`}
                 className="flex items-center gap-3 text-luxury-lightGray hover:text-luxury-goldLight transition-colors group"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-                <span className="text-sm">+90 XXX XXX XX XX</span>
+                <span className="text-sm">{contactInfo.phone}</span>
               </a>
               <a 
-                href="mailto:info@aychookah.com" 
+                href={`mailto:${contactInfo.email}`}
                 className="flex items-center gap-3 text-luxury-lightGray hover:text-luxury-goldLight transition-colors group"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <span className="text-sm">info@aychookah.com</span>
+                <span className="text-sm">{contactInfo.email}</span>
               </a>
             </div>
 
