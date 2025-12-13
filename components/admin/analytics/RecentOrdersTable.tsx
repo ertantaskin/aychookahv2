@@ -22,8 +22,8 @@ interface RecentOrdersTableProps {
 export default function RecentOrdersTable({ data }: RecentOrdersTableProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white border border-gray-300 rounded-sm p-6">
-        <p className="text-sm font-sans text-gray-500 text-center">Bu tarih aralığında sipariş bulunamadı.</p>
+      <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+        <p className="text-xs sm:text-sm font-sans text-gray-500 text-center">Bu tarih aralığında sipariş bulunamadı.</p>
       </div>
     );
   }
@@ -70,7 +70,8 @@ export default function RecentOrdersTable({ data }: RecentOrdersTableProps) {
 
   return (
     <div className="bg-white border border-gray-300 rounded-sm overflow-hidden">
-      <div className="overflow-x-auto">
+      {/* Desktop Tablo Görünümü */}
+      <div className="hidden lg:block overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -142,6 +143,55 @@ export default function RecentOrdersTable({ data }: RecentOrdersTableProps) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobil Kart Görünümü */}
+      <div className="lg:hidden divide-y divide-gray-200">
+        {data.map((order) => (
+          <Link
+            key={order.id}
+            href={`/admin/siparisler/${order.id}`}
+            className="block p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-sans font-semibold text-blue-600 mb-1 truncate">
+                  {order.orderNumber}
+                </div>
+                <div className="text-xs sm:text-sm font-sans text-gray-900 truncate">
+                  {order.customerName}
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <div className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-1">
+                  {formatCurrency(order.total)}
+                </div>
+                <div className="text-xs font-sans text-gray-500">
+                  {format(new Date(order.createdAt), "d MMM yyyy", { locale: tr })}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${getStatusColor(
+                  order.status
+                )}`}
+              >
+                {order.status}
+              </span>
+              <span
+                className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${getPaymentStatusColor(
+                  order.paymentStatus
+                )}`}
+              >
+                {order.paymentStatus}
+              </span>
+              <span className="text-xs font-sans text-gray-500">
+                {order.itemCount} ürün
+              </span>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

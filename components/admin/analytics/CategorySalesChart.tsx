@@ -27,8 +27,8 @@ interface CategorySalesChartProps {
 export default function CategorySalesChart({ data }: CategorySalesChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white border border-gray-300 rounded-sm p-6">
-        <p className="text-sm font-sans text-gray-500 text-center">Bu tarih aralığında kategori satış verisi bulunamadı.</p>
+      <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+        <p className="text-xs sm:text-sm font-sans text-gray-500 text-center">Bu tarih aralığında kategori satış verisi bulunamadı.</p>
       </div>
     );
   }
@@ -51,9 +51,9 @@ export default function CategorySalesChart({ data }: CategorySalesChartProps) {
   }));
 
   return (
-    <div className="bg-white border border-gray-300 rounded-sm p-6">
-      <h3 className="text-lg font-sans font-semibold text-gray-900 mb-4">Kategori Bazlı Satışlar</h3>
-      <ResponsiveContainer width="100%" height={400}>
+    <div className="bg-white border border-gray-300 rounded-sm p-3 sm:p-4 lg:p-6">
+      <h3 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Kategori Bazlı Satışlar</h3>
+      <ResponsiveContainer width="100%" height={300} className="sm:h-[400px]">
         <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
@@ -92,31 +92,31 @@ export default function CategorySalesChart({ data }: CategorySalesChartProps) {
       </ResponsiveContainer>
 
       {/* Detaylı Tablo */}
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full text-sm font-sans">
+      <div className="mt-4 sm:mt-6 overflow-x-auto">
+        <table className="w-full text-xs sm:text-sm font-sans">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kategori</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Toplam Gelir</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Satılan Adet</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Sipariş Sayısı</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Ortalama Sipariş</th>
+              <th className="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Kategori</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Toplam Gelir</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Satılan Adet</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Sipariş Sayısı</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Ortalama Sipariş</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {data.map((item) => (
               <tr key={item.categoryId} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-gray-900">{item.categoryName}</td>
-                <td className="px-4 py-2 text-right font-medium text-gray-900">
+                <td className="px-3 sm:px-4 py-2 text-gray-900 truncate">{item.categoryName}</td>
+                <td className="px-3 sm:px-4 py-2 text-right font-medium text-gray-900">
                   {formatCurrency(item.totalRevenue)}
                 </td>
-                <td className="px-4 py-2 text-right text-gray-600">
+                <td className="px-3 sm:px-4 py-2 text-right text-gray-600">
                   {item.totalQuantity.toLocaleString("tr-TR")}
                 </td>
-                <td className="px-4 py-2 text-right text-gray-600">
+                <td className="px-3 sm:px-4 py-2 text-right text-gray-600">
                   {item.orderCount.toLocaleString("tr-TR")}
                 </td>
-                <td className="px-4 py-2 text-right text-gray-600">
+                <td className="px-3 sm:px-4 py-2 text-right text-gray-600">
                   {formatCurrency(item.averageOrderValue)}
                 </td>
               </tr>

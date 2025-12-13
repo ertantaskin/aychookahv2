@@ -47,42 +47,42 @@ export default function ContactInfoManager() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500 font-sans">Yükleniyor...</div>
+      <div className="flex items-center justify-center p-4 sm:p-8">
+        <div className="text-xs sm:text-sm text-gray-500 font-sans">Yükleniyor...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-sans font-semibold mb-4 text-gray-900">İletişim Bilgileri</h3>
-      <div className="space-y-4">
+    <div className="bg-white rounded-lg shadow p-3 sm:p-4 lg:p-6">
+      <h3 className="text-base sm:text-lg font-sans font-semibold mb-3 sm:mb-4 text-gray-900">İletişim Bilgileri</h3>
+      <div className="space-y-3 sm:space-y-4">
         <div>
-          <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
             Email
           </label>
           <input
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
             placeholder="info@aychookah.com"
           />
         </div>
         <div>
-          <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
             Telefon
           </label>
           <input
             type="text"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
             placeholder="+90 XXX XXX XX XX"
           />
         </div>
         <div>
-          <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
             Footer Açıklama Metni
           </label>
           <textarea
@@ -91,16 +91,16 @@ export default function ContactInfoManager() {
               setFormData({ ...formData, footerDescription: e.target.value })
             }
             rows={4}
-            className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all resize-y"
             placeholder="Footer açıklama metni..."
           />
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-sans w-full sm:w-auto"
         >
-          <Save className="w-4 h-4" />
+          <Save className="w-3 h-3 sm:w-4 sm:h-4" />
           {saving ? "Kaydediliyor..." : "Kaydet"}
         </button>
       </div>

@@ -192,17 +192,17 @@ export default function MenuManager() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500 font-sans">Yükleniyor...</div>
+      <div className="flex items-center justify-center p-4 sm:p-8">
+        <div className="text-xs sm:text-sm text-gray-500 font-sans">Yükleniyor...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Location Selector */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+      <div className="bg-white rounded-lg shadow p-3 sm:p-4">
+        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
           Menü Konumu
         </label>
         <select
@@ -211,7 +211,7 @@ export default function MenuManager() {
             setSelectedLocation(e.target.value);
             resetForm();
           }}
-          className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+          className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
         >
           {LOCATIONS.map((loc) => (
             <option key={loc.value} value={loc.value}>
@@ -223,27 +223,27 @@ export default function MenuManager() {
 
       {/* Section Title */}
       {selectedLocation !== "header" && (
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-sans font-medium text-gray-700">
+            <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700">
               Bölüm Başlığı
             </label>
             {editingSectionTitle === selectedLocation ? (
               <div className="flex gap-2">
                 <button
                   onClick={() => handleSectionTitleUpdate(selectedLocation)}
-                  className="p-1 text-green-600 hover:text-green-700"
+                  className="p-1.5 sm:p-1 text-green-600 hover:text-green-700"
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
                 <button
                   onClick={() => {
                     setEditingSectionTitle(null);
                     setSectionTitle("");
                   }}
-                  className="p-1 text-red-600 hover:text-red-700"
+                  className="p-1.5 sm:p-1 text-red-600 hover:text-red-700"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
               </div>
             ) : (
@@ -252,9 +252,9 @@ export default function MenuManager() {
                   setEditingSectionTitle(selectedLocation);
                   setSectionTitle(currentSectionTitle?.label || "");
                 }}
-                className="p-1 text-blue-600 hover:text-blue-700"
+                className="p-1.5 sm:p-1 text-blue-600 hover:text-blue-700"
               >
-                <Edit className="w-4 h-4" />
+                <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             )}
           </div>
@@ -263,11 +263,11 @@ export default function MenuManager() {
               type="text"
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
-              className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
               placeholder="Bölüm başlığı"
             />
           ) : (
-            <div className="text-lg font-sans font-semibold text-gray-900">
+            <div className="text-base sm:text-lg font-sans font-semibold text-gray-900">
               {currentSectionTitle?.label || "Başlık yok"}
             </div>
           )}
@@ -276,31 +276,31 @@ export default function MenuManager() {
 
       {/* Create Form - Sadece yeni ekleme için */}
       {!editingId && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-sans font-semibold mb-4 text-gray-900">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4">
+          <h3 className="text-base sm:text-lg font-sans font-semibold mb-3 sm:mb-4 text-gray-900">
             Yeni Menü Öğesi Ekle
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Label
               </label>
               <input
                 type="text"
                 value={formData.label}
                 onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Link (href)
               </label>
               <input
                 type="text"
                 value={formData.href}
                 onChange={(e) => setFormData({ ...formData, href: e.target.value })}
-                className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                 placeholder="/urunler"
               />
             </div>
@@ -310,17 +310,17 @@ export default function MenuManager() {
                   type="checkbox"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="rounded"
+                  className="w-4 h-4 rounded"
                 />
-                <span className="text-sm font-sans text-gray-700">Aktif</span>
+                <span className="text-xs sm:text-sm font-sans text-gray-700">Aktif</span>
               </label>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleCreate}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 font-sans w-full sm:w-auto justify-center sm:justify-start"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                 Ekle
               </button>
             </div>
@@ -330,12 +330,12 @@ export default function MenuManager() {
 
       {/* Menu Items List */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h3 className="text-lg font-sans font-semibold text-gray-900">Menü Öğeleri</h3>
+        <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200">
+          <h3 className="text-base sm:text-lg font-sans font-semibold text-gray-900">Menü Öğeleri</h3>
         </div>
         <div className="divide-y divide-gray-200">
           {currentItems.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 font-sans">
+            <div className="p-4 sm:p-8 text-center text-xs sm:text-sm text-gray-500 font-sans">
               Henüz menü öğesi yok
             </div>
           ) : (
@@ -343,33 +343,33 @@ export default function MenuManager() {
               <div key={item.id}>
                 {editingId === item.id ? (
                   // Düzenleme Formu - Inline
-                  <div className="px-4 py-4 bg-blue-50 border-l-4 border-blue-500">
-                    <div className="space-y-4">
+                  <div className="px-3 sm:px-4 py-3 sm:py-4 bg-blue-50 border-l-4 border-blue-500">
+                    <div className="space-y-3 sm:space-y-4">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-sans font-semibold text-gray-900">
+                        <h4 className="text-xs sm:text-sm font-sans font-semibold text-gray-900">
                           Menü Öğesini Düzenle
                         </h4>
                       </div>
                       <div>
-                        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                           Label
                         </label>
                         <input
                           type="text"
                           value={formData.label}
                           onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                          className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                           Link (href)
                         </label>
                         <input
                           type="text"
                           value={formData.href}
                           onChange={(e) => setFormData({ ...formData, href: e.target.value })}
-                          className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                           placeholder="/urunler"
                         />
                       </div>
@@ -379,21 +379,21 @@ export default function MenuManager() {
                             type="checkbox"
                             checked={formData.isActive}
                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                            className="rounded"
+                            className="w-4 h-4 rounded"
                           />
-                          <span className="text-sm font-sans text-gray-700">Aktif</span>
+                          <span className="text-xs sm:text-sm font-sans text-gray-700">Aktif</span>
                         </label>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <button
                           onClick={() => handleUpdate(item.id)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-sans"
+                          className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 font-sans w-full sm:w-auto"
                         >
                           Güncelle
                         </button>
                         <button
                           onClick={resetForm}
-                          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 font-sans"
+                          className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 font-sans w-full sm:w-auto"
                         >
                           İptal
                         </button>
@@ -402,39 +402,39 @@ export default function MenuManager() {
                   </div>
                 ) : (
                   // Normal Görünüm
-                  <div className="px-4 py-3 hover:bg-gray-50 flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="font-sans font-medium text-gray-900">{item.label}</div>
-                      <div className="text-sm font-sans text-gray-500">{item.href || "Link yok"}</div>
+                  <div className="px-3 sm:px-4 py-3 hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm sm:text-base font-sans font-medium text-gray-900 truncate">{item.label}</div>
+                      <div className="text-xs sm:text-sm font-sans text-gray-500 truncate">{item.href || "Link yok"}</div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                       <button
                         onClick={() => handleMoveUp(item)}
-                        className="p-1 text-gray-600 hover:text-gray-900"
+                        className="p-1.5 sm:p-1 text-gray-600 hover:text-gray-900"
                         title="Yukarı taşı"
                       >
-                        <ArrowUp className="w-4 h-4" />
+                        <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => handleMoveDown(item)}
-                        className="p-1 text-gray-600 hover:text-gray-900"
+                        className="p-1.5 sm:p-1 text-gray-600 hover:text-gray-900"
                         title="Aşağı taşı"
                       >
-                        <ArrowDown className="w-4 h-4" />
+                        <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => handleEdit(item)}
-                        className="p-1 text-blue-600 hover:text-blue-700"
+                        className="p-1.5 sm:p-1 text-blue-600 hover:text-blue-700"
                         title="Düzenle"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="p-1 text-red-600 hover:text-red-700"
+                        className="p-1.5 sm:p-1 text-red-600 hover:text-red-700"
                         title="Sil"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>

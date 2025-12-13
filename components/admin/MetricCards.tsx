@@ -111,29 +111,29 @@ export default function MetricCards({ data }: MetricCardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {metrics.map((metric, index) => {
         const IconComponent = metric.icon;
         return (
           <div
             key={index}
-            className={`bg-white border ${metric.borderColor} rounded-lg p-4 hover:shadow-md transition-shadow`}
+            className={`bg-white border ${metric.borderColor} rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow`}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-sans font-medium text-gray-600 mb-1">{metric.title}</p>
-                <p className={`text-2xl font-sans font-semibold ${metric.color} mb-1`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-sans font-medium text-gray-600 mb-1 truncate">{metric.title}</p>
+                <p className={`text-lg sm:text-xl lg:text-2xl font-sans font-semibold ${metric.color} mb-1 break-words`}>
                   {metric.value}
                 </p>
                 {metric.description && (
-                  <p className="text-xs font-sans text-gray-500">{metric.description}</p>
+                  <p className="text-xs font-sans text-gray-500 truncate">{metric.description}</p>
                 )}
                 {metric.subtitle && (
-                  <p className="text-xs font-sans text-gray-500">{metric.subtitle}</p>
+                  <p className="text-xs font-sans text-gray-500 truncate">{metric.subtitle}</p>
                 )}
               </div>
-              <div className={`${metric.bgColor} p-3 rounded-lg`}>
-                <IconComponent className={`w-6 h-6 ${metric.color}`} />
+              <div className={`${metric.bgColor} p-2 sm:p-3 rounded-lg flex-shrink-0`}>
+                <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${metric.color}`} />
               </div>
             </div>
           </div>

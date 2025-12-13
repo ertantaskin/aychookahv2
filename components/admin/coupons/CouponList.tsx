@@ -143,52 +143,54 @@ export default function CouponList() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
       {/* Başlık ve Yeni Buton */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-sans font-bold text-gray-900">Kuponlar</h1>
-          <p className="mt-1 text-sm font-sans text-gray-500">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl font-sans font-bold text-gray-900">Kuponlar</h1>
+          <p className="mt-1 text-xs sm:text-sm font-sans text-gray-500">
             İndirim kuponlarını yönetin ve takip edin
           </p>
         </div>
         <Link
           href="/admin/kampanyalar/kuponlar/yeni"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-sans text-sm font-medium"
+          className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-sans text-xs sm:text-sm font-medium w-full sm:w-auto flex-shrink-0"
         >
-          <Plus className="w-4 h-4" />
-          Yeni Kupon
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Yeni Kupon</span>
         </Link>
       </div>
 
       {/* Filtreler */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 space-y-3 sm:space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* Arama */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="sm:col-span-2 lg:col-span-1 relative">
+            <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Kupon kodu veya açıklama ara..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent font-sans text-sm text-gray-900"
+              className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent font-sans text-gray-900"
             />
           </div>
 
           {/* Durum Filtresi */}
-          <select
-            value={isActive}
-            onChange={(e) => {
-              setIsActive(e.target.value);
-              setPage(1);
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent font-sans text-sm text-gray-900 bg-white"
-          >
-            <option value="all">Tüm Durumlar</option>
-            <option value="active">Aktif</option>
-            <option value="inactive">Pasif</option>
-          </select>
+          <div>
+            <select
+              value={isActive}
+              onChange={(e) => {
+                setIsActive(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2.5 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent font-sans text-gray-900 bg-white"
+            >
+              <option value="all">Tüm Durumlar</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Pasif</option>
+            </select>
+          </div>
 
           {/* Sıralama */}
           <div className="flex gap-2">
@@ -198,7 +200,7 @@ export default function CouponList() {
                 setSortBy(e.target.value);
                 setPage(1);
               }}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent font-sans text-sm text-gray-900 bg-white"
+              className="flex-1 px-2.5 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent font-sans text-gray-900 bg-white"
             >
               <option value="createdAt">Oluşturulma Tarihi</option>
               <option value="code">Kupon Kodu</option>
@@ -209,7 +211,7 @@ export default function CouponList() {
                 setSortOrder(sortOrder === "asc" ? "desc" : "asc");
                 setPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-sans text-sm"
+              className="px-2.5 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-sans flex-shrink-0"
             >
               {sortOrder === "asc" ? "↑" : "↓"}
             </button>
@@ -217,42 +219,43 @@ export default function CouponList() {
         </div>
       </div>
 
-      {/* Tablo */}
+      {/* Tablo / Kart Görünümü */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            <p className="mt-4 text-sm font-sans text-gray-500">Yükleniyor...</p>
+          <div className="p-6 sm:p-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-gray-900"></div>
+            <p className="mt-4 text-xs sm:text-sm font-sans text-gray-500">Yükleniyor...</p>
           </div>
         ) : coupons.length === 0 ? (
-          <div className="p-12 text-center">
-            <p className="text-sm font-sans text-gray-500">Kupon bulunamadı</p>
+          <div className="p-6 sm:p-12 text-center">
+            <p className="text-xs sm:text-sm font-sans text-gray-500">Kupon bulunamadı</p>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop Tablo Görünümü */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                       Kupon Kodu
                     </th>
-                    <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                       İndirim Türü
                     </th>
-                    <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                       İndirim Değeri
                     </th>
-                    <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                       Kullanım
                     </th>
-                    <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                       Tarih Aralığı
                     </th>
-                    <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                       Durum
                     </th>
-                    <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                       İşlemler
                     </th>
                   </tr>
@@ -267,25 +270,25 @@ export default function CouponList() {
 
                     return (
                       <tr key={coupon.id} className="hover:bg-gray-50">
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <div className="flex flex-col">
-                            <span className="text-sm font-sans font-semibold text-gray-900">
+                            <span className="text-sm font-sans font-semibold text-gray-900 truncate">
                               {coupon.code}
                             </span>
                             {coupon.description && (
-                              <span className="text-xs font-sans text-gray-500 mt-1">
+                              <span className="text-xs font-sans text-gray-500 mt-1 line-clamp-1">
                                 {coupon.description}
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <div className="flex flex-col">
                           <span className="text-sm font-sans text-gray-900">
                             {discountTypeLabels[coupon.discountType]}
                           </span>
                             {coupon.discountType === "BUY_X_GET_Y" && coupon.buyMode && (
-                              <span className="text-xs font-sans text-gray-500 mt-1">
+                              <span className="text-xs font-sans text-gray-500 mt-1 line-clamp-1">
                                 {coupon.buyMode === "CATEGORY" && "İki Kategori"}
                                 {coupon.buyMode === "PRODUCT" && "İki Ürün"}
                                 {coupon.buyMode === "CONDITIONAL_FREE" && "Koşullu Bedava"}
@@ -295,12 +298,12 @@ export default function CouponList() {
                             )}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <span className="text-sm font-sans font-semibold text-gray-900">
                             {formatDiscountValue(coupon.discountType, coupon.discountValue)}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <div className="flex flex-col">
                             <span className="text-sm font-sans text-gray-900">
                               {coupon._count.usages}
@@ -311,25 +314,25 @@ export default function CouponList() {
                             )}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <div className="flex flex-col text-xs font-sans text-gray-600">
                             {coupon.startDate && (
-                              <span>
+                              <span className="truncate">
                                 Başlangıç: {new Date(coupon.startDate).toLocaleDateString("tr-TR")}
                               </span>
                             )}
                             {coupon.endDate && (
-                              <span>
+                              <span className="truncate">
                                 Bitiş: {new Date(coupon.endDate).toLocaleDateString("tr-TR")}
                               </span>
                             )}
                             {!coupon.startDate && !coupon.endDate && <span>-</span>}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <div className="flex flex-col gap-1">
                             <span
-                              className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${
+                              className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full whitespace-nowrap ${
                                 coupon.isActive && !expired && !notStarted
                                   ? "bg-green-100 text-green-800"
                                   : "bg-gray-100 text-gray-800"
@@ -345,11 +348,11 @@ export default function CouponList() {
                             </span>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
+                        <td className="py-4 px-4 xl:px-6">
+                          <div className="flex items-center gap-1 xl:gap-2">
                             <Link
                               href={`/admin/kampanyalar/kuponlar/${coupon.id}`}
-                              className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded transition-colors"
+                              className="p-1.5 xl:p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded transition-colors"
                               title="Düzenle"
                             >
                               <Edit className="w-4 h-4" />
@@ -357,7 +360,7 @@ export default function CouponList() {
                             <button
                               onClick={() => handleDelete(coupon.id)}
                               disabled={deletingId === coupon.id}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                              className="p-1.5 xl:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
                               title="Sil"
                             >
                               {deletingId === coupon.id ? (
@@ -375,29 +378,140 @@ export default function CouponList() {
               </table>
             </div>
 
+            {/* Mobil Kart Görünümü */}
+            <div className="lg:hidden divide-y divide-gray-200">
+              {coupons.map((coupon) => {
+                const expired = isExpired(coupon.endDate);
+                const notStarted = isNotStarted(coupon.startDate);
+                const usageLimitReached =
+                  coupon.totalUsageLimit !== null &&
+                  coupon._count.usages >= coupon.totalUsageLimit;
+
+                return (
+                  <div key={coupon.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-sans font-semibold text-gray-900 mb-1 truncate">
+                          {coupon.code}
+                        </div>
+                        {coupon.description && (
+                          <div className="text-xs font-sans text-gray-500 line-clamp-1 mb-2">
+                            {coupon.description}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs sm:text-sm font-sans text-gray-700">
+                            {discountTypeLabels[coupon.discountType]}
+                          </span>
+                          <span className="text-xs sm:text-sm font-sans font-semibold text-gray-900">
+                            {formatDiscountValue(coupon.discountType, coupon.discountValue)}
+                          </span>
+                        </div>
+                        {coupon.discountType === "BUY_X_GET_Y" && coupon.buyMode && (
+                          <div className="text-xs font-sans text-gray-500 mt-1 line-clamp-1">
+                            {coupon.buyMode === "CATEGORY" && "İki Kategori"}
+                            {coupon.buyMode === "PRODUCT" && "İki Ürün"}
+                            {coupon.buyMode === "CONDITIONAL_FREE" && "Koşullu Bedava"}
+                            {coupon.buyMode === "CATEGORY" && coupon.buyQuantity && coupon.getQuantity && ` (${coupon.buyQuantity} alana ${coupon.getQuantity} bedava)`}
+                            {coupon.buyMode === "PRODUCT" && coupon.buyQuantity && coupon.getQuantity && ` (${coupon.buyQuantity} alana ${coupon.getQuantity} bedava)`}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full whitespace-nowrap ${
+                            coupon.isActive && !expired && !notStarted
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {coupon.isActive && !expired && !notStarted
+                            ? "Aktif"
+                            : expired
+                            ? "Süresi Dolmuş"
+                            : notStarted
+                            ? "Başlamadı"
+                            : "Pasif"}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Link
+                            href={`/admin/kampanyalar/kuponlar/${coupon.id}`}
+                            className="p-1.5 text-gray-600 hover:text-black hover:bg-gray-100 rounded transition-colors"
+                            title="Düzenle"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(coupon.id)}
+                            disabled={deletingId === coupon.id}
+                            className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                            title="Sil"
+                          >
+                            {deletingId === coupon.id ? (
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs font-sans text-gray-600">
+                      <div>
+                        <span className="font-medium">Kullanım: </span>
+                        <span className={usageLimitReached ? "text-red-600" : ""}>
+                          {coupon._count.usages}
+                          {coupon.totalUsageLimit !== null && ` / ${coupon.totalUsageLimit}`}
+                        </span>
+                        {usageLimitReached && (
+                          <span className="text-red-600 ml-1">(Limit doldu)</span>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        {coupon.startDate && (
+                          <div className="truncate">
+                            Başlangıç: {new Date(coupon.startDate).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          </div>
+                        )}
+                        {coupon.endDate && (
+                          <div className="truncate">
+                            Bitiş: {new Date(coupon.endDate).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          </div>
+                        )}
+                        {!coupon.startDate && !coupon.endDate && <span>-</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             {/* Sayfalama */}
             {totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div className="text-sm font-sans text-gray-700">
-                  Toplam {total} kupon, Sayfa {page} / {totalPages}
+              <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-t border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
+                <div className="text-xs sm:text-sm font-sans text-gray-700 text-center sm:text-left">
+                  <span className="hidden sm:inline">Toplam {total} kupon, </span>Sayfa {page} / {totalPages}
+                  <span className="sm:hidden block text-xs text-gray-500 mt-0.5">Toplam {total} kupon</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-center sm:justify-end">
                   <button
                     onClick={() => setPage(page - 1)}
                     disabled={page === 1}
-                    className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-1 sm:flex-initial justify-center flex items-center"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline ml-1">Önceki</span>
                   </button>
-                  <span className="text-sm font-sans text-gray-700">
+                  <span className="text-xs sm:text-sm font-sans text-gray-700 px-2">
                     {page} / {totalPages}
                   </span>
                   <button
                     onClick={() => setPage(page + 1)}
                     disabled={page >= totalPages}
-                    className="p-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-1 sm:flex-initial justify-center flex items-center"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <span className="hidden sm:inline mr-1">Sonraki</span>
+                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                 </div>
               </div>

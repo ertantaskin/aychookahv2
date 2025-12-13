@@ -212,69 +212,83 @@ export default function AnalyticsClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="ml-4 text-sm font-sans text-gray-600">Yükleniyor...</p>
+      <div className="flex flex-col sm:flex-row items-center justify-center py-8 sm:py-12 gap-3 sm:gap-4">
+        <div className="inline-block w-6 h-6 sm:w-8 sm:h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs sm:text-sm font-sans text-gray-600">Yükleniyor...</p>
       </div>
     );
   }
 
   if (!analyticsData) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 font-sans">Veri yüklenirken bir hata oluştu.</p>
+      <div className="text-center py-8 sm:py-12">
+        <p className="text-xs sm:text-sm text-gray-500 font-sans">Veri yüklenirken bir hata oluştu.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <DateRangeFilter />
 
       <div>
-        <h2 className="text-xl font-sans font-semibold text-gray-900 mb-4">Genel Görünüm</h2>
+        <h2 className="text-base sm:text-lg lg:text-xl font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Genel Görünüm</h2>
         <MetricCards data={analyticsData} />
       </div>
 
       <div>
-        <h2 className="text-xl font-sans font-semibold text-gray-900 mb-4">Son Siparişler</h2>
+        <h2 className="text-base sm:text-lg lg:text-xl font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Son Siparişler</h2>
         <RecentOrdersTable data={recentOrders} />
       </div>
 
       <div>
-        <h2 className="text-xl font-sans font-semibold text-gray-900 mb-4">Ürün Bazlı Satışlar</h2>
+        <h2 className="text-base sm:text-lg lg:text-xl font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Ürün Bazlı Satışlar</h2>
         <ProductSalesTable data={productSales} />
       </div>
 
       <div>
-        <h2 className="text-xl font-sans font-semibold text-gray-900 mb-4">Kategori Bazlı Satışlar</h2>
-        <CategorySalesChart data={categorySales} />
+        <h2 className="text-base sm:text-lg lg:text-xl font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Kategori Bazlı Satışlar</h2>
+        <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+          <CategorySalesChart data={categorySales} />
+        </div>
       </div>
 
       <div>
-        <h2 className="text-xl font-sans font-semibold text-gray-900 mb-4">Müşteri İstatistikleri</h2>
+        <h2 className="text-base sm:text-lg lg:text-xl font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Müşteri İstatistikleri</h2>
         {customerStats && <CustomerStats data={customerStats} />}
       </div>
 
       <div>
-        <h2 className="text-xl font-sans font-semibold text-gray-900 mb-4">Satış Performansı</h2>
-        <div className="space-y-6">
-          <SalesTrendChart data={salesTrend} period={period} />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RevenueComparisonChart data={salesTrend} period={period} />
-            <OrderStatsChart data={orderStats} />
+        <h2 className="text-base sm:text-lg lg:text-xl font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Satış Performansı</h2>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+            <SalesTrendChart data={salesTrend} period={period} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <RevenueComparisonChart data={salesTrend} period={period} />
+            </div>
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <OrderStatsChart data={orderStats} />
+            </div>
           </div>
         </div>
       </div>
 
       <div>
-        <h2 className="text-xl font-sans font-semibold text-gray-900 mb-4">Sipariş Analizi</h2>
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <OrderStatusChart data={orderStatusDistribution} />
-            <PaymentStatusChart data={paymentStatusDistribution} />
+        <h2 className="text-base sm:text-lg lg:text-xl font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Sipariş Analizi</h2>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <OrderStatusChart data={orderStatusDistribution} />
+            </div>
+            <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+              <PaymentStatusChart data={paymentStatusDistribution} />
+            </div>
           </div>
-          <PaymentMethodChart data={paymentMethodDistribution} />
+          <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+            <PaymentMethodChart data={paymentMethodDistribution} />
+          </div>
         </div>
       </div>
     </div>

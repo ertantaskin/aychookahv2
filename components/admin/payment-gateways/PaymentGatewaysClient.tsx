@@ -138,9 +138,9 @@ export default function PaymentGatewaysClient({
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-sans font-bold text-luxury-black">Ödeme Sistemleri</h1>
+    <div className="p-3 sm:p-4 lg:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-sans font-bold text-luxury-black">Ödeme Sistemleri</h1>
         <button
           onClick={() => {
             setEditingGateway(null);
@@ -159,7 +159,7 @@ export default function PaymentGatewaysClient({
               accountNumber: "",
             });
           }}
-          className="px-4 py-2 font-sans bg-luxury-goldLight text-luxury-black rounded-lg hover:bg-luxury-goldLight/90 transition-colors font-semibold"
+          className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans bg-luxury-goldLight text-luxury-black rounded-lg hover:bg-luxury-goldLight/90 transition-colors font-semibold w-full sm:w-auto"
         >
           Yeni Ödeme Sistemi Ekle
         </button>
@@ -167,14 +167,14 @@ export default function PaymentGatewaysClient({
 
       {/* Form Modal */}
       {(editingGateway !== null || gateways.length === 0) && (
-        <div className="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-sans font-semibold mb-4 text-luxury-black">
+        <div className="mb-4 sm:mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-sans font-semibold mb-3 sm:mb-4 text-luxury-black">
             {editingGateway ? "Ödeme Sistemi Düzenle" : "Yeni Ödeme Sistemi Ekle"}
           </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Sistem Adı
                 </label>
                 {editingGateway ? (
@@ -182,7 +182,7 @@ export default function PaymentGatewaysClient({
                   type="text"
                   value={formData.name}
                     disabled
-                    className="w-full px-4 py-2.5 font-sans text-gray-500 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-500 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
                   />
                 ) : (
                   <select
@@ -222,7 +222,7 @@ export default function PaymentGatewaysClient({
                       }
                     }}
                   required
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
                   >
                     <option value="iyzico">iyzico</option>
                     <option value="eft-havale">EFT/Havale</option>
@@ -230,7 +230,7 @@ export default function PaymentGatewaysClient({
                 )}
               </div>
               <div>
-                <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Görünen Ad
                 </label>
                 <input
@@ -240,7 +240,7 @@ export default function PaymentGatewaysClient({
                     setFormData({ ...formData, displayName: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                   placeholder="iyzico Sanal POS"
                 />
               </div>
@@ -249,7 +249,7 @@ export default function PaymentGatewaysClient({
             {formData.name !== "eft-havale" && (
               <>
             <div>
-              <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                 API Key
               </label>
               <input
@@ -259,13 +259,13 @@ export default function PaymentGatewaysClient({
                   setFormData({ ...formData, apiKey: e.target.value })
                 }
                 required
-                className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                 placeholder="API Key"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Secret Key
               </label>
               <input
@@ -275,7 +275,7 @@ export default function PaymentGatewaysClient({
                   setFormData({ ...formData, secretKey: e.target.value })
                 }
                 required
-                className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                 placeholder="Secret Key"
               />
             </div>
@@ -286,7 +286,7 @@ export default function PaymentGatewaysClient({
             {formData.name === "eft-havale" ? (
               <>
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     Banka Adı *
                   </label>
                   <input
@@ -296,12 +296,12 @@ export default function PaymentGatewaysClient({
                       setFormData({ ...formData, bankName: e.target.value })
                     }
                     required
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                     placeholder="Ziraat Bankası"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     Hesap Adı *
                   </label>
                   <input
@@ -311,12 +311,12 @@ export default function PaymentGatewaysClient({
                       setFormData({ ...formData, accountName: e.target.value })
                     }
                     required
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                     placeholder="AYC HOOKAH"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     IBAN *
                   </label>
                   <input
@@ -326,12 +326,12 @@ export default function PaymentGatewaysClient({
                       setFormData({ ...formData, iban: e.target.value })
                     }
                     required
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all font-mono"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all font-mono"
                     placeholder="TR00 0000 0000 0000 0000 0000 00"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     Şube
                   </label>
                   <input
@@ -340,12 +340,12 @@ export default function PaymentGatewaysClient({
                     onChange={(e) =>
                       setFormData({ ...formData, branch: e.target.value })
                     }
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                     placeholder="Şube Adı"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     Hesap Numarası
                   </label>
                   <input
@@ -354,7 +354,7 @@ export default function PaymentGatewaysClient({
                     onChange={(e) =>
                       setFormData({ ...formData, accountNumber: e.target.value })
                     }
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                     placeholder="00000000"
                   />
                 </div>
@@ -362,7 +362,7 @@ export default function PaymentGatewaysClient({
             ) : (
               <>
             <div>
-              <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                 API URI
               </label>
               <select
@@ -370,7 +370,7 @@ export default function PaymentGatewaysClient({
                 onChange={(e) =>
                   setFormData({ ...formData, uri: e.target.value })
                 }
-                className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
               >
                 <option value="https://sandbox-api.iyzipay.com">
                   Sandbox (Test)
@@ -381,7 +381,7 @@ export default function PaymentGatewaysClient({
               </>
             )}
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -391,7 +391,7 @@ export default function PaymentGatewaysClient({
                   }
                   className="w-4 h-4 text-luxury-goldLight border-gray-300 rounded focus:ring-luxury-goldLight"
                 />
-                <span className="text-sm font-sans font-medium text-gray-700">Aktif</span>
+                <span className="text-xs sm:text-sm font-sans font-medium text-gray-700">Aktif</span>
               </label>
               {formData.name !== "eft-havale" && (
               <label className="flex items-center gap-2">
@@ -403,23 +403,23 @@ export default function PaymentGatewaysClient({
                   }
                   className="w-4 h-4 text-luxury-goldLight border-gray-300 rounded focus:ring-luxury-goldLight"
                 />
-                <span className="text-sm font-sans font-medium text-gray-700">Test Modu</span>
+                <span className="text-xs sm:text-sm font-sans font-medium text-gray-700">Test Modu</span>
               </label>
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 font-sans bg-luxury-goldLight text-luxury-black rounded-lg hover:bg-luxury-goldLight/90 transition-colors disabled:opacity-50 font-semibold"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans bg-luxury-goldLight text-luxury-black rounded-lg hover:bg-luxury-goldLight/90 transition-colors disabled:opacity-50 font-semibold w-full sm:w-auto"
               >
                 {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
               </button>
               <button
                 type="button"
                 onClick={() => setEditingGateway(null)}
-                className="px-4 py-2 font-sans bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold w-full sm:w-auto"
               >
                 İptal
               </button>
@@ -430,76 +430,141 @@ export default function PaymentGatewaysClient({
 
       {/* Gateway List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
-                Sistem
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
-                Durum
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
-                Mod
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
-                İşlemler
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {gateways.map((gateway) => (
-              <tr key={gateway.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-sans font-medium text-gray-900">
+        {/* Desktop Tablo Görünümü */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
+                  Sistem
+                </th>
+                <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
+                  Durum
+                </th>
+                <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
+                  Mod
+                </th>
+                <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-medium text-gray-500 uppercase tracking-wider">
+                  İşlemler
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {gateways.map((gateway) => (
+                <tr key={gateway.id} className="hover:bg-gray-50">
+                  <td className="px-4 xl:px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-sans font-medium text-gray-900">
+                      {gateway.displayName}
+                    </div>
+                    <div className="text-sm font-sans text-gray-500">{gateway.name}</div>
+                  </td>
+                  <td className="px-4 xl:px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-sans font-semibold rounded-full ${
+                        gateway.isActive
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {gateway.isActive ? "Aktif" : "Pasif"}
+                    </span>
+                  </td>
+                  <td className="px-4 xl:px-6 py-4 whitespace-nowrap text-sm font-sans text-gray-500">
+                    {gateway.name === "eft-havale" ? "-" : gateway.isTestMode ? "Test" : "Production"}
+                  </td>
+                  <td className="px-4 xl:px-6 py-4 whitespace-nowrap text-sm font-sans font-medium">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEdit(gateway)}
+                        className="text-blue-600 hover:text-blue-900 font-sans"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleToggle(gateway.id, gateway.isActive)}
+                        className={`font-sans ${
+                          gateway.isActive
+                            ? "text-yellow-600 hover:text-yellow-900"
+                            : "text-green-600 hover:text-green-900"
+                        }`}
+                      >
+                        {gateway.isActive ? "Devre Dışı" : "Aktif Et"}
+                      </button>
+                      {gateway.name !== "eft-havale" && (
+                      <button
+                        onClick={() => handleDelete(gateway.id)}
+                        className="text-red-600 hover:text-red-900 font-sans"
+                      >
+                        Sil
+                      </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobil Kart Görünümü */}
+        <div className="lg:hidden divide-y divide-gray-200">
+          {gateways.map((gateway) => (
+            <div key={gateway.id} className="p-4 hover:bg-gray-50 transition-colors">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-sans font-semibold text-gray-900 mb-1">
                     {gateway.displayName}
                   </div>
-                  <div className="text-sm font-sans text-gray-500">{gateway.name}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-sans font-semibold rounded-full ${
-                      gateway.isActive
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {gateway.isActive ? "Aktif" : "Pasif"}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-sans text-gray-500">
-                  {gateway.name === "eft-havale" ? "-" : gateway.isTestMode ? "Test" : "Production"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-sans font-medium space-x-2">
-                  <button
-                    onClick={() => handleEdit(gateway)}
-                    className="text-blue-600 hover:text-blue-900 font-sans"
-                  >
-                    Düzenle
-                  </button>
-                  <button
-                    onClick={() => handleToggle(gateway.id, gateway.isActive)}
-                    className={`font-sans ${
-                      gateway.isActive
-                        ? "text-yellow-600 hover:text-yellow-900"
-                        : "text-green-600 hover:text-green-900"
-                    }`}
-                  >
-                    {gateway.isActive ? "Devre Dışı" : "Aktif Et"}
-                  </button>
-                  {gateway.name !== "eft-havale" && (
+                  <div className="text-xs font-sans text-gray-500 mb-2">
+                    {gateway.name}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-sans font-semibold rounded-full ${
+                        gateway.isActive
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {gateway.isActive ? "Aktif" : "Pasif"}
+                    </span>
+                    {gateway.name !== "eft-havale" && (
+                      <span className="text-xs font-sans text-gray-600">
+                        {gateway.isTestMode ? "Test Modu" : "Production"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <button
+                  onClick={() => handleEdit(gateway)}
+                  className="px-3 py-2 text-xs sm:text-sm font-sans bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium flex-1 sm:flex-initial"
+                >
+                  Düzenle
+                </button>
+                <button
+                  onClick={() => handleToggle(gateway.id, gateway.isActive)}
+                  className={`px-3 py-2 text-xs sm:text-sm font-sans rounded-lg transition-colors font-medium flex-1 sm:flex-initial ${
+                    gateway.isActive
+                      ? "bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
+                      : "bg-green-50 text-green-600 hover:bg-green-100"
+                  }`}
+                >
+                  {gateway.isActive ? "Devre Dışı" : "Aktif Et"}
+                </button>
+                {gateway.name !== "eft-havale" && (
                   <button
                     onClick={() => handleDelete(gateway.id)}
-                    className="text-red-600 hover:text-red-900 font-sans"
+                    className="px-3 py-2 text-xs sm:text-sm font-sans bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium flex-1 sm:flex-initial"
                   >
                     Sil
                   </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -123,29 +123,29 @@ export default function OrdersTable() {
   const hasActiveFilters = search || status !== "all" || paymentStatus !== "all" || sortBy !== "createdAt";
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-4 lg:p-8 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-sans font-semibold text-gray-900">Siparişler</h1>
-          <p className="text-sm font-sans text-gray-500 mt-1">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-sans font-semibold text-gray-900">Siparişler</h1>
+          <p className="text-xs sm:text-sm font-sans text-gray-500 mt-1">
             Toplam {total} sipariş
           </p>
         </div>
 
         {/* Filtreler ve Arama */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {/* Arama */}
-            <div className="lg:col-span-2">
+            <div className="sm:col-span-2 lg:col-span-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Sipariş no, müşteri adı veya email ara..."
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 />
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function OrdersTable() {
               <select
                 value={status}
                 onChange={(e) => handleFilterChange("status", e.target.value)}
-                className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">Tüm Durumlar</option>
                 <option value="PENDING">Beklemede</option>
@@ -173,7 +173,7 @@ export default function OrdersTable() {
               <select
                 value={paymentStatus}
                 onChange={(e) => handleFilterChange("paymentStatus", e.target.value)}
-                className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">Tüm Ödeme Durumları</option>
                 <option value="PENDING">Beklemede</option>
@@ -193,7 +193,7 @@ export default function OrdersTable() {
                   setSortOrder(order as "asc" | "desc");
                   setPage(1);
                 }}
-                className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="createdAt-desc">Yeni → Eski</option>
                 <option value="createdAt-asc">Eski → Yeni</option>
@@ -207,8 +207,8 @@ export default function OrdersTable() {
 
           {/* Aktif Filtreler */}
           {hasActiveFilters && (
-            <div className="mt-4 flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-sans font-medium text-gray-500">Aktif Filtreler:</span>
+            <div className="mt-3 sm:mt-4 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <span className="text-xs font-sans font-medium text-gray-500 whitespace-nowrap">Aktif Filtreler:</span>
               {search && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-sans font-medium bg-gray-100 text-gray-700 rounded">
                   Arama: {search}
@@ -252,52 +252,53 @@ export default function OrdersTable() {
           )}
         </div>
 
-        {/* Tablo */}
+        {/* Tablo / Kart Görünümü */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           {error ? (
-            <div className="p-12 text-center">
-              <p className="text-sm font-sans text-red-600 mb-4">{error}</p>
+            <div className="p-6 sm:p-12 text-center">
+              <p className="text-xs sm:text-sm font-sans text-red-600 mb-4">{error}</p>
               <button
                 onClick={() => loadOrders()}
-                className="px-4 py-2 text-sm font-sans font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors"
               >
                 Tekrar Dene
               </button>
             </div>
           ) : loading ? (
-            <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              <p className="mt-4 text-sm font-sans text-gray-500">Yükleniyor...</p>
+            <div className="p-6 sm:p-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-gray-900"></div>
+              <p className="mt-4 text-xs sm:text-sm font-sans text-gray-500">Yükleniyor...</p>
             </div>
           ) : orders.length === 0 ? (
-            <div className="p-12 text-center">
-              <p className="text-sm font-sans text-gray-500">Sipariş bulunamadı</p>
+            <div className="p-6 sm:p-12 text-center">
+              <p className="text-xs sm:text-sm font-sans text-gray-500">Sipariş bulunamadı</p>
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Desktop Tablo Görünümü */}
+              <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                         Sipariş No
                       </th>
-                      <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                         Müşteri
                       </th>
-                      <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                         Tutar
                       </th>
-                      <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                         Durum
                       </th>
-                      <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                         Ödeme
                       </th>
-                      <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                         Tarih
                       </th>
-                      <th className="text-left py-3 px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 xl:px-6 text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
                         İşlemler
                       </th>
                     </tr>
@@ -305,21 +306,21 @@ export default function OrdersTable() {
                   <tbody className="divide-y divide-gray-200">
                     {orders.map((order) => (
                       <tr key={order.id} className="hover:bg-gray-50">
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <span className="text-sm font-sans font-medium text-gray-900">{order.orderNumber}</span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <div className="text-sm font-sans font-medium text-gray-900">
                             {order.user.name || "İsimsiz"}
                           </div>
                           <div className="text-xs font-sans text-gray-500">{order.user.email}</div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <span className="text-sm font-sans font-medium text-gray-900">
                             {order.total.toLocaleString("tr-TR")} ₺
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${
                               order.status === "DELIVERED"
@@ -334,7 +335,7 @@ export default function OrdersTable() {
                             {statusLabels[order.status] || order.status}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${
                               order.paymentStatus === "COMPLETED"
@@ -347,7 +348,7 @@ export default function OrdersTable() {
                             {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <span className="text-sm font-sans text-gray-600">
                             {new Date(order.createdAt).toLocaleDateString("tr-TR", {
                               year: "numeric",
@@ -356,7 +357,7 @@ export default function OrdersTable() {
                             })}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-4 xl:px-6">
                           <Link
                             href={`/admin/siparisler/${order.id}`}
                             className="text-sm font-sans font-medium text-gray-700 hover:text-gray-900"
@@ -370,28 +371,89 @@ export default function OrdersTable() {
                 </table>
               </div>
 
+              {/* Mobil Kart Görünümü */}
+              <div className="lg:hidden divide-y divide-gray-200">
+                {orders.map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/admin/siparisler/${order.id}`}
+                    className="block p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-sans font-semibold text-gray-900 mb-1 truncate">
+                          {order.orderNumber}
+                        </div>
+                        <div className="text-xs font-sans text-gray-500 truncate">
+                          {order.user.name || "İsimsiz"} • {order.user.email}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-base font-sans font-semibold text-gray-900 mb-1">
+                          {order.total.toLocaleString("tr-TR")} ₺
+                        </div>
+                        <div className="text-xs font-sans text-gray-500">
+                          {new Date(order.createdAt).toLocaleDateString("tr-TR", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${
+                          order.status === "DELIVERED"
+                            ? "bg-green-100 text-green-800"
+                            : order.status === "PENDING"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : order.status === "CANCELLED" || order.status === "REFUNDED"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {statusLabels[order.status] || order.status}
+                      </span>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${
+                          order.paymentStatus === "COMPLETED"
+                            ? "bg-green-100 text-green-800"
+                            : order.paymentStatus === "PENDING"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {paymentStatusLabels[order.paymentStatus] || order.paymentStatus}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
               {/* Sayfalama */}
               {totalPages > 1 && (
-                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                  <div className="text-sm font-sans text-gray-700">
-                    Sayfa {page} / {totalPages} (Toplam {total} sipariş)
+                <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-t border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
+                  <div className="text-xs sm:text-sm font-sans text-gray-700 text-center sm:text-left">
+                    Sayfa {page} / {totalPages} <span className="hidden sm:inline">(Toplam {total} sipariş)</span>
+                    <span className="sm:hidden block text-xs text-gray-500 mt-0.5">Toplam {total} sipariş</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-center sm:justify-end">
                     <button
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="px-3 py-1.5 text-sm font-sans font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 flex-1 sm:flex-initial justify-center"
                     >
-                      <ChevronLeft className="w-4 h-4" />
-                      Önceki
+                      <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Önceki</span>
                     </button>
                     <button
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="px-3 py-1.5 text-sm font-sans font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 flex-1 sm:flex-initial justify-center"
                     >
-                      Sonraki
-                      <ChevronRight className="w-4 h-4" />
+                      <span className="hidden sm:inline">Sonraki</span>
+                      <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>

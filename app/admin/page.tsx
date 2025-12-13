@@ -144,11 +144,11 @@ export default async function AdminDashboard() {
   }));
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-4 lg:p-8 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-sans font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-sm font-sans text-gray-600">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-sans font-bold text-gray-900 mb-1 sm:mb-2">Dashboard</h1>
+          <p className="text-xs sm:text-sm font-sans text-gray-600">
             Mağaza genel bakış ve önemli metrikler
           </p>
         </div>

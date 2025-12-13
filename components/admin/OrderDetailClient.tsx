@@ -189,42 +189,42 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-sans font-bold text-gray-900 mb-2">Sipariş Detayı</h1>
-            <p className="text-sm font-sans text-gray-600">Sipariş No: {order.orderNumber}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-sans font-bold text-gray-900 mb-1 sm:mb-2 truncate">Sipariş Detayı</h1>
+            <p className="text-xs sm:text-sm font-sans text-gray-600 truncate">Sipariş No: {order.orderNumber}</p>
           </div>
-        <button
-          onClick={() => router.back()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto flex-shrink-0"
+          >
             <ArrowLeft className="w-4 h-4" />
-            Geri
-        </button>
-      </div>
+            <span className="sm:inline">Geri</span>
+          </button>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Sipariş Bilgileri */}
-            <div className="bg-white border border-gray-300 rounded-sm p-6">
-              <h2 className="text-lg font-sans font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Sipariş Bilgileri
+            <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Sipariş Bilgileri</span>
               </h2>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1.5">
                       Sipariş Durumu
                     </label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm font-sans text-gray-900 bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="flex-1 px-3 py-2 text-sm font-sans text-gray-900 bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                 >
                   {statusOptions.map((option) => (
                           <option key={option.value} value={option.value} className="font-sans text-gray-900">
@@ -235,17 +235,18 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                       <button
                         onClick={handleStatusUpdate}
                         disabled={isUpdatingStatus || status === order.status}
-                        className="px-4 py-2 text-sm font-sans bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
                       >
                         {isUpdatingStatus ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Güncelleniyor...
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span className="hidden sm:inline">Güncelleniyor...</span>
+                            <span className="sm:hidden">Güncelleniyor</span>
                           </>
                         ) : (
                           <>
-                            <Save className="w-4 h-4" />
-                            Kaydet
+                            <Save className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>Kaydet</span>
                           </>
                         )}
                       </button>
@@ -258,16 +259,16 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                       </span>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1.5">
                       Tarih
                     </label>
-                    <div className="flex items-center gap-2 text-sm font-sans text-gray-900">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      {format(new Date(order.createdAt), "d MMMM yyyy HH:mm", { locale: tr })}
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-sans text-gray-900">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
+                      <span className="truncate">{format(new Date(order.createdAt), "d MMMM yyyy HH:mm", { locale: tr })}</span>
                     </div>
                     {order.updatedAt && order.updatedAt !== order.createdAt && (
-                      <p className="text-xs font-sans text-gray-500 mt-1">
+                      <p className="text-xs font-sans text-gray-500 mt-1 truncate">
                         Son güncelleme: {format(new Date(order.updatedAt), "d MMM yyyy HH:mm", { locale: tr })}
                       </p>
                     )}
@@ -277,22 +278,22 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             </div>
 
             {/* Ödeme Bilgileri */}
-            <div className="bg-white border border-gray-300 rounded-sm p-6">
-              <h2 className="text-lg font-sans font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Ödeme Bilgileri
+            <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Ödeme Bilgileri</span>
               </h2>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1.5">
                       Ödeme Durumu
                     </label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                       <select
                         value={paymentStatus}
                         onChange={(e) => setPaymentStatus(e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm font-sans text-gray-900 bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="flex-1 px-3 py-2 text-sm font-sans text-gray-900 bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                       >
                         {paymentStatusOptions.map((option) => (
                           <option key={option.value} value={option.value} className="font-sans text-gray-900">
@@ -303,17 +304,18 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
               <button
                         onClick={handlePaymentStatusUpdate}
                         disabled={isUpdatingPaymentStatus || paymentStatus === order.paymentStatus}
-                        className="px-4 py-2 text-sm font-sans bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
               >
                         {isUpdatingPaymentStatus ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Güncelleniyor...
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span className="hidden sm:inline">Güncelleniyor...</span>
+                            <span className="sm:hidden">Güncelleniyor</span>
                           </>
                         ) : (
                           <>
-                            <Save className="w-4 h-4" />
-                            Kaydet
+                            <Save className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>Kaydet</span>
                           </>
                         )}
               </button>
@@ -326,15 +328,15 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                       </span>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-sans font-medium text-gray-700 mb-1.5">
                       Ödeme Yöntemi
                     </label>
-                    <p className="text-sm font-sans text-gray-900">
+                    <p className="text-xs sm:text-sm font-sans text-gray-900 truncate">
                       {order.paymentMethod || "Belirtilmemiş"}
                     </p>
                     {order.paymentId && (
-                      <p className="text-xs font-sans text-gray-500 mt-1">ID: {order.paymentId}</p>
+                      <p className="text-xs font-sans text-gray-500 mt-1 truncate">ID: {order.paymentId}</p>
                     )}
                   </div>
                 </div>
@@ -342,9 +344,9 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
           </div>
 
           {/* Sipariş Kalemleri */}
-            <div className="bg-white border border-gray-300 rounded-sm p-6">
-              <h2 className="text-lg font-sans font-semibold text-gray-900 mb-4">Sipariş Kalemleri</h2>
-            <div className="space-y-4">
+            <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Sipariş Kalemleri</h2>
+            <div className="space-y-3 sm:space-y-4">
               {(() => {
                 // Aynı ürünün normal ve bedava versiyonlarını birleştir
                 const itemsMap = new Map<string, { item: any; freeQuantity: number; normalQuantity: number; originalPrice: number }>();
@@ -383,9 +385,9 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                   return (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 pb-4 border-b border-gray-200 last:border-0 last:pb-0"
+                    className="flex items-start sm:items-center gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-gray-200 last:border-0 last:pb-0"
                   >
-                    <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     {(item.product?.images?.[0]?.url || item.productImageUrl) ? (
                       <Image
                         src={item.product?.images[0]?.url || item.productImageUrl || ""}
@@ -404,25 +406,25 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                       {item.product?.slug ? (
                         <Link
                           href={`/urun/${item.product.slug}`}
-                            className="font-sans font-semibold hover:text-blue-600 transition-colors block truncate text-gray-900"
+                            className="font-sans font-semibold hover:text-blue-600 transition-colors block truncate text-sm sm:text-base text-gray-900"
                         >
                           {item.product.name || item.productName || "Silinmiş Ürün"}
                         </Link>
                       ) : (
-                          <h3 className="font-sans font-semibold block truncate text-gray-900">
+                          <h3 className="font-sans font-semibold block truncate text-sm sm:text-base text-gray-900">
                       {item.product?.name || item.productName || "Silinmiş Ürün"}
                     </h3>
                       )}
-                      <p className="text-sm font-sans text-gray-600 mt-1">
-                          Adet: {totalQuantity}
+                      <p className="text-xs sm:text-sm font-sans text-gray-600 mt-1 flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <span>Adet: {totalQuantity}</span>
                           {hasFree && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
                               {freeQuantity} adet bedava
                             </span>
                           )}
                       </p>
                   </div>
-                    <div className="text-right flex-shrink-0">
+                    <div className="text-right flex-shrink-0 min-w-[80px] sm:min-w-[100px]">
                         {hasFree ? (
                           <div className="flex flex-col items-end">
                             {normalQuantity > 0 && (
@@ -455,12 +457,12 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
           </div>
 
           {/* Teslimat Adresi */}
-            <div className="bg-white border border-gray-300 rounded-sm p-6">
-              <h2 className="text-lg font-sans font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                Teslimat Adresi
+            <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Teslimat Adresi</span>
               </h2>
-              <div className="space-y-2 font-sans text-gray-700">
+              <div className="space-y-1.5 sm:space-y-2 font-sans text-xs sm:text-sm text-gray-700">
                 <p className="font-medium text-gray-900">
                   {order.shippingAddress?.firstName} {order.shippingAddress?.lastName}
               </p>
@@ -484,19 +486,20 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             </div>
 
             {/* Notlar */}
-            <div className="bg-white border border-gray-300 rounded-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-sans font-semibold text-gray-900 flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Notlar
+            <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+                <h2 className="text-base sm:text-lg font-sans font-semibold text-gray-900 flex items-center gap-2 flex-1 min-w-0">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="truncate">Notlar</span>
                 </h2>
                 {!isEditingNotes && (
                   <button
                     onClick={() => setIsEditingNotes(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-sans text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-sans text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors flex-shrink-0 whitespace-nowrap"
                   >
-                    <Edit2 className="w-4 h-4" />
-                    Düzenle
+                    <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Düzenle</span>
+                    <span className="sm:hidden">Düzenle</span>
                   </button>
                 )}
               </div>
@@ -509,21 +512,21 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                     className="w-full px-3 py-2 text-sm font-sans text-gray-900 bg-white border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Sipariş notlarını buraya yazın..."
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <button
                       onClick={handleNotesUpdate}
                       disabled={isUpdatingNotes}
-                      className="px-4 py-2 text-sm font-sans bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
                     >
                       {isUpdatingNotes ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Kaydediliyor...
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Kaydediliyor...</span>
                         </>
                       ) : (
                         <>
-                          <Save className="w-4 h-4" />
-                          Kaydet
+                          <Save className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span>Kaydet</span>
                         </>
                       )}
                     </button>
@@ -533,10 +536,10 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
                         setIsEditingNotes(false);
                       }}
                       disabled={isUpdatingNotes}
-                      className="px-4 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
                     >
-                      <X className="w-4 h-4" />
-                      İptal
+                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>İptal</span>
                     </button>
                   </div>
                 </div>
@@ -549,14 +552,14 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             {/* Müşteri Bilgileri */}
-            <div className="bg-white border border-gray-300 rounded-sm p-6">
-              <h2 className="text-lg font-sans font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Müşteri Bilgileri
+            <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="truncate">Müşteri Bilgileri</span>
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 <div>
                   <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
                     Ad Soyad
@@ -595,9 +598,9 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             </div>
 
             {/* Sipariş Özeti */}
-            <div className="bg-white border border-gray-300 rounded-sm p-6 sticky top-24">
-              <h2 className="text-lg font-sans font-semibold text-gray-900 mb-4">Sipariş Özeti</h2>
-              <div className="space-y-3">
+            <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6 lg:sticky lg:top-24">
+              <h2 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Sipariş Özeti</h2>
+              <div className="space-y-2.5 sm:space-y-3">
                 <div className="flex justify-between text-sm font-sans">
                 <span className="text-gray-600">Ara Toplam:</span>
                   <span className="text-gray-900">{formatCurrency(order.subtotal)}</span>
@@ -639,10 +642,10 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             </div>
 
             {/* Sipariş Logları */}
-            <div className="bg-white border border-gray-300 rounded-sm p-4">
-              <h2 className="text-base font-sans font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <History className="w-4 h-4" />
-                Sipariş Geçmişi
+            <div className="bg-white border border-gray-300 rounded-sm p-3 sm:p-4">
+              <h2 className="text-sm sm:text-base font-sans font-semibold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2">
+                <History className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate">Sipariş Geçmişi</span>
               </h2>
               {order.logs && order.logs.length > 0 ? (
                 <div className="max-h-96 overflow-y-auto pr-2 space-y-2">

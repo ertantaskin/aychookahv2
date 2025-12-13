@@ -14,13 +14,13 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="bg-white border-b border-gray-300 px-6 py-4">
+      <div className="bg-white border-b border-gray-300 px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-xl font-sans font-semibold text-gray-800">Analiz ve Raporlar</h1>
+          <h1 className="text-lg sm:text-xl font-sans font-semibold text-gray-800">Analiz ve Raporlar</h1>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
         <AnalyticsClient />
       </div>
     </div>

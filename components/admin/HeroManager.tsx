@@ -216,10 +216,10 @@ export default function HeroManager() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
+      <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <div className="text-gray-500 font-sans">Yükleniyor...</div>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-gray-900 mx-auto mb-3 sm:mb-4"></div>
+          <div className="text-xs sm:text-sm text-gray-500 font-sans">Yükleniyor...</div>
         </div>
       </div>
     );
@@ -228,19 +228,19 @@ export default function HeroManager() {
   const sortedSlides = [...slides].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
         <div>
-          <h2 className="text-2xl font-sans font-bold text-gray-900">Hero Slide Yönetimi</h2>
-          <p className="text-sm text-gray-500 mt-1">Ana sayfa slider içeriklerini yönetin</p>
+          <h2 className="text-xl sm:text-2xl font-sans font-bold text-gray-900">Hero Slide Yönetimi</h2>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">Ana sayfa slider içeriklerini yönetin</p>
         </div>
         {editingId && (
           <button
             onClick={resetForm}
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 font-sans flex items-center gap-2"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-900 font-sans flex items-center justify-center gap-2 w-full sm:w-auto"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3 sm:w-4 sm:h-4" />
             Düzenlemeyi İptal Et
           </button>
         )}
@@ -248,81 +248,81 @@ export default function HeroManager() {
 
       {/* Create Form - Sadece yeni ekleme için */}
       {!editingId && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Plus className="w-5 h-5 text-gray-700" />
-            <h3 className="text-lg font-sans font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
+            <h3 className="text-base sm:text-lg font-sans font-semibold text-gray-900">
               Yeni Hero Slide Ekle
             </h3>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Sol Kolon - Form */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Başlık <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                   placeholder="Ana başlık"
                 />
               </div>
               <div>
-                <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Alt Başlık
                 </label>
                 <input
                   type="text"
                   value={formData.subtitle}
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                  className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                   placeholder="Alt başlık"
                 />
               </div>
               <div>
-                <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Açıklama
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all resize-y"
                   placeholder="Kısa açıklama metni"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     CTA Metni
                   </label>
                   <input
                     type="text"
                     value={formData.ctaText}
                     onChange={(e) => setFormData({ ...formData, ctaText: e.target.value })}
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                     placeholder="Ürünleri Keşfet"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     CTA Link
                   </label>
                   <input
                     type="text"
                     value={formData.ctaLink}
                     onChange={(e) => setFormData({ ...formData, ctaLink: e.target.value })}
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
                     placeholder="/urunler"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                     Pozisyon
                   </label>
                   <select
@@ -333,7 +333,7 @@ export default function HeroManager() {
                         position: e.target.value as "left" | "center" | "right",
                       })
                     }
-                    className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                   >
                     <option value="left">Sol</option>
                     <option value="center">Orta</option>
@@ -341,39 +341,39 @@ export default function HeroManager() {
                   </select>
                 </div>
                 <div className="flex items-end">
-                  <label className="flex items-center gap-2 p-2.5 border border-gray-300 rounded-lg w-full cursor-pointer hover:bg-gray-50">
+                  <label className="flex items-center gap-2 p-2 sm:p-2.5 border border-gray-300 rounded-lg w-full cursor-pointer hover:bg-gray-50">
                     <input
                       type="checkbox"
                       checked={formData.isActive}
                       onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                       className="rounded w-4 h-4"
                     />
-                    <span className="text-sm font-sans text-gray-700">Aktif</span>
+                    <span className="text-xs sm:text-sm font-sans text-gray-700">Aktif</span>
                   </label>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <label className="flex items-center gap-2 p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
+                <label className="flex items-start gap-2 p-2 sm:p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
                     type="checkbox"
                     checked={formData.showContent}
                     onChange={(e) => setFormData({ ...formData, showContent: e.target.checked })}
-                    className="rounded w-4 h-4"
+                    className="rounded w-4 h-4 mt-0.5 flex-shrink-0"
                   />
                   <div>
-                    <span className="text-sm font-sans font-medium text-gray-700 block">İçerik Göster</span>
+                    <span className="text-xs sm:text-sm font-sans font-medium text-gray-700 block">İçerik Göster</span>
                     <span className="text-xs text-gray-500">Başlık, açıklama ve buton gösterilsin</span>
                   </div>
                 </label>
-                <label className="flex items-center gap-2 p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-start gap-2 p-2 sm:p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
                     type="checkbox"
                     checked={formData.showOverlay}
                     onChange={(e) => setFormData({ ...formData, showOverlay: e.target.checked })}
-                    className="rounded w-4 h-4"
+                    className="rounded w-4 h-4 mt-0.5 flex-shrink-0"
                   />
                   <div>
-                    <span className="text-sm font-sans font-medium text-gray-700 block">Overlay Efektleri</span>
+                    <span className="text-xs sm:text-sm font-sans font-medium text-gray-700 block">Overlay Efektleri</span>
                     <span className="text-xs text-gray-500">Görsel üzerinde efekt gösterilsin</span>
                   </div>
                 </label>
@@ -381,12 +381,12 @@ export default function HeroManager() {
             </div>
 
             {/* Sağ Kolon - Resim */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Desktop Görsel <span className="text-red-500">*</span>
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {selectedImage ? (
                     <div className="relative group">
                       <div className="relative aspect-video bg-gray-50 border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
@@ -404,15 +404,15 @@ export default function HeroManager() {
                           setSelectedImage(null);
                           setFormData({ ...formData, image: "" });
                         }}
-                        className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
+                        className="absolute top-2 right-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   ) : (
                     <div className="aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2">
-                      <ImageIcon className="w-12 h-12 text-gray-400" />
-                      <span className="text-sm font-sans text-gray-400">Görsel seçilmedi</span>
+                      <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
+                      <span className="text-xs sm:text-sm font-sans text-gray-400">Görsel seçilmedi</span>
                     </div>
                   )}
                   <MediaSelector
@@ -440,10 +440,10 @@ export default function HeroManager() {
               </div>
               
               <div>
-                <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Mobil Görsel <span className="text-xs text-gray-500 font-normal">(Opsiyonel)</span>
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {selectedMobileImage ? (
                     <div className="relative group">
                       <div className="relative aspect-video bg-gray-50 border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
@@ -461,16 +461,16 @@ export default function HeroManager() {
                           setSelectedMobileImage(null);
                           setFormData({ ...formData, mobileImage: "" });
                         }}
-                        className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
+                        className="absolute top-2 right-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   ) : (
                     <div className="aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2">
-                      <ImageIcon className="w-12 h-12 text-gray-400" />
-                      <span className="text-sm font-sans text-gray-400">Mobil görsel seçilmedi</span>
-                      <span className="text-xs font-sans text-gray-400">Boş bırakılırsa desktop görsel kullanılır</span>
+                      <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
+                      <span className="text-xs sm:text-sm font-sans text-gray-400">Mobil görsel seçilmedi</span>
+                      <span className="text-xs font-sans text-gray-400 text-center px-2">Boş bırakılırsa desktop görsel kullanılır</span>
                     </div>
                   )}
                   <MediaSelector
@@ -498,17 +498,17 @@ export default function HeroManager() {
               </div>
             </div>
           </div>
-          <div className="flex gap-3 pt-4 border-t border-gray-200 mt-6">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-gray-200 mt-4 sm:mt-6">
             <button
               onClick={handleCreate}
-              className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-sans font-medium flex items-center gap-2 transition-colors"
+              className="px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-sans font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
               Hero Slide Ekle
             </button>
             <button
               onClick={resetForm}
-              className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-sans font-medium transition-colors"
+              className="px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-sans font-medium transition-colors w-full sm:w-auto"
             >
               Temizle
             </button>
@@ -518,100 +518,100 @@ export default function HeroManager() {
 
       {/* Slides List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-lg font-sans font-semibold text-gray-900">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+          <h3 className="text-base sm:text-lg font-sans font-semibold text-gray-900">
             Mevcut Hero Slides ({sortedSlides.length})
           </h3>
         </div>
         <div className="divide-y divide-gray-200">
           {sortedSlides.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ImageIcon className="w-8 h-8 text-gray-400" />
+            <div className="p-6 sm:p-12 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
               </div>
-              <p className="text-gray-500 font-sans mb-2">Henüz hero slide yok</p>
-              <p className="text-sm text-gray-400">Yukarıdaki formu kullanarak yeni bir hero slide ekleyin</p>
+              <p className="text-xs sm:text-sm text-gray-500 font-sans mb-2">Henüz hero slide yok</p>
+              <p className="text-xs sm:text-sm text-gray-400">Yukarıdaki formu kullanarak yeni bir hero slide ekleyin</p>
             </div>
           ) : (
             sortedSlides.map((slide) => (
               <div key={slide.id}>
                 {editingId === slide.id ? (
                   // Düzenleme Formu - Inline
-                  <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500">
-                    <div className="flex items-center gap-2 mb-6">
-                      <Edit className="w-5 h-5 text-blue-600" />
-                      <h4 className="text-lg font-sans font-semibold text-gray-900">
+                  <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500">
+                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                      <Edit className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                      <h4 className="text-base sm:text-lg font-sans font-semibold text-gray-900">
                         Hero Slide Düzenle
                       </h4>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Sol Kolon - Form */}
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4">
                       <div>
-                        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                           Başlık <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={formData.title}
                           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                          className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
                           placeholder="Ana başlık"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                           Alt Başlık
                         </label>
                         <input
                           type="text"
                           value={formData.subtitle}
                           onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                          className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
                           placeholder="Alt başlık"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                           Açıklama
                         </label>
                         <textarea
                           value={formData.description}
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           rows={3}
-                          className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white resize-y"
                           placeholder="Kısa açıklama metni"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                             CTA Metni
                           </label>
                           <input
                             type="text"
                             value={formData.ctaText}
                             onChange={(e) => setFormData({ ...formData, ctaText: e.target.value })}
-                            className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
                             placeholder="Ürünleri Keşfet"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                             CTA Link
                           </label>
                           <input
                             type="text"
                             value={formData.ctaLink}
                             onChange={(e) => setFormData({ ...formData, ctaLink: e.target.value })}
-                            className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all bg-white"
                             placeholder="/urunler"
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
-                          <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                             Pozisyon
                           </label>
                           <select
@@ -622,7 +622,7 @@ export default function HeroManager() {
                                 position: e.target.value as "left" | "center" | "right",
                               })
                             }
-                            className="w-full px-4 py-2.5 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all bg-white"
                           >
                             <option value="left">Sol</option>
                             <option value="center">Orta</option>
@@ -630,39 +630,39 @@ export default function HeroManager() {
                           </select>
                         </div>
                         <div className="flex items-end">
-                          <label className="flex items-center gap-2 p-2.5 border border-gray-300 rounded-lg w-full cursor-pointer hover:bg-white/50 bg-white">
+                          <label className="flex items-center gap-2 p-2 sm:p-2.5 border border-gray-300 rounded-lg w-full cursor-pointer hover:bg-white/50 bg-white">
                             <input
                               type="checkbox"
                               checked={formData.isActive}
                               onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                               className="rounded w-4 h-4"
                             />
-                            <span className="text-sm font-sans text-gray-700">Aktif</span>
+                            <span className="text-xs sm:text-sm font-sans text-gray-700">Aktif</span>
                           </label>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <label className="flex items-center gap-2 p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-white/50 bg-white">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
+                        <label className="flex items-start gap-2 p-2 sm:p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-white/50 bg-white">
                           <input
                             type="checkbox"
                             checked={formData.showContent}
                             onChange={(e) => setFormData({ ...formData, showContent: e.target.checked })}
-                            className="rounded w-4 h-4"
+                            className="rounded w-4 h-4 mt-0.5 flex-shrink-0"
                           />
                           <div>
-                            <span className="text-sm font-sans font-medium text-gray-700 block">İçerik Göster</span>
+                            <span className="text-xs sm:text-sm font-sans font-medium text-gray-700 block">İçerik Göster</span>
                             <span className="text-xs text-gray-500">Başlık, açıklama ve buton gösterilsin</span>
                           </div>
                         </label>
-                        <label className="flex items-center gap-2 p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-white/50 bg-white">
+                        <label className="flex items-start gap-2 p-2 sm:p-2.5 border border-gray-300 rounded-lg cursor-pointer hover:bg-white/50 bg-white">
                           <input
                             type="checkbox"
                             checked={formData.showOverlay}
                             onChange={(e) => setFormData({ ...formData, showOverlay: e.target.checked })}
-                            className="rounded w-4 h-4"
+                            className="rounded w-4 h-4 mt-0.5 flex-shrink-0"
                           />
                           <div>
-                            <span className="text-sm font-sans font-medium text-gray-700 block">Overlay Efektleri</span>
+                            <span className="text-xs sm:text-sm font-sans font-medium text-gray-700 block">Overlay Efektleri</span>
                             <span className="text-xs text-gray-500">Görsel üzerinde efekt gösterilsin</span>
                           </div>
                         </label>
@@ -670,12 +670,12 @@ export default function HeroManager() {
                     </div>
 
                     {/* Sağ Kolon - Resim */}
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       <div>
-                        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                           Desktop Görsel <span className="text-red-500">*</span>
                         </label>
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {selectedImage ? (
                             <div className="relative group">
                               <div className="relative aspect-video bg-gray-50 border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
@@ -693,15 +693,15 @@ export default function HeroManager() {
                                   setSelectedImage(null);
                                   setFormData({ ...formData, image: "" });
                                 }}
-                                className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
+                                className="absolute top-2 right-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-3 h-3 sm:w-4 sm:h-4" />
                               </button>
                             </div>
                           ) : (
                             <div className="aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2">
-                              <ImageIcon className="w-12 h-12 text-gray-400" />
-                              <span className="text-sm font-sans text-gray-400">Görsel seçilmedi</span>
+                              <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
+                              <span className="text-xs sm:text-sm font-sans text-gray-400">Görsel seçilmedi</span>
                             </div>
                           )}
                           <MediaSelector
@@ -729,10 +729,10 @@ export default function HeroManager() {
                       </div>
                       
                       <div>
-                        <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
                           Mobil Görsel <span className="text-xs text-gray-500 font-normal">(Opsiyonel)</span>
                         </label>
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {selectedMobileImage ? (
                             <div className="relative group">
                               <div className="relative aspect-video bg-gray-50 border-2 border-gray-300 rounded-lg overflow-hidden shadow-sm">
@@ -750,16 +750,16 @@ export default function HeroManager() {
                                   setSelectedMobileImage(null);
                                   setFormData({ ...formData, mobileImage: "" });
                                 }}
-                                className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
+                                className="absolute top-2 right-2 p-1.5 sm:p-2 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-700"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-3 h-3 sm:w-4 sm:h-4" />
                               </button>
                             </div>
                           ) : (
                             <div className="aspect-video bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2">
-                              <ImageIcon className="w-12 h-12 text-gray-400" />
-                              <span className="text-sm font-sans text-gray-400">Mobil görsel seçilmedi</span>
-                              <span className="text-xs font-sans text-gray-400">Boş bırakılırsa desktop görsel kullanılır</span>
+                              <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
+                              <span className="text-xs sm:text-sm font-sans text-gray-400">Mobil görsel seçilmedi</span>
+                              <span className="text-xs font-sans text-gray-400 text-center px-2">Boş bırakılırsa desktop görsel kullanılır</span>
                             </div>
                           )}
                           <MediaSelector
@@ -787,17 +787,17 @@ export default function HeroManager() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-3 pt-4 border-t border-blue-200 mt-6">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-blue-200 mt-4 sm:mt-6">
                     <button
                       onClick={() => handleUpdate(slide.id)}
-                      className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-sans font-medium flex items-center gap-2 transition-colors"
+                      className="px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-sans font-medium flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
                     >
-                      <Save className="w-4 h-4" />
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4" />
                       Değişiklikleri Kaydet
                     </button>
                     <button
                       onClick={resetForm}
-                      className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-sans font-medium transition-colors"
+                      className="px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-sans font-medium transition-colors w-full sm:w-auto"
                     >
                       İptal
                     </button>
@@ -805,93 +805,93 @@ export default function HeroManager() {
                 </div>
                 ) : (
                   // Normal Görünüm - Kart Tasarımı
-                  <div className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-4">
+                  <div className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                       {/* Görsel Önizleme */}
-                      <div className="relative w-32 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                      <div className="relative w-full sm:w-32 h-32 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
                         {slide.image ? (
                           <Image
                             src={slide.image}
                             alt={slide.title}
                             fill
                             className="object-cover"
-                            sizes="128px"
+                            sizes="(max-width: 640px) 100vw, 128px"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="w-8 h-8 text-gray-400" />
+                            <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                           </div>
                         )}
                         {!slide.isActive && (
                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <EyeOff className="w-5 h-5 text-white" />
+                            <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                           </div>
                         )}
                       </div>
                       
                       {/* İçerik */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0 w-full sm:w-auto">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-sans font-semibold text-gray-900 truncate">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                              <h4 className="text-sm sm:text-base font-sans font-semibold text-gray-900 truncate">
                                 {slide.title || "Başlıksız"}
                               </h4>
                               {slide.isActive ? (
-                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">
+                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded w-fit">
                                   Aktif
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded w-fit">
                                   Pasif
                                 </span>
                               )}
                             </div>
                             {slide.subtitle && (
-                              <p className="text-sm font-sans text-gray-600 mb-1">{slide.subtitle}</p>
+                              <p className="text-xs sm:text-sm font-sans text-gray-600 mb-1 line-clamp-1">{slide.subtitle}</p>
                             )}
-                            <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-gray-500 mt-2">
                               <span className="capitalize">Pozisyon: {slide.position}</span>
-                              <span>•</span>
+                              <span className="hidden sm:inline">•</span>
                               <span>Sıra: {slide.order + 1}</span>
                               {slide.ctaText && (
                                 <>
-                                  <span>•</span>
-                                  <span>CTA: {slide.ctaText}</span>
+                                  <span className="hidden sm:inline">•</span>
+                                  <span className="truncate">CTA: {slide.ctaText}</span>
                                 </>
                               )}
                             </div>
                           </div>
                           
                           {/* Aksiyon Butonları */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
+                          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
                             <button
                               onClick={() => handleMoveUp(slide)}
-                              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                               title="Yukarı taşı"
                             >
-                              <ArrowUp className="w-4 h-4" />
+                              <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => handleMoveDown(slide)}
-                              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                               title="Aşağı taşı"
                             >
-                              <ArrowDown className="w-4 h-4" />
+                              <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => handleEdit(slide)}
-                              className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                               title="Düzenle"
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(slide.id)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                               title="Sil"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                           </div>
                         </div>

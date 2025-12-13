@@ -26,8 +26,8 @@ const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
 export default function PaymentMethodChart({ data }: PaymentMethodChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white border border-gray-300 rounded-sm p-6">
-        <p className="text-sm font-sans text-gray-500 text-center">Bu tarih aralığında ödeme yöntemi verisi bulunamadı.</p>
+      <div className="bg-white border border-gray-300 rounded-sm p-4 sm:p-6">
+        <p className="text-xs sm:text-sm font-sans text-gray-500 text-center">Bu tarih aralığında ödeme yöntemi verisi bulunamadı.</p>
       </div>
     );
   }
@@ -68,12 +68,12 @@ export default function PaymentMethodChart({ data }: PaymentMethodChartProps) {
   };
 
   return (
-    <div className="bg-white border border-gray-300 rounded-sm p-6">
-      <h3 className="text-lg font-sans font-semibold text-gray-900 mb-4">Ödeme Yöntemleri Dağılımı</h3>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="bg-white border border-gray-300 rounded-sm p-3 sm:p-4 lg:p-6">
+      <h3 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Ödeme Yöntemleri Dağılımı</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div>
-          <h4 className="text-sm font-sans font-medium text-gray-700 mb-2 text-center">Sipariş Sayısına Göre</h4>
-          <ResponsiveContainer width="100%" height={300}>
+          <h4 className="text-xs sm:text-sm font-sans font-medium text-gray-700 mb-2 text-center">Sipariş Sayısına Göre</h4>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
             <PieChart>
               <Pie
                 data={chartData}
@@ -94,8 +94,8 @@ export default function PaymentMethodChart({ data }: PaymentMethodChartProps) {
           </ResponsiveContainer>
         </div>
         <div>
-          <h4 className="text-sm font-sans font-medium text-gray-700 mb-2 text-center">Gelire Göre</h4>
-          <ResponsiveContainer width="100%" height={300}>
+          <h4 className="text-xs sm:text-sm font-sans font-medium text-gray-700 mb-2 text-center">Gelire Göre</h4>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
             <PieChart>
               <Pie
                 data={chartData}
@@ -118,39 +118,39 @@ export default function PaymentMethodChart({ data }: PaymentMethodChartProps) {
       </div>
 
       {/* Detaylı Tablo */}
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full text-sm font-sans">
+      <div className="mt-4 sm:mt-6 overflow-x-auto">
+        <table className="w-full text-xs sm:text-sm font-sans">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ödeme Yöntemi</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Sipariş Sayısı</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Yüzde</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Toplam Gelir</th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Gelir Yüzdesi</th>
+              <th className="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">Ödeme Yöntemi</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Sipariş Sayısı</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Yüzde</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Toplam Gelir</th>
+              <th className="px-3 sm:px-4 py-2 text-right text-xs font-semibold text-gray-700 uppercase">Gelir Yüzdesi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {data.map((item, index) => (
               <tr key={item.method} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-gray-900">
+                <td className="px-3 sm:px-4 py-2 text-gray-900">
                   <div className="flex items-center gap-2">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     />
-                    {item.method}
+                    <span className="truncate">{item.method}</span>
                   </div>
                 </td>
-                <td className="px-4 py-2 text-right font-medium text-gray-900">
+                <td className="px-3 sm:px-4 py-2 text-right font-medium text-gray-900">
                   {item.count.toLocaleString("tr-TR")}
                 </td>
-                <td className="px-4 py-2 text-right text-gray-600">
+                <td className="px-3 sm:px-4 py-2 text-right text-gray-600">
                   {item.percentage.toFixed(1)}%
                 </td>
-                <td className="px-4 py-2 text-right font-medium text-gray-900">
+                <td className="px-3 sm:px-4 py-2 text-right font-medium text-gray-900">
                   {formatCurrency(item.totalRevenue)}
                 </td>
-                <td className="px-4 py-2 text-right text-gray-600">
+                <td className="px-3 sm:px-4 py-2 text-right text-gray-600">
                   {item.revenuePercentage.toFixed(1)}%
                 </td>
               </tr>

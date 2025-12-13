@@ -10,14 +10,7 @@ export default async function HeroManagementPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Hero Slider Yönetimi</h1>
-        <p className="text-gray-600 mt-1">
-          Ana sayfa hero slider içeriklerini yönetin
-        </p>
-      </div>
-
+    <div className="p-3 sm:p-4 lg:p-6">
       <HeroManager />
     </div>
   );

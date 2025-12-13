@@ -34,9 +34,9 @@ export default function RevenueComparisonChart({ data, period }: RevenueComparis
   }));
 
   return (
-    <div className="bg-white border border-gray-300 rounded-sm p-6">
-      <h3 className="text-lg font-sans font-semibold text-gray-900 mb-4">Gelir Karşılaştırması</h3>
-      <ResponsiveContainer width="100%" height={300}>
+    <div className="bg-white border border-gray-300 rounded-sm p-3 sm:p-4 lg:p-6">
+      <h3 className="text-base sm:text-lg font-sans font-semibold text-gray-900 mb-3 sm:mb-4">Gelir Karşılaştırması</h3>
+      <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
         <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis

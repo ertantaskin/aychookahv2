@@ -159,85 +159,87 @@ export default function DateRangeFilter({}: DateRangeFilterProps) {
   };
 
   return (
-    <div className="bg-white border border-gray-300 rounded-sm p-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-gray-600" />
-          <span className="text-sm font-sans font-medium text-gray-700">Tarih Aralığı:</span>
+    <div className="bg-white border border-gray-300 rounded-sm p-3 sm:p-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 flex-shrink-0" />
+          <span className="text-xs sm:text-sm font-sans font-medium text-gray-700 whitespace-nowrap">Tarih Aralığı:</span>
         </div>
 
-        <div className="flex-1 flex flex-wrap gap-2">
-          {quickRanges.map((range) => (
+        <div className="flex-1 overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+          <div className="flex gap-1.5 sm:gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
+            {quickRanges.map((range) => (
+              <button
+                key={range.value}
+                onClick={() => {
+                  setSelectedRange(range.value);
+                  setShowCustomDates(false);
+                  updateURL(range.value, "", "");
+                }}
+                className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans rounded transition-colors whitespace-nowrap flex-shrink-0 ${
+                  selectedRange === range.value
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
             <button
-              key={range.value}
               onClick={() => {
-                setSelectedRange(range.value);
-                setShowCustomDates(false);
-                updateURL(range.value, "", "");
+                setShowCustomDates(!showCustomDates);
+                if (!showCustomDates) {
+                  setSelectedRange("custom");
+                }
               }}
-              className={`px-3 py-1.5 text-sm font-sans rounded transition-colors ${
-                selectedRange === range.value
+              className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans rounded transition-colors flex items-center gap-1 whitespace-nowrap flex-shrink-0 ${
+                selectedRange === "custom"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {range.label}
+              Özel Tarih
+              <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showCustomDates ? "rotate-180" : ""}`} />
             </button>
-          ))}
-          <button
-            onClick={() => {
-              setShowCustomDates(!showCustomDates);
-              if (!showCustomDates) {
-                setSelectedRange("custom");
-              }
-            }}
-            className={`px-3 py-1.5 text-sm font-sans rounded transition-colors flex items-center gap-1 ${
-              selectedRange === "custom"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Özel Tarih
-            <ChevronDown className={`w-4 h-4 transition-transform ${showCustomDates ? "rotate-180" : ""}`} />
-          </button>
+          </div>
         </div>
 
         {selectedRange !== "custom" && (
-          <div className="text-sm font-sans text-gray-600">
+          <div className="text-xs sm:text-sm font-sans text-gray-600 truncate">
             {getDisplayText()}
           </div>
         )}
       </div>
 
       {showCustomDates && (
-        <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <label className="block text-xs font-sans font-medium text-gray-700 mb-1.5">
               Başlangıç Tarihi
             </label>
             <input
               type="date"
               value={customStartDate}
               onChange={(e) => setCustomStartDate(e.target.value)}
-              className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <div className="flex-1">
-            <label className="block text-xs font-sans font-medium text-gray-700 mb-1">
+          <div className="flex-1 min-w-0">
+            <label className="block text-xs font-sans font-medium text-gray-700 mb-1.5">
               Bitiş Tarihi
             </label>
             <input
               type="date"
               value={customEndDate}
               onChange={(e) => setCustomEndDate(e.target.value)}
-              className="w-full px-3 py-2 text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end sm:flex-shrink-0">
             <button
               onClick={handleCustomDateChange}
               disabled={!customStartDate || !customEndDate}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-sans font-medium rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-600 text-white text-xs sm:text-sm font-sans font-medium rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Uygula
             </button>
@@ -246,7 +248,7 @@ export default function DateRangeFilter({}: DateRangeFilterProps) {
       )}
 
       {selectedRange === "custom" && !showCustomDates && customStartDate && customEndDate && (
-        <div className="mt-2 text-sm font-sans text-gray-600">
+        <div className="mt-2 text-xs sm:text-sm font-sans text-gray-600 truncate">
           {getDisplayText()}
         </div>
       )}

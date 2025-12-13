@@ -12,18 +12,20 @@ export default async function MenuManagementPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-3 sm:p-4 lg:p-6">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Menü Yönetimi</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Menü Yönetimi</h1>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
             Header ve Footer menülerini, bölüm başlıklarını yönetin
           </p>
         </div>
-        <SeedButton />
+        <div className="w-full sm:w-auto">
+          <SeedButton />
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <MenuManager />
         <ContactInfoManager />
       </div>
