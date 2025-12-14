@@ -45,6 +45,7 @@ const menuItems = [
     subItems: [
       { href: "/admin/urunler", label: "Tüm Ürünler" },
       { href: "/admin/urunler/kategoriler", label: "Kategoriler" },
+      { href: "/admin/urunler/one-cikan", label: "Öne Çıkan Ürünler" },
     ],
   },
   { href: "/admin/siparisler", label: "Siparişler", icon: ShoppingBag },

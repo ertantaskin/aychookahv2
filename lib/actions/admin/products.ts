@@ -352,6 +352,40 @@ export const getAllProducts = async (
   }
 };
 
+// Öne çıkan ürünleri güncelle (admin için)
+export const updateFeaturedProducts = async (productIds: string[]) => {
+  await checkAdmin();
+
+  try {
+    // Önce tüm ürünlerin isFeatured değerini false yap
+    await prisma.product.updateMany({
+      data: {
+        isFeatured: false,
+      },
+    });
+
+    // Seçilen ürünlerin isFeatured değerini true yap
+    if (productIds.length > 0) {
+      await prisma.product.updateMany({
+        where: {
+          id: { in: productIds },
+        },
+        data: {
+          isFeatured: true,
+        },
+      });
+    }
+
+    revalidatePath("/");
+    revalidatePath("/admin/urunler/one-cikan");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating featured products:", error);
+    throw new Error("Öne çıkan ürünler güncellenirken bir hata oluştu");
+  }
+};
+
 // Kategorileri getir (admin için)
 export const getCategories = async () => {
   await checkAdmin();

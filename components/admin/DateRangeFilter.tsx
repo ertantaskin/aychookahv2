@@ -168,39 +168,39 @@ export default function DateRangeFilter({}: DateRangeFilterProps) {
 
         <div className="flex-1 overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
           <div className="flex gap-1.5 sm:gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
-            {quickRanges.map((range) => (
-              <button
-                key={range.value}
-                onClick={() => {
-                  setSelectedRange(range.value);
-                  setShowCustomDates(false);
-                  updateURL(range.value, "", "");
-                }}
-                className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans rounded transition-colors whitespace-nowrap flex-shrink-0 ${
-                  selectedRange === range.value
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {range.label}
-              </button>
-            ))}
+          {quickRanges.map((range) => (
             <button
+              key={range.value}
               onClick={() => {
-                setShowCustomDates(!showCustomDates);
-                if (!showCustomDates) {
-                  setSelectedRange("custom");
-                }
+                setSelectedRange(range.value);
+                setShowCustomDates(false);
+                updateURL(range.value, "", "");
               }}
-              className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans rounded transition-colors flex items-center gap-1 whitespace-nowrap flex-shrink-0 ${
-                selectedRange === "custom"
+                className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans rounded transition-colors whitespace-nowrap flex-shrink-0 ${
+                selectedRange === range.value
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              Özel Tarih
-              <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showCustomDates ? "rotate-180" : ""}`} />
+              {range.label}
             </button>
+          ))}
+          <button
+            onClick={() => {
+              setShowCustomDates(!showCustomDates);
+              if (!showCustomDates) {
+                setSelectedRange("custom");
+              }
+            }}
+              className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-sans rounded transition-colors flex items-center gap-1 whitespace-nowrap flex-shrink-0 ${
+              selectedRange === "custom"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Özel Tarih
+              <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform ${showCustomDates ? "rotate-180" : ""}`} />
+          </button>
           </div>
         </div>
 

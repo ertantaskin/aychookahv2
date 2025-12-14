@@ -251,84 +251,84 @@ export default function DashboardStats({ stats, recentOrders }: DashboardStatsPr
         <div className="overflow-x-auto">
           {/* Desktop Tablo Görünümü */}
           <div className="hidden lg:block">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                  <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                  Sipariş No
+                </th>
+                  <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                  Müşteri
+                </th>
+                  <th className="px-4 xl:px-6 py-3 text-right text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                  Tutar
+                </th>
+                  <th className="px-4 xl:px-6 py-3 text-center text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                  Durum
+                </th>
+                  <th className="px-4 xl:px-6 py-3 text-center text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                  Ödeme
+                </th>
+                  <th className="px-4 xl:px-6 py-3 text-right text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
+                  Tarih
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {recentOrders.length === 0 ? (
                 <tr>
-                  <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
-                    Sipariş No
-                  </th>
-                  <th className="px-4 xl:px-6 py-3 text-left text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
-                    Müşteri
-                  </th>
-                  <th className="px-4 xl:px-6 py-3 text-right text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
-                    Tutar
-                  </th>
-                  <th className="px-4 xl:px-6 py-3 text-center text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
-                    Durum
-                  </th>
-                  <th className="px-4 xl:px-6 py-3 text-center text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
-                    Ödeme
-                  </th>
-                  <th className="px-4 xl:px-6 py-3 text-right text-xs font-sans font-semibold text-gray-700 uppercase tracking-wider">
-                    Tarih
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentOrders.length === 0 ? (
-                  <tr>
                     <td colSpan={6} className="px-4 xl:px-6 py-8 text-center text-sm font-sans text-gray-500">
-                      Henüz sipariş bulunmuyor
+                    Henüz sipariş bulunmuyor
+                  </td>
+                </tr>
+              ) : (
+                recentOrders.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => (window.location.href = `/admin/siparisler/${order.id}`)}
+                  >
+                      <td className="px-4 xl:px-6 py-4 text-sm font-sans">
+                      <Link
+                        href={`/admin/siparisler/${order.id}`}
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {order.orderNumber}
+                      </Link>
+                    </td>
+                      <td className="px-4 xl:px-6 py-4 text-sm font-sans text-gray-900">
+                      {order.customerName}
+                    </td>
+                      <td className="px-4 xl:px-6 py-4 text-sm font-sans font-medium text-gray-900 text-right">
+                      {formatCurrency(order.total)}
+                    </td>
+                      <td className="px-4 xl:px-6 py-4 text-sm text-center">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
+                      <td className="px-4 xl:px-6 py-4 text-sm text-center">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${getPaymentStatusColor(
+                          order.paymentStatus
+                        )}`}
+                      >
+                        {order.paymentStatus}
+                      </span>
+                    </td>
+                      <td className="px-4 xl:px-6 py-4 text-sm font-sans text-gray-600 text-right">
+                      {format(new Date(order.createdAt), "d MMM yyyy HH:mm", { locale: tr })}
                     </td>
                   </tr>
-                ) : (
-                  recentOrders.map((order) => (
-                    <tr
-                      key={order.id}
-                      className="hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => (window.location.href = `/admin/siparisler/${order.id}`)}
-                    >
-                      <td className="px-4 xl:px-6 py-4 text-sm font-sans">
-                        <Link
-                          href={`/admin/siparisler/${order.id}`}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {order.orderNumber}
-                        </Link>
-                      </td>
-                      <td className="px-4 xl:px-6 py-4 text-sm font-sans text-gray-900">
-                        {order.customerName}
-                      </td>
-                      <td className="px-4 xl:px-6 py-4 text-sm font-sans font-medium text-gray-900 text-right">
-                        {formatCurrency(order.total)}
-                      </td>
-                      <td className="px-4 xl:px-6 py-4 text-sm text-center">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-4 xl:px-6 py-4 text-sm text-center">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-sans font-medium rounded-full ${getPaymentStatusColor(
-                            order.paymentStatus
-                          )}`}
-                        >
-                          {order.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="px-4 xl:px-6 py-4 text-sm font-sans text-gray-600 text-right">
-                        {format(new Date(order.createdAt), "d MMM yyyy HH:mm", { locale: tr })}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
           </div>
 
           {/* Mobil Kart Görünümü */}

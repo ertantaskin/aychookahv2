@@ -66,6 +66,7 @@ model Product {
   isActive         Boolean          @default(true)
   isNew            Boolean          @default(false)
   isBestseller     Boolean          @default(false)
+  isFeatured       Boolean          @default(false)
   material         String?
   height           String?
   equipmentType    String?

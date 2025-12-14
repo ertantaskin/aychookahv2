@@ -196,14 +196,14 @@ export default function OrderDetailClient({ order }: OrderDetailClientProps) {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-sans font-bold text-gray-900 mb-1 sm:mb-2 truncate">Sipariş Detayı</h1>
             <p className="text-xs sm:text-sm font-sans text-gray-600 truncate">Sipariş No: {order.orderNumber}</p>
           </div>
-          <button
-            onClick={() => router.back()}
+        <button
+          onClick={() => router.back()}
             className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full sm:w-auto flex-shrink-0"
-          >
+        >
             <ArrowLeft className="w-4 h-4" />
             <span className="sm:inline">Geri</span>
-          </button>
-        </div>
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}

@@ -211,3 +211,69 @@ export const getRelatedProducts = async (productId: string, categoryId: string, 
   }
 };
 
+// Öne çıkan ürünleri getir (public) - getProducts ile aynı yapıyı kullanır
+export const getFeaturedProducts = async () => {
+  try {
+    // Sıralama bilgisini al
+    const orderSettings = await prisma.storeSettings.findUnique({
+      where: { key: "featuredProductsOrder" },
+    });
+
+    const orderArray = orderSettings?.config && typeof orderSettings.config === 'object' && 'order' in orderSettings.config
+      ? (orderSettings.config as any).order as string[]
+      : null;
+
+    const products = await prisma.product.findMany({
+      where: {
+        isFeatured: true,
+        isActive: true,
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        images: {
+          orderBy: { isPrimary: "desc" },
+          take: 1,
+        },
+        features: true,
+        _count: {
+          select: {
+            reviews: true,
+          },
+        },
+      },
+      take: 8, // Maksimum 8 ürün
+    });
+
+    // Sıralama bilgisi varsa ona göre sırala
+    if (orderArray && orderArray.length > 0) {
+      const productMap = new Map(products.map(p => [p.id, p]));
+      const orderedProducts = orderArray
+        .map(id => productMap.get(id))
+        .filter((p): p is typeof products[0] => p !== undefined);
+      
+      // Sıralama bilgisinde olmayan ürünleri sona ekle
+      const remainingProducts = products.filter(p => !orderArray.includes(p.id));
+      return [...orderedProducts, ...remainingProducts];
+    }
+
+    // Sıralama bilgisi yoksa oluşturulma tarihine göre sırala
+    return products.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch (error) {
+    console.error("Error fetching featured products:", error);
+    // Veritabanı bağlantı hatası veya tablo yoksa boş dizi döndür
+    if (error instanceof Error) {
+      console.error("Error details:", error.message);
+      if (error.message.includes("does not exist") || error.message.includes("relation") || error.message.includes("connect")) {
+        return [];
+      }
+    }
+    return [];
+  }
+};
+
