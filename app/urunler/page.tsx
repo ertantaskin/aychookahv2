@@ -13,14 +13,31 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const pageMetadata = await getPageMetadata("/urunler");
-  if (pageMetadata) {
-    return pageMetadata;
+  try {
+    const pageMetadata = await getPageMetadata("/urunler");
+    if (pageMetadata) {
+      return pageMetadata;
+    }
+  } catch (error) {
+    console.error("Error fetching page metadata:", error);
+    // Fallback metadata'ya devam et
   }
 
   // Fallback metadata
-  const siteSEO = await getSiteSEO();
-  const baseUrl = siteSEO.siteUrl;
+  let siteSEO;
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+  
+  try {
+    siteSEO = await getSiteSEO();
+    baseUrl = siteSEO.siteUrl || baseUrl;
+  } catch (seoError) {
+    console.error("Error fetching site SEO in metadata:", seoError);
+    // Fallback değerler kullan
+    siteSEO = {
+      siteName: "Aychookah",
+      siteUrl: baseUrl,
+    } as any;
+  }
   
   return {
     title: "Ürünler",
@@ -46,7 +63,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Ürünler",
       description: "Aychookah lüks nargile takımları, orijinal Rus nargile ekipmanları ve premium aksesuarlar. El işçiliği ve kaliteli tasarımlar.",
       url: `${baseUrl}/urunler`,
-      siteName: siteSEO.siteName,
+      siteName: siteSEO?.siteName || "Aychookah",
     },
     twitter: {
       card: "summary_large_image",
@@ -58,8 +75,25 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ProductsPage() {
   try {
-    const { products } = await getProducts({ isActive: true }, undefined, 1, 100);
-    const categories = await getCategories();
+    let products: Awaited<ReturnType<typeof getProducts>>['products'] = [];
+    let categories: Awaited<ReturnType<typeof getCategories>> = [];
+    
+    try {
+      const productsResult = await getProducts({ isActive: true }, undefined, 1, 100);
+      products = productsResult.products || [];
+    } catch (productsError) {
+      console.error("Error fetching products:", productsError);
+      // Boş dizi kullan - sayfa yine de render edilecek
+      products = [];
+    }
+    
+    try {
+      categories = await getCategories();
+    } catch (categoriesError) {
+      console.error("Error fetching categories:", categoriesError);
+      // Boş dizi kullan - sayfa yine de render edilecek
+      categories = [];
+    }
     
     let siteSEO;
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";

@@ -1,9 +1,5 @@
 "use client";
 
-import { 
-  AggregateRatingJsonLd,
-} from "next-seo";
-
 interface OrganizationData {
   name: string;
   url: string;
@@ -188,16 +184,37 @@ export function AggregateRatingStructuredData({
   itemReviewed,
   ratingValue,
   reviewCount,
+  itemUrl,
 }: {
   itemReviewed: string;
   ratingValue: number;
   reviewCount: number;
+  itemUrl?: string;
 }) {
+  // Veriler sistemden geliyor (prop'lar üzerinden)
+  // Eğer rating yoksa veya geçersizse render etme
+  if (!ratingValue || ratingValue <= 0 || reviewCount <= 0) {
+    return null;
+  }
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AggregateRating",
+    itemReviewed: {
+      "@type": "Product",
+      name: itemReviewed,
+      ...(itemUrl && { url: itemUrl }),
+    },
+    ratingValue: Number(ratingValue.toFixed(1)), // Virgülden sonra 1 basamak
+    reviewCount: Number(reviewCount),
+    bestRating: 5,
+    worstRating: 1,
+  };
+
   return (
-    <AggregateRatingJsonLd
-      itemReviewed={itemReviewed}
-      ratingValue={ratingValue}
-      reviewCount={reviewCount}
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   );
 }

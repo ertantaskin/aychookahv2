@@ -18,7 +18,16 @@ export const revalidate = 0;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const category = await getCategoryBySlug(slug);
+  
+  let category;
+  try {
+    category = await getCategoryBySlug(slug);
+  } catch (error) {
+    console.error("Error fetching category in metadata:", error);
+    return {
+      title: "Kategori Bulunamadı",
+    };
+  }
 
   if (!category) {
     return {
@@ -93,18 +102,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CategoryPage({ params }: PageProps) {
   const { slug } = await params;
-  const category = await getCategoryBySlug(slug);
+  
+  let category;
+  try {
+    category = await getCategoryBySlug(slug);
+  } catch (error) {
+    console.error("Error fetching category:", error);
+    notFound();
+    return; // TypeScript için
+  }
 
   if (!category) {
     notFound();
+    return; // TypeScript için
   }
 
-  const { products } = await getProducts(
-    { categoryIds: [category.id], isActive: true },
-    undefined,
-    1,
-    100
-  );
+  let products: Awaited<ReturnType<typeof getProducts>>['products'] = [];
+  try {
+    const productsResult = await getProducts(
+      { categoryIds: [category.id], isActive: true },
+      undefined,
+      1,
+      100
+    );
+    products = productsResult.products || [];
+  } catch (productsError) {
+    console.error("Error fetching products:", productsError);
+    // Boş dizi kullan - sayfa yine de render edilecek
+    products = [];
+  }
 
   let siteSEO;
   let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";

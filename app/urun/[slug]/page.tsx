@@ -19,7 +19,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   
   try {
-    const product = await getProduct(slug);
+    let product;
+    try {
+      product = await getProduct(slug);
+    } catch (productError) {
+      console.error("Error fetching product in metadata:", productError);
+      return {
+        title: "Ürün Bulunamadı",
+      };
+    }
+
+    if (!product) {
+      return {
+        title: "Ürün Bulunamadı",
+      };
+    }
+
     let siteSEO;
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
     
@@ -93,8 +108,28 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params;
 
   try {
-    const product = await getProduct(slug);
-    const relatedProducts = await getRelatedProducts(product.id, product.categoryId);
+    let product;
+    try {
+      product = await getProduct(slug);
+    } catch (productError) {
+      console.error("Error fetching product:", productError);
+      notFound();
+      return; // TypeScript için
+    }
+
+    if (!product) {
+      notFound();
+      return; // TypeScript için
+    }
+
+    let relatedProducts: Awaited<ReturnType<typeof getRelatedProducts>> = [];
+    try {
+      relatedProducts = await getRelatedProducts(product.id, product.categoryId);
+    } catch (relatedError) {
+      console.error("Error fetching related products:", relatedError);
+      // Boş dizi kullan - sayfa yine de render edilecek
+      relatedProducts = [];
+    }
     
     let siteSEO;
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
@@ -182,11 +217,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <div className="min-h-screen bg-white">
         <ProductStructuredData data={productData} />
         <BreadcrumbStructuredData data={breadcrumbData} />
-        {avgRating > 0 && (
+        {avgRating > 0 && reviews.length > 0 && (
           <AggregateRatingStructuredData
             itemReviewed={product.name}
             ratingValue={avgRating}
             reviewCount={reviews.length}
+            itemUrl={`${baseUrl}/urun/${product.slug}`}
           />
         )}
         <ProductDetailClient product={product} taxSettings={taxSettings} />
