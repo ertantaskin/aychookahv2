@@ -60,8 +60,21 @@ export default async function ProductsPage() {
   try {
     const { products } = await getProducts({ isActive: true }, undefined, 1, 100);
     const categories = await getCategories();
-    const siteSEO = await getSiteSEO();
-    const baseUrl = siteSEO.siteUrl;
+    
+    let siteSEO;
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+    
+    try {
+      siteSEO = await getSiteSEO();
+      baseUrl = siteSEO.siteUrl || baseUrl;
+    } catch (seoError) {
+      console.error("Error fetching site SEO:", seoError);
+      // Fallback değerler kullan
+      siteSEO = {
+        siteName: "Aychookah",
+        siteUrl: baseUrl,
+      } as any;
+    }
 
     // Breadcrumb structured data
     const breadcrumbData = {

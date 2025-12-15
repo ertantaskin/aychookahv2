@@ -85,22 +85,95 @@ export async function getSiteSEO() {
     
     if (!siteSEO) {
       // Varsayılan değerlerle oluştur
-      siteSEO = await prisma.siteSEO.create({
-        data: {
+      try {
+        siteSEO = await prisma.siteSEO.create({
+          data: {
+            siteName: "Aychookah",
+            siteDescription: "Lüks nargile takımları ve aksesuarları",
+            siteUrl: process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com",
+            defaultTitle: "Aychookah - Lüks Nargile Takımları",
+            defaultDescription: "Aychookah, kendi ürettiği lüks nargile takımları ve ithal orijinal Rus nargile ekipmanlarını sunar.",
+            defaultKeywords: "nargile, rus nargile, lüks nargile, nargile takımı",
+          },
+        });
+      } catch (createError) {
+        // Veritabanı yazma hatası - fallback değerler döndür
+        console.error("Error creating site SEO:", createError);
+        return {
+          id: "fallback",
           siteName: "Aychookah",
           siteDescription: "Lüks nargile takımları ve aksesuarları",
           siteUrl: process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com",
           defaultTitle: "Aychookah - Lüks Nargile Takımları",
           defaultDescription: "Aychookah, kendi ürettiği lüks nargile takımları ve ithal orijinal Rus nargile ekipmanlarını sunar.",
           defaultKeywords: "nargile, rus nargile, lüks nargile, nargile takımı",
-        },
-      });
+          favicon: null,
+          ogImage: null,
+          twitterHandle: null,
+          facebookAppId: null,
+          instagramUrl: null,
+          linkedinUrl: null,
+          youtubeUrl: null,
+          pinterestUrl: null,
+          googleSiteVerification: null,
+          bingVerification: null,
+          robotsTxt: null,
+          analyticsId: null,
+          phone: null,
+          email: null,
+          address: null,
+          city: null,
+          country: null,
+          postalCode: null,
+          latitude: null,
+          longitude: null,
+          openingHours: null,
+          priceRange: null,
+          structuredData: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any;
+      }
     }
     
     return siteSEO;
   } catch (error) {
     console.error("Error fetching site SEO:", error);
-    throw error;
+    // Hata durumunda fallback değerler döndür - sayfa çalışmaya devam etsin
+    return {
+      id: "fallback",
+      siteName: "Aychookah",
+      siteDescription: "Lüks nargile takımları ve aksesuarları",
+      siteUrl: process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com",
+      defaultTitle: "Aychookah - Lüks Nargile Takımları",
+      defaultDescription: "Aychookah, kendi ürettiği lüks nargile takımları ve ithal orijinal Rus nargile ekipmanlarını sunar.",
+      defaultKeywords: "nargile, rus nargile, lüks nargile, nargile takımı",
+      favicon: null,
+      ogImage: null,
+      twitterHandle: null,
+      facebookAppId: null,
+      instagramUrl: null,
+      linkedinUrl: null,
+      youtubeUrl: null,
+      pinterestUrl: null,
+      googleSiteVerification: null,
+      bingVerification: null,
+      robotsTxt: null,
+      analyticsId: null,
+      phone: null,
+      email: null,
+      address: null,
+      city: null,
+      country: null,
+      postalCode: null,
+      latitude: null,
+      longitude: null,
+      openingHours: null,
+      priceRange: null,
+      structuredData: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any;
   }
 }
 

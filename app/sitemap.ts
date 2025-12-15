@@ -4,8 +4,16 @@ import { prisma } from '@/lib/prisma';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
-    const siteSEO = await getSiteSEO();
-    const baseUrl = siteSEO.siteUrl;
+    let siteSEO;
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
+    
+    try {
+      siteSEO = await getSiteSEO();
+      baseUrl = siteSEO.siteUrl || baseUrl;
+    } catch (seoError) {
+      console.error('Error fetching site SEO in sitemap:', seoError);
+      // Fallback URL kullan
+    }
 
     // Static pages
     const staticPages: MetadataRoute.Sitemap = [

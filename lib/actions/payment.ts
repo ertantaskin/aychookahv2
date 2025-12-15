@@ -178,6 +178,150 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       }
     }
 
+    // PayTR kontrolü - eğer seçilen gateway PayTR ise, PayTR akışına yönlendir
+    // Bu kontrol sepet kontrolünden SONRA yapılmalı (cart tanımlı olmalı)
+    if (selectedGateway && selectedGateway.name === "paytr") {
+      // PayTR için sipariş oluştur (iyzico akışından önce)
+      // Bu kısım iyzico akışından bağımsız çalışacak
+      let paytrPendingOrder;
+      
+      if (retryOrderId) {
+        // Retry durumunda mevcut siparişi kullan
+        paytrPendingOrder = await prisma.order.findUnique({
+          where: { id: retryOrderId },
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        });
+
+        if (!paytrPendingOrder || paytrPendingOrder.userId !== session.user.id) {
+          throw new Error("Sipariş bulunamadı");
+        }
+
+        if (paytrPendingOrder.paymentStatus !== "PENDING" && paytrPendingOrder.paymentStatus !== "FAILED") {
+          throw new Error("Bu sipariş tekrar ödenemez");
+        }
+
+        // Siparişi güncelle
+        paytrPendingOrder = await prisma.order.update({
+          where: { id: retryOrderId },
+          data: {
+            shippingAddress,
+            paymentStatus: "PENDING",
+            notes: `PayTR ödeme denemesi - ${new Date().toISOString()}`,
+          },
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Yeni sipariş oluştur (iyzico akışındaki gibi)
+        // cart zaten yukarıda tanımlı
+        const cartSubtotal = cart.items.reduce(
+          (sum, item) => sum + item.product.price * item.quantity,
+          0
+        );
+        const shippingCost = calculateShippingCost(cartSubtotal, shippingSettings);
+        const taxCalculation = calculateTaxForCartWithShipping(
+          cartSubtotal,
+          shippingCost,
+          taxSettings.defaultTaxRate,
+          taxSettings.taxIncluded
+        );
+        const discountAmount = couponDiscountAmount || 0;
+        
+        const { calculateTotalWithCoupon } = await import("@/lib/utils/coupon-calculator");
+        let couponForPayTR: any = null;
+        if (couponCode && discountAmount > 0) {
+          couponForPayTR = await prisma.coupon.findUnique({
+            where: { code: couponCode.toUpperCase() },
+          });
+        }
+        const isFreeShippingForPayTR = couponForPayTR?.discountType === "FREE_SHIPPING";
+        const shippingCostForPayTR = isFreeShippingForPayTR ? 0 : taxCalculation.shippingCost;
+        
+        const totalCalculation = discountAmount > 0
+          ? calculateTotalWithCoupon(
+              cartSubtotal,
+              shippingCostForPayTR,
+              discountAmount,
+              taxSettings.defaultTaxRate,
+              taxSettings.taxIncluded
+            )
+          : {
+              subtotal: taxCalculation.subtotal,
+              tax: taxCalculation.tax,
+              shippingCost: taxCalculation.shippingCost,
+              shippingTax: 0,
+              total: taxCalculation.total,
+            };
+
+        const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+        paytrPendingOrder = await prisma.order.create({
+          data: {
+            orderNumber,
+            userId: session.user.id,
+            total: totalCalculation.total,
+            subtotal: totalCalculation.subtotal,
+            shippingCost: totalCalculation.shippingCost,
+            tax: totalCalculation.tax,
+            couponCode: couponCode || null,
+            discountAmount,
+            shippingAddress,
+            paymentMethod: "paytr",
+            paymentStatus: "PENDING",
+            status: "PENDING",
+            items: {
+              create: cart.items.map((item) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.product.price,
+                productName: item.product.name,
+                productImageUrl: (item.product as any).images?.find((img: any) => img.isPrimary)?.url || (item.product as any).images?.[0]?.url || null,
+              })),
+            },
+          },
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        });
+      }
+
+      // PayTR token oluştur
+      const { createPayTRToken } = await import("./payment-paytr");
+      const paytrResult = await createPayTRToken(
+        shippingAddress,
+        paytrPendingOrder.id,
+        selectedGateway.id,
+        couponCode,
+        couponDiscountAmount
+      );
+
+      if (paytrResult.success && paytrResult.token) {
+        return {
+          type: "paytr",
+          token: paytrResult.token,
+          orderId: paytrResult.orderId,
+          orderNumber: paytrResult.orderNumber,
+        };
+      } else {
+        throw new Error("PayTR token oluşturulamadı");
+      }
+    }
+
     // Sepet içeriğini normalize et (karşılaştırma için)
     const normalizeCartItems = (items: any[]) => {
       return items

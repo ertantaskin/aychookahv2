@@ -2,7 +2,26 @@ import { Metadata } from "next";
 import { getSiteSEO, getPageSEO } from "@/lib/actions/seo";
 
 export async function getDefaultMetadata(): Promise<Metadata> {
-  const siteSEO = await getSiteSEO();
+  let siteSEO;
+  try {
+    siteSEO = await getSiteSEO();
+  } catch (error) {
+    console.error("Error fetching site SEO in getDefaultMetadata:", error);
+    // Fallback değerler
+    const fallbackUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+    siteSEO = {
+      siteName: "Aychookah",
+      siteUrl: fallbackUrl,
+      defaultTitle: "Aychookah - Lüks Nargile Takımları",
+      defaultDescription: "Aychookah, kendi ürettiği lüks nargile takımları ve ithal orijinal Rus nargile ekipmanlarını sunar.",
+      defaultKeywords: "nargile, rus nargile, lüks nargile, nargile takımı",
+      favicon: null,
+      ogImage: null,
+      twitterHandle: null,
+      googleSiteVerification: null,
+      bingVerification: null,
+    } as any;
+  }
 
   return {
     title: {
@@ -10,7 +29,7 @@ export async function getDefaultMetadata(): Promise<Metadata> {
       template: `%s | ${siteSEO.siteName}`,
     },
     description: siteSEO.defaultDescription,
-    keywords: siteSEO.defaultKeywords?.split(",").map((k) => k.trim()),
+    keywords: siteSEO.defaultKeywords?.split(",").map((k: string) => k.trim()),
     metadataBase: new URL(siteSEO.siteUrl),
     alternates: {
       languages: {
@@ -80,13 +99,25 @@ export async function getPageMetadata(pagePath: string): Promise<Metadata | null
   const pageSEO = await getPageSEO(pagePath);
   if (!pageSEO) return null;
 
-  const siteSEO = await getSiteSEO();
-  const baseUrl = siteSEO.siteUrl;
+  let siteSEO;
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+  
+  try {
+    siteSEO = await getSiteSEO();
+    baseUrl = siteSEO.siteUrl || baseUrl;
+  } catch (error) {
+    console.error("Error fetching site SEO in getPageMetadata:", error);
+    // Fallback değerler
+    siteSEO = {
+      siteName: "Aychookah",
+      siteUrl: baseUrl,
+    } as any;
+  }
 
   const metadata: Metadata = {
     title: pageSEO.title || pageSEO.pageName,
     description: pageSEO.description || undefined,
-    keywords: pageSEO.keywords?.split(",").map((k) => k.trim()),
+    keywords: pageSEO.keywords?.split(",").map((k: string) => k.trim()),
     metadataBase: new URL(baseUrl),
     alternates: {
       canonical: pageSEO.canonical || `${baseUrl}${pageSEO.pagePath}`,

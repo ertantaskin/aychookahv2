@@ -3,8 +3,19 @@ import { getSiteSEO } from '@/lib/actions/seo';
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   try {
-    const siteSEO = await getSiteSEO();
-    const baseUrl = siteSEO.siteUrl;
+    let siteSEO;
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
+    
+    try {
+      siteSEO = await getSiteSEO();
+      baseUrl = siteSEO.siteUrl || baseUrl;
+    } catch (seoError) {
+      console.error('Error fetching site SEO in robots:', seoError);
+      // Fallback URL kullan
+      siteSEO = {
+        robotsTxt: null,
+      } as any;
+    }
 
     // Parse robots.txt content if exists
     let disallowPaths = ['/api/', '/admin/', '/giris', '/kayit', '/hesabim/', '/sepet', '/odeme/'];
@@ -13,8 +24,8 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       // Simple parsing - you can enhance this
       const lines = siteSEO.robotsTxt.split('\n');
       const disallowLines = lines
-        .filter(line => line.trim().startsWith('Disallow:'))
-        .map(line => line.replace('Disallow:', '').trim());
+        .filter((line: string) => line.trim().startsWith('Disallow:'))
+        .map((line: string) => line.replace('Disallow:', '').trim());
       
       if (disallowLines.length > 0) {
         disallowPaths = disallowLines;

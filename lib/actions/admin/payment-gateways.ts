@@ -29,6 +29,33 @@ export const getPaymentGateways = async () => {
       });
     }
 
+    // PayTR yoksa otomatik oluştur (pasif olarak)
+    const paytr = await prisma.paymentGateway.findUnique({
+      where: { name: "paytr" },
+    });
+
+    if (!paytr) {
+      await prisma.paymentGateway.create({
+        data: {
+          name: "paytr",
+          displayName: "PayTR",
+          isActive: false,
+          isTestMode: true,
+          config: {
+            merchant_id: "",
+            merchant_key: "",
+            merchant_salt: "",
+            iframe_v2_dark: "0",
+            no_installment: "0",
+            max_installment: "0",
+            currency: "TL",
+            timeout_limit: "30",
+            lang: "tr",
+          },
+        },
+      });
+    }
+
     return await prisma.paymentGateway.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -66,19 +93,21 @@ export const upsertPaymentGateway = async (data: {
     iban?: string;
     branch?: string;
     accountNumber?: string;
+    // PayTR için
+    merchant_id?: string;
+    merchant_key?: string;
+    merchant_salt?: string;
+    iframe_v2_dark?: string;
+    no_installment?: string;
+    max_installment?: string;
+    currency?: string;
+    timeout_limit?: string;
+    lang?: string;
   };
 }) => {
   try {
-    // EFT/Havale için özel kontrol - aktif edilirken diğer gateway'leri devre dışı bırakma
-    if (data.name !== "eft-havale" && data.isActive) {
-      await prisma.paymentGateway.updateMany({
-        where: { 
-          isActive: true,
-          name: { not: "eft-havale" } // EFT/Havale'yi etkileme
-        },
-        data: { isActive: false },
-      });
-    }
+    // Birden fazla gateway aktif olabilir - bu kontrolü kaldırdık
+    // Her gateway bağımsız olarak aktif/pasif edilebilir
 
     const gateway = await prisma.paymentGateway.upsert({
       where: { name: data.name },
@@ -117,16 +146,8 @@ export const togglePaymentGateway = async (id: string, isActive: boolean) => {
       throw new Error("Ödeme sistemi bulunamadı");
     }
 
-    // EFT/Havale değilse ve aktif ediliyorsa, diğer gateway'leri (EFT/Havale hariç) devre dışı bırak
-    if (isActive && gateway.name !== "eft-havale") {
-      await prisma.paymentGateway.updateMany({
-        where: { 
-          isActive: true,
-          name: { not: "eft-havale" } // EFT/Havale'yi etkileme
-        },
-        data: { isActive: false },
-      });
-    }
+    // Birden fazla gateway aktif olabilir - bu kontrolü kaldırdık
+    // Her gateway bağımsız olarak aktif/pasif edilebilir
 
     await prisma.paymentGateway.update({
       where: { id },

@@ -19,6 +19,22 @@ interface PaymentGateway {
     apiKey?: string;
     secretKey?: string;
     uri?: string;
+    // PayTR için
+    merchant_id?: string;
+    merchant_key?: string;
+    merchant_salt?: string;
+    iframe_v2_dark?: string;
+    no_installment?: string;
+    max_installment?: string;
+    currency?: string;
+    timeout_limit?: string;
+    lang?: string;
+    // EFT/Havale için
+    bankName?: string;
+    accountName?: string;
+    iban?: string;
+    branch?: string;
+    accountNumber?: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -49,6 +65,16 @@ export default function PaymentGatewaysClient({
     iban: "",
     branch: "",
     accountNumber: "",
+    // PayTR için
+    merchant_id: "",
+    merchant_key: "",
+    merchant_salt: "",
+    iframe_v2_dark: "0",
+    no_installment: "0",
+    max_installment: "0",
+    currency: "TL",
+    timeout_limit: "30",
+    lang: "tr",
   });
 
   const handleEdit = (gateway: PaymentGateway) => {
@@ -68,6 +94,16 @@ export default function PaymentGatewaysClient({
       iban: config?.iban || "",
       branch: config?.branch || "",
       accountNumber: config?.accountNumber || "",
+      // PayTR için
+      merchant_id: config?.merchant_id || "",
+      merchant_key: config?.merchant_key || "",
+      merchant_salt: config?.merchant_salt || "",
+      iframe_v2_dark: config?.iframe_v2_dark || "0",
+      no_installment: config?.no_installment || "0",
+      max_installment: config?.max_installment || "0",
+      currency: config?.currency || "TL",
+      timeout_limit: config?.timeout_limit || "30",
+      lang: config?.lang || "tr",
     });
   };
 
@@ -76,20 +112,37 @@ export default function PaymentGatewaysClient({
     setIsSubmitting(true);
 
     try {
-      // EFT/Havale için özel config
-      const config = formData.name === "eft-havale" 
-        ? {
-            bankName: formData.bankName,
-            accountName: formData.accountName,
-            iban: formData.iban,
-            branch: formData.branch,
-            accountNumber: formData.accountNumber,
-          }
-        : {
-            apiKey: formData.apiKey,
-            secretKey: formData.secretKey,
-            uri: formData.uri,
-          };
+      // Gateway tipine göre config oluştur
+      let config: any = {};
+      
+      if (formData.name === "eft-havale") {
+        config = {
+          bankName: formData.bankName,
+          accountName: formData.accountName,
+          iban: formData.iban,
+          branch: formData.branch,
+          accountNumber: formData.accountNumber,
+        };
+      } else if (formData.name === "paytr") {
+        config = {
+          merchant_id: formData.merchant_id,
+          merchant_key: formData.merchant_key,
+          merchant_salt: formData.merchant_salt,
+          iframe_v2_dark: formData.iframe_v2_dark,
+          no_installment: formData.no_installment,
+          max_installment: formData.max_installment,
+          currency: formData.currency,
+          timeout_limit: formData.timeout_limit,
+          lang: formData.lang,
+        };
+      } else {
+        // iyzico veya diğer gateway'ler
+        config = {
+          apiKey: formData.apiKey,
+          secretKey: formData.secretKey,
+          uri: formData.uri,
+        };
+      }
 
       await upsertPaymentGateway({
         name: formData.name,
@@ -157,6 +210,15 @@ export default function PaymentGatewaysClient({
               iban: "",
               branch: "",
               accountNumber: "",
+              merchant_id: "",
+              merchant_key: "",
+              merchant_salt: "",
+              iframe_v2_dark: "0",
+              no_installment: "0",
+              max_installment: "0",
+              currency: "TL",
+              timeout_limit: "30",
+              lang: "tr",
             });
           }}
           className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-sans bg-luxury-goldLight text-luxury-black rounded-lg hover:bg-luxury-goldLight/90 transition-colors font-semibold w-full sm:w-auto"
@@ -204,6 +266,30 @@ export default function PaymentGatewaysClient({
                           branch: "",
                           accountNumber: "",
                         });
+                      } else if (newName === "paytr") {
+                        setFormData({
+                          ...formData,
+                          name: "paytr",
+                          displayName: "PayTR",
+                          isTestMode: true,
+                          apiKey: "",
+                          secretKey: "",
+                          uri: "",
+                          bankName: "",
+                          accountName: "",
+                          iban: "",
+                          branch: "",
+                          accountNumber: "",
+                          merchant_id: "",
+                          merchant_key: "",
+                          merchant_salt: "",
+                          iframe_v2_dark: "0",
+                          no_installment: "0",
+                          max_installment: "0",
+                          currency: "TL",
+                          timeout_limit: "30",
+                          lang: "tr",
+                        });
                       } else {
                         setFormData({
                           ...formData,
@@ -218,6 +304,15 @@ export default function PaymentGatewaysClient({
                           iban: "",
                           branch: "",
                           accountNumber: "",
+                          merchant_id: "",
+                          merchant_key: "",
+                          merchant_salt: "",
+                          iframe_v2_dark: "0",
+                          no_installment: "0",
+                          max_installment: "0",
+                          currency: "TL",
+                          timeout_limit: "30",
+                          lang: "tr",
                         });
                       }
                     }}
@@ -225,6 +320,7 @@ export default function PaymentGatewaysClient({
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
                   >
                     <option value="iyzico">iyzico</option>
+                    <option value="paytr">PayTR</option>
                     <option value="eft-havale">EFT/Havale</option>
                   </select>
                 )}
@@ -246,7 +342,8 @@ export default function PaymentGatewaysClient({
               </div>
             </div>
 
-            {formData.name !== "eft-havale" && (
+            {/* iyzico için alanlar */}
+            {formData.name === "iyzico" && (
               <>
             <div>
               <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
@@ -282,8 +379,178 @@ export default function PaymentGatewaysClient({
               </>
             )}
 
+            {/* PayTR için alanlar */}
+            {formData.name === "paytr" && (
+              <>
+            <div>
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                Merchant ID *
+              </label>
+              <input
+                type="text"
+                value={formData.merchant_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, merchant_id: e.target.value })
+                }
+                required
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                placeholder="Merchant ID"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                Merchant Key *
+              </label>
+              <input
+                type="password"
+                value={formData.merchant_key}
+                onChange={(e) =>
+                  setFormData({ ...formData, merchant_key: e.target.value })
+                }
+                required
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                placeholder="Merchant Key"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                Merchant Salt *
+              </label>
+              <input
+                type="password"
+                value={formData.merchant_salt}
+                onChange={(e) =>
+                  setFormData({ ...formData, merchant_salt: e.target.value })
+                }
+                required
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                placeholder="Merchant Salt"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                  Para Birimi
+                </label>
+                <select
+                  value={formData.currency}
+                  onChange={(e) =>
+                    setFormData({ ...formData, currency: e.target.value })
+                  }
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
+                >
+                  <option value="TL">TL</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                  Dil
+                </label>
+                <select
+                  value={formData.lang}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lang: e.target.value })
+                  }
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
+                >
+                  <option value="tr">Türkçe</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                  Maksimum Taksit
+                </label>
+                <input
+                  type="number"
+                  value={formData.max_installment}
+                  onChange={(e) =>
+                    setFormData({ ...formData, max_installment: e.target.value })
+                  }
+                  min="0"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                  placeholder="0 = Sınırsız"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                  Zaman Aşımı (Dakika)
+                </label>
+                <input
+                  type="number"
+                  value={formData.timeout_limit}
+                  onChange={(e) =>
+                    setFormData({ ...formData, timeout_limit: e.target.value })
+                  }
+                  min="1"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                  placeholder="30"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.no_installment === "1"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, no_installment: e.target.checked ? "1" : "0" })
+                  }
+                  className="w-4 h-4 text-luxury-goldLight border-gray-300 rounded focus:ring-luxury-goldLight"
+                />
+                <span className="text-xs sm:text-sm font-sans font-medium text-gray-700">Taksit Yapılmasın (Sadece Tek Çekim)</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.iframe_v2_dark === "1"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, iframe_v2_dark: e.target.checked ? "1" : "0" })
+                  }
+                  className="w-4 h-4 text-luxury-goldLight border-gray-300 rounded focus:ring-luxury-goldLight"
+                />
+                <span className="text-xs sm:text-sm font-sans font-medium text-gray-700">Dark Mode</span>
+              </label>
+            </div>
+              </>
+            )}
+
+            {/* iyzico için URI alanı */}
+            {formData.name === "iyzico" && (
+              <>
+            <div>
+              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+                API URI
+              </label>
+              <select
+                value={formData.uri}
+                onChange={(e) =>
+                  setFormData({ ...formData, uri: e.target.value })
+                }
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
+              >
+                <option value="https://sandbox-api.iyzipay.com">
+                  Sandbox (Test)
+                </option>
+                <option value="https://api.iyzipay.com">Production</option>
+              </select>
+            </div>
+              </>
+            )}
+
             {/* Gateway tipine göre form alanları */}
-            {formData.name === "eft-havale" ? (
+            {formData.name === "eft-havale" && (
               <>
                 <div>
                   <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
@@ -359,26 +626,6 @@ export default function PaymentGatewaysClient({
                   />
                 </div>
               </>
-            ) : (
-              <>
-            <div>
-              <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
-                API URI
-              </label>
-              <select
-                value={formData.uri}
-                onChange={(e) =>
-                  setFormData({ ...formData, uri: e.target.value })
-                }
-                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight transition-all"
-              >
-                <option value="https://sandbox-api.iyzipay.com">
-                  Sandbox (Test)
-                </option>
-                <option value="https://api.iyzipay.com">Production</option>
-              </select>
-            </div>
-              </>
             )}
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
@@ -393,7 +640,7 @@ export default function PaymentGatewaysClient({
                 />
                 <span className="text-xs sm:text-sm font-sans font-medium text-gray-700">Aktif</span>
               </label>
-              {formData.name !== "eft-havale" && (
+              {(formData.name === "iyzico" || formData.name === "paytr") && (
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"

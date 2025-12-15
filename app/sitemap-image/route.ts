@@ -7,8 +7,16 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    const siteSEO = await getSiteSEO();
-    const baseUrl = siteSEO.siteUrl;
+    let siteSEO;
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
+    
+    try {
+      siteSEO = await getSiteSEO();
+      baseUrl = siteSEO.siteUrl || baseUrl;
+    } catch (seoError) {
+      console.error('Error fetching site SEO in image sitemap:', seoError);
+      // Fallback URL kullan
+    }
 
     // Get all active products with images
     const products = await prisma.product.findMany({

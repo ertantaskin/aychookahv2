@@ -307,6 +307,18 @@ export default function CheckoutClient({
 
       // Cookie'ye gerek yok - artık veritabanından çalışıyoruz
       const paymentResult = await createPayment(shippingAddress, selectedPaymentMethod, retryOrderId, couponCode, couponDiscountAmount);
+
+      // PayTR ödeme yöntemi seçildiyse
+      if (paymentResult && typeof paymentResult === "object" && "type" in paymentResult && paymentResult.type === "paytr") {
+        const orderId = (paymentResult as any).orderId;
+        // Shipping address'i localStorage'a kaydet (PayTR sayfasında kullanılacak)
+        if (typeof window !== "undefined") {
+          localStorage.setItem("checkoutShippingAddress", JSON.stringify(shippingAddress));
+        }
+        // PayTR ödeme sayfasına yönlendir
+        router.push(`/odeme/paytr?orderId=${encodeURIComponent(orderId)}&gatewayId=${encodeURIComponent(selectedPaymentMethod)}`);
+        return;
+      }
       
       // Kupon kullanımını kaydet (başarılı ödeme başlatıldığında)
       if (couponCode && typeof window !== "undefined") {

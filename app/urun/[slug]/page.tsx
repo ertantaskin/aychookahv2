@@ -20,8 +20,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   
   try {
     const product = await getProduct(slug);
-    const siteSEO = await getSiteSEO();
-    const baseUrl = siteSEO.siteUrl;
+    let siteSEO;
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+    
+    try {
+      siteSEO = await getSiteSEO();
+      baseUrl = siteSEO.siteUrl || baseUrl;
+    } catch (seoError) {
+      console.error("Error fetching site SEO in metadata:", seoError);
+      // Fallback değerler kullan
+      siteSEO = {
+        siteName: "Aychookah",
+        siteUrl: baseUrl,
+      } as any;
+    }
     
     const title = (product as any).seoTitle || product.name;
     const description = (product as any).seoDescription || product.description;
@@ -60,7 +72,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           },
         ] : [],
         url: `${baseUrl}/urun/${product.slug}`,
-        siteName: siteSEO.siteName,
+        siteName: siteSEO?.siteName || "Aychookah",
       },
       twitter: {
         card: "summary_large_image",
@@ -69,7 +81,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         images: ogImage ? [ogImage] : [],
       },
     };
-  } catch {
+  } catch (error) {
+    console.error("Error generating metadata:", error);
     return {
       title: "Ürün Bulunamadı",
     };
@@ -82,9 +95,34 @@ export default async function ProductDetailPage({ params }: PageProps) {
   try {
     const product = await getProduct(slug);
     const relatedProducts = await getRelatedProducts(product.id, product.categoryId);
-    const siteSEO = await getSiteSEO();
-    const baseUrl = siteSEO.siteUrl;
-    const taxSettings = await getTaxSettings();
+    
+    let siteSEO;
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+    
+    try {
+      siteSEO = await getSiteSEO();
+      baseUrl = siteSEO.siteUrl || baseUrl;
+    } catch (seoError) {
+      console.error("Error fetching site SEO:", seoError);
+      // Fallback değerler kullan
+      siteSEO = {
+        siteName: "Aychookah",
+        siteUrl: baseUrl,
+      } as any;
+    }
+    
+    let taxSettings;
+    try {
+      taxSettings = await getTaxSettings();
+    } catch (taxError) {
+      console.error("Error fetching tax settings:", taxError);
+      // Fallback tax settings
+      taxSettings = {
+        defaultTaxRate: 0.20,
+        taxIncluded: true,
+        rules: [],
+      };
+    }
 
     // Calculate average rating
     const reviews = product.reviews || [];

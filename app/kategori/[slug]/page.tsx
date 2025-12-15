@@ -26,8 +26,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const siteSEO = await getSiteSEO();
-  const baseUrl = siteSEO.siteUrl;
+  let siteSEO;
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+  
+  try {
+    siteSEO = await getSiteSEO();
+    baseUrl = siteSEO.siteUrl || baseUrl;
+  } catch (seoError) {
+    console.error("Error fetching site SEO in metadata:", seoError);
+    // Fallback değerler kullan
+    siteSEO = {
+      siteName: "Aychookah",
+      siteUrl: baseUrl,
+    } as any;
+  }
 
   return {
     title: category.seoTitle || category.name,
@@ -94,8 +106,20 @@ export default async function CategoryPage({ params }: PageProps) {
     100
   );
 
-  const siteSEO = await getSiteSEO();
-  const baseUrl = siteSEO.siteUrl;
+  let siteSEO;
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aychookah.com";
+  
+  try {
+    siteSEO = await getSiteSEO();
+    baseUrl = siteSEO.siteUrl || baseUrl;
+  } catch (seoError) {
+    console.error("Error fetching site SEO:", seoError);
+    // Fallback değerler kullan
+    siteSEO = {
+      siteName: "Aychookah",
+      siteUrl: baseUrl,
+    } as any;
+  }
 
   // Breadcrumb structured data
   const breadcrumbData = {
