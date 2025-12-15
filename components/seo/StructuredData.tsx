@@ -24,6 +24,44 @@ interface ProductData {
     priceCurrency: string;
     availability: string;
     url: string;
+    shippingDetails?: {
+      shippingRate?: {
+        value: number;
+        currency: string;
+      };
+      shippingDestination?: {
+        "@type"?: "DefinedRegion" | string;
+        addressCountry: string;
+      };
+      deliveryTime?: {
+        "@type"?: "ShippingDeliveryTime" | string;
+        businessDays?: {
+          "@type"?: "OpeningHoursSpecification" | string;
+          dayOfWeek?: string[];
+        };
+        cutoffTime?: string;
+        handlingTime?: {
+          "@type"?: "QuantitativeValue" | string;
+          minValue?: number;
+          maxValue?: number;
+          unitCode?: "DAY" | string;
+        };
+        transitTime?: {
+          "@type"?: "QuantitativeValue" | string;
+          minValue?: number;
+          maxValue?: number;
+          unitCode?: "DAY" | string;
+        };
+      };
+    };
+    hasMerchantReturnPolicy?: {
+      "@type"?: "MerchantReturnPolicy" | string;
+      applicableCountry?: string;
+      returnPolicyCategory?: string;
+      merchantReturnDays?: number;
+      returnMethod?: string;
+      returnFees?: string;
+    };
   };
   aggregateRating?: {
     ratingValue: number;
@@ -122,6 +160,74 @@ export function ProductStructuredData({ data }: { data: ProductData }) {
       ...(data.offers.url && data.offers.url.trim() && { url: String(data.offers.url) }),
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       itemCondition: "https://schema.org/NewCondition",
+      // Shipping Details (isteğe bağlı ama Google öneriyor)
+      ...(data.offers.shippingDetails && {
+        shippingDetails: {
+          "@type": "OfferShippingDetails",
+          ...(data.offers.shippingDetails.shippingRate && {
+            shippingRate: {
+              "@type": "MonetaryAmount",
+              value: Number(data.offers.shippingDetails.shippingRate.value) || 0,
+              currency: String(data.offers.shippingDetails.shippingRate.currency || "TRY"),
+            },
+          }),
+          ...(data.offers.shippingDetails.shippingDestination && {
+            shippingDestination: {
+              "@type": "DefinedRegion",
+              addressCountry: String(data.offers.shippingDetails.shippingDestination.addressCountry || "TR"),
+            },
+          }),
+          ...(data.offers.shippingDetails.deliveryTime && {
+            deliveryTime: {
+              "@type": "ShippingDeliveryTime",
+              ...(data.offers.shippingDetails.deliveryTime.businessDays && {
+                businessDays: {
+                  "@type": "OpeningHoursSpecification",
+                  dayOfWeek: Array.isArray(data.offers.shippingDetails.deliveryTime.businessDays.dayOfWeek)
+                    ? data.offers.shippingDetails.deliveryTime.businessDays.dayOfWeek
+                    : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+                },
+              }),
+              ...(data.offers.shippingDetails.deliveryTime.cutoffTime && {
+                cutoffTime: String(data.offers.shippingDetails.deliveryTime.cutoffTime),
+              }),
+              ...(data.offers.shippingDetails.deliveryTime.handlingTime && {
+                handlingTime: {
+                  "@type": "QuantitativeValue",
+                  minValue: Number(data.offers.shippingDetails.deliveryTime.handlingTime.minValue) || 0,
+                  maxValue: Number(data.offers.shippingDetails.deliveryTime.handlingTime.maxValue) || 1,
+                  unitCode: "DAY",
+                },
+              }),
+              ...(data.offers.shippingDetails.deliveryTime.transitTime && {
+                transitTime: {
+                  "@type": "QuantitativeValue",
+                  minValue: Number(data.offers.shippingDetails.deliveryTime.transitTime.minValue) || 1,
+                  maxValue: Number(data.offers.shippingDetails.deliveryTime.transitTime.maxValue) || 3,
+                  unitCode: "DAY",
+                },
+              }),
+            },
+          }),
+        },
+      }),
+      // Merchant Return Policy (isteğe bağlı ama Google öneriyor)
+      ...(data.offers.hasMerchantReturnPolicy && {
+        hasMerchantReturnPolicy: {
+          "@type": "MerchantReturnPolicy",
+          applicableCountry: String(data.offers.hasMerchantReturnPolicy.applicableCountry || "TR"),
+          returnPolicyCategory: String(data.offers.hasMerchantReturnPolicy.returnPolicyCategory || "https://schema.org/MerchantReturnFiniteReturnWindow"),
+          ...(data.offers.hasMerchantReturnPolicy.merchantReturnDays && {
+            merchantReturnDays: Number(data.offers.hasMerchantReturnPolicy.merchantReturnDays) || 14,
+          }),
+          ...(data.offers.hasMerchantReturnPolicy.returnMethod && {
+            returnMethod: String(data.offers.hasMerchantReturnPolicy.returnMethod || "https://schema.org/ReturnByMail"),
+          }),
+          ...(data.offers.hasMerchantReturnPolicy.returnFees && {
+            returnFees: String(data.offers.hasMerchantReturnPolicy.returnFees || "https://schema.org/FreeReturn"),
+          }),
+        },
+      }),
     };
 
     // AggregateRating - Google'ın zorunlu alanı (offers yoksa)

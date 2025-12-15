@@ -6,6 +6,8 @@ import ProductDetailClient from "@/components/products/ProductDetailClient";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/StructuredData";
 import { getTaxSettings } from "@/lib/utils/tax-calculator";
+import { getShippingSettings } from "@/lib/utils/shipping-calculator";
+import { stripHtml } from "@/lib/utils/strip-html";
 
 // Cache'i devre dışı bırak - her istekte yeniden oluştur
 export const dynamic = 'force-dynamic';
@@ -51,7 +53,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
     
     const title = (product as any).seoTitle || product.name;
-    const description = (product as any).seoDescription || product.description;
+    // Metadata için description'dan HTML etiketlerini temizle
+    const rawDescription = (product as any).seoDescription || product.description;
+    const description = stripHtml(rawDescription || "");
     const keywords = (product as any).metaKeywords?.split(",").map((k: string) => k.trim()).filter(Boolean);
     const ogImage = (product as any).ogImage || (product.images && product.images.length > 0 ? product.images[0].url : undefined);
     
@@ -184,6 +188,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
       };
     }
 
+    let shippingSettings;
+    try {
+      shippingSettings = await getShippingSettings();
+    } catch (shippingError) {
+      console.error("Error fetching shipping settings:", shippingError);
+      // Fallback shipping settings
+      shippingSettings = {
+        defaultShippingCost: 0,
+        freeShippingThreshold: null,
+        estimatedDeliveryDays: 3,
+        rules: [],
+      };
+    }
+
     // Calculate average rating
     const reviews = product.reviews || [];
     const images = product.images || [];
@@ -191,10 +209,18 @@ export default async function ProductDetailPage({ params }: PageProps) {
       ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
       : 0;
 
+    // Calculate shipping cost (free shipping threshold kontrolü)
+    const shippingCost = shippingSettings.freeShippingThreshold && product.price >= shippingSettings.freeShippingThreshold
+      ? 0
+      : shippingSettings.defaultShippingCost;
+
     // Product structured data
+    // Description'dan HTML etiketlerini temizle (Google structured data için düz metin gerekli)
+    const cleanDescription = stripHtml(product.description || "");
+    
     const productData = {
       name: product.name,
-      description: product.description,
+      description: cleanDescription,
       image: images.length > 0 ? images.map(img => img.url) : [],
       brand: (product as any).brand || siteSEO.siteName,
       sku: product.sku || product.id,
@@ -203,6 +229,43 @@ export default async function ProductDetailPage({ params }: PageProps) {
         priceCurrency: "TRY",
         availability: product.stock > 0 ? "InStock" : "OutOfStock",
         url: `${baseUrl}/urun/${product.slug}`,
+        shippingDetails: {
+          shippingRate: {
+            value: shippingCost,
+            currency: "TRY",
+          },
+          shippingDestination: {
+            "@type": "DefinedRegion",
+            addressCountry: "TR",
+          },
+          deliveryTime: {
+            "@type": "ShippingDeliveryTime",
+            businessDays: {
+              "@type": "OpeningHoursSpecification",
+              dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            },
+            handlingTime: {
+              "@type": "QuantitativeValue",
+              minValue: 0,
+              maxValue: 1,
+              unitCode: "DAY",
+            },
+            transitTime: {
+              "@type": "QuantitativeValue",
+              minValue: 1,
+              maxValue: shippingSettings.estimatedDeliveryDays || 3,
+              unitCode: "DAY",
+            },
+          },
+        },
+        hasMerchantReturnPolicy: {
+          "@type": "MerchantReturnPolicy",
+          applicableCountry: "TR",
+          returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+          merchantReturnDays: 14,
+          returnMethod: "https://schema.org/ReturnByMail",
+          returnFees: "https://schema.org/FreeReturn",
+        },
       },
       ...(avgRating > 0 && {
         aggregateRating: {
