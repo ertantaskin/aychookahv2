@@ -113,13 +113,38 @@ export default async function ProductDetailPage({ params }: PageProps) {
       product = await getProduct(slug);
     } catch (productError) {
       console.error("Error fetching product:", productError);
-      notFound();
-      return; // TypeScript için
+      // Hata durumunda notFound yerine basit bir hata sayfası göster
+      return (
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Ürün Bulunamadı</h1>
+            <p className="text-gray-600">Aradığınız ürün bulunamadı veya kaldırılmış olabilir.</p>
+          </div>
+        </div>
+      );
     }
 
     if (!product) {
-      notFound();
-      return; // TypeScript için
+      // Ürün yoksa notFound yerine basit bir hata sayfası göster
+      return (
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Ürün Bulunamadı</h1>
+            <p className="text-gray-600">Aradığınız ürün bulunamadı veya kaldırılmış olabilir.</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Category kontrolü
+    if (!product.category) {
+      console.error("Product category is missing:", product.id);
+      // Category yoksa fallback kullan
+      product.category = {
+        id: "unknown",
+        name: "Kategori",
+        slug: "kategori",
+      } as any;
     }
 
     let relatedProducts: Awaited<ReturnType<typeof getRelatedProducts>> = [];
@@ -200,13 +225,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
           name: "Ürünler",
           item: `${baseUrl}/urunler`,
         },
-        {
+        ...(product.category ? [{
           position: 3,
           name: product.category.name,
           item: `${baseUrl}/urunler?kategori=${product.category.slug}`,
-        },
+        }] : []),
         {
-          position: 4,
+          position: product.category ? 4 : 3,
           name: product.name,
           item: `${baseUrl}/urun/${product.slug}`,
         },
@@ -232,6 +257,15 @@ export default async function ProductDetailPage({ params }: PageProps) {
       </div>
     );
   } catch (error) {
-    notFound();
+    console.error("ProductDetailPage error:", error);
+    // Hata durumunda notFound yerine basit bir hata sayfası göster
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Bir Hata Oluştu</h1>
+          <p className="text-gray-600">Sayfa yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+        </div>
+      </div>
+    );
   }
 }

@@ -147,13 +147,21 @@ export const getProduct = async (slug: string) => {
     });
 
     if (!product) {
-      throw new Error("Ürün bulunamadı");
+      return null; // null döndür, hata fırlatma
     }
 
     return product;
   } catch (error) {
     console.error("Error fetching product:", error);
-    throw new Error("Ürün yüklenirken bir hata oluştu");
+    // Veritabanı bağlantı hatası veya tablo yoksa null döndür
+    if (error instanceof Error) {
+      console.error("Error details:", error.message);
+      if (error.message.includes("does not exist") || error.message.includes("relation") || error.message.includes("connect")) {
+        return null;
+      }
+    }
+    // Diğer hatalar için null döndür (hata fırlatma yerine)
+    return null;
   }
 };
 

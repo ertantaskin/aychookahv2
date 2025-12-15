@@ -83,75 +83,96 @@ export function OrganizationStructuredData({ data }: { data: OrganizationData })
 }
 
 export function ProductStructuredData({ data }: { data: ProductData }) {
-  // Ensure images array is not empty
-  const images = Array.isArray(data.image) && data.image.length > 0 ? data.image : [];
-  
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: data.name,
-    description: data.description,
-    image: images,
-    ...(data.brand && { 
-      brand: {
-        "@type": "Brand",
-        name: data.brand
-      }
-    }),
-    ...(data.sku && { sku: data.sku }),
-    offers: {
-      "@type": "Offer",
-      price: data.offers.price,
-      priceCurrency: data.offers.priceCurrency,
-      availability: `https://schema.org/${data.offers.availability}`,
-      url: data.offers.url,
-      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    },
-    ...(data.aggregateRating && {
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: data.aggregateRating.ratingValue,
-        reviewCount: data.aggregateRating.reviewCount,
+  try {
+    // Ensure images array is not empty
+    const images = Array.isArray(data.image) && data.image.length > 0 ? data.image : [];
+    
+    // Validate required fields
+    if (!data.name || !data.description) {
+      console.warn("ProductStructuredData: Missing required fields");
+      return null;
+    }
+    
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: String(data.name),
+      description: String(data.description),
+      image: images,
+      ...(data.brand && { 
+        brand: {
+          "@type": "Brand",
+          name: String(data.brand)
+        }
+      }),
+      ...(data.sku && { sku: String(data.sku) }),
+      offers: {
+        "@type": "Offer",
+        price: Number(data.offers.price) || 0,
+        priceCurrency: String(data.offers.priceCurrency || "TRY"),
+        availability: `https://schema.org/${data.offers.availability || "InStock"}`,
+        url: String(data.offers.url || ""),
+        priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       },
-    }),
-  };
+      ...(data.aggregateRating && {
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: Number(data.aggregateRating.ratingValue) || 0,
+          reviewCount: Number(data.aggregateRating.reviewCount) || 0,
+        },
+      }),
+    };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
-  );
+    return (
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+    );
+  } catch (error) {
+    console.error("Error generating ProductStructuredData:", error);
+    return null; // Hata durumunda hiçbir şey render etme
+  }
 }
 
 export function BreadcrumbStructuredData({ data }: { data: BreadcrumbData }) {
-  // Ensure itemListElement is defined and is an array
-  if (!data || !data.itemListElement || !Array.isArray(data.itemListElement) || data.itemListElement.length === 0) {
-    return null;
+  try {
+    // Ensure itemListElement is defined and is an array
+    if (!data || !data.itemListElement || !Array.isArray(data.itemListElement) || data.itemListElement.length === 0) {
+      return null;
+    }
+
+    // Transform to the format expected by schema.org
+    const items = data.itemListElement
+      .sort((a, b) => a.position - b.position) // Sort by position
+      .map((item) => ({
+        "@type": "ListItem",
+        position: Number(item.position) || 0,
+        name: String(item.name || ""),
+        item: String(item.item || ""),
+      }))
+      .filter(item => item.name && item.item); // Geçersiz item'ları filtrele
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: items,
+    };
+
+    return (
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+    );
+  } catch (error) {
+    console.error("Error generating BreadcrumbStructuredData:", error);
+    return null; // Hata durumunda hiçbir şey render etme
   }
-
-  // Transform to the format expected by schema.org
-  const items = data.itemListElement
-    .sort((a, b) => a.position - b.position) // Sort by position
-    .map((item) => ({
-      "@type": "ListItem",
-      position: item.position,
-      name: item.name,
-      item: item.item,
-    }));
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: items,
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
-  );
 }
 
 export function ReviewStructuredData({ data }: { data: ReviewData }) {
