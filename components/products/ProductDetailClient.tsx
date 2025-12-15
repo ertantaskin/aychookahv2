@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ReviewForm from "./ReviewForm";
 import ReviewList from "./ReviewList";
-import DOMPurify from "dompurify";
 import { calculatePriceWithoutTax } from "@/lib/utils/tax-calculator";
 
 interface ProductDetailClientProps {
@@ -66,6 +65,65 @@ export default function ProductDetailClient({ product, taxSettings }: ProductDet
   const [activeTab, setActiveTab] = useState<"description" | "reviews">("description");
   const [user, setUser] = useState<{ id: string; role: string } | null>(null);
   const [availableStock, setAvailableStock] = useState(product.stock);
+  const [sanitizedDescription, setSanitizedDescription] = useState<string>("");
+
+  // DOMPurify'ı client-side'da yükle ve sanitize et
+  useEffect(() => {
+    const loadDOMPurify = async () => {
+      try {
+        // Sadece browser'da çalış
+        if (typeof window !== "undefined") {
+          const DOMPurify = (await import("dompurify")).default;
+          const sanitized = DOMPurify.sanitize(product.description || "", {
+            ALLOWED_TAGS: [
+              "p",
+              "br",
+              "strong",
+              "em",
+              "u",
+              "s",
+              "h1",
+              "h2",
+              "h3",
+              "h4",
+              "h5",
+              "h6",
+              "ul",
+              "ol",
+              "li",
+              "blockquote",
+              "a",
+              "img",
+              "code",
+              "pre",
+              "span",
+              "div",
+            ],
+            ALLOWED_ATTR: [
+              "href",
+              "src",
+              "alt",
+              "title",
+              "class",
+              "style",
+              "target",
+              "rel",
+            ],
+            ALLOW_DATA_ATTR: false,
+          });
+          setSanitizedDescription(sanitized);
+        } else {
+          // Server-side'da basit HTML temizleme
+          setSanitizedDescription(product.description || "");
+        }
+      } catch (error) {
+        console.error("Error loading DOMPurify:", error);
+        // Hata durumunda orijinal description'ı kullan
+        setSanitizedDescription(product.description || "");
+      }
+    };
+    loadDOMPurify();
+  }, [product.description]);
 
   // Kullanıcı session kontrolü ve mevcut stok hesaplama
   useEffect(() => {
@@ -658,43 +716,7 @@ export default function ProductDetailClient({ product, taxSettings }: ProductDet
               <div
                 className="product-description-content"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(product.description, {
-                    ALLOWED_TAGS: [
-                      "p",
-                      "br",
-                      "strong",
-                      "em",
-                      "u",
-                      "s",
-                      "h1",
-                      "h2",
-                      "h3",
-                      "h4",
-                      "h5",
-                      "h6",
-                      "ul",
-                      "ol",
-                      "li",
-                      "blockquote",
-                      "a",
-                      "img",
-                      "code",
-                      "pre",
-                      "span",
-                      "div",
-                    ],
-                    ALLOWED_ATTR: [
-                      "href",
-                      "src",
-                      "alt",
-                      "title",
-                      "class",
-                      "style",
-                      "target",
-                      "rel",
-                    ],
-                    ALLOW_DATA_ATTR: false,
-                  }),
+                  __html: sanitizedDescription || product.description || "",
                 }}
               />
             </div>
