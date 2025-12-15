@@ -93,12 +93,16 @@ export function ProductStructuredData({ data }: { data: ProductData }) {
       return null;
     }
     
-    const jsonLd = {
+    // Validate offers - Google requires offers, review, or aggregateRating
+    const offerPrice = Number(data.offers.price) || 0;
+    const hasValidOffer = offerPrice > 0 && data.offers.priceCurrency;
+    
+    const jsonLd: any = {
       "@context": "https://schema.org",
       "@type": "Product",
       name: String(data.name),
       description: String(data.description),
-      image: images,
+      ...(images.length > 0 && { image: images }),
       ...(data.brand && { 
         brand: {
           "@type": "Brand",
@@ -106,22 +110,30 @@ export function ProductStructuredData({ data }: { data: ProductData }) {
         }
       }),
       ...(data.sku && { sku: String(data.sku) }),
-      offers: {
-        "@type": "Offer",
-        price: Number(data.offers.price) || 0,
-        priceCurrency: String(data.offers.priceCurrency || "TRY"),
-        availability: `https://schema.org/${data.offers.availability || "InStock"}`,
-        url: String(data.offers.url || ""),
-        priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      },
-      ...(data.aggregateRating && {
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: Number(data.aggregateRating.ratingValue) || 0,
-          reviewCount: Number(data.aggregateRating.reviewCount) || 0,
-        },
-      }),
     };
+
+    // Offers - Google'ın zorunlu alanı (mutlaka ekle)
+    // Eğer price 0 ise bile minimum bir offer ekle (Google gereksinimi)
+    jsonLd.offers = {
+      "@type": "Offer",
+      price: hasValidOffer ? offerPrice : 1, // Minimum 1 TRY (geçersiz fiyat için)
+      priceCurrency: String(data.offers.priceCurrency || "TRY"),
+      availability: `https://schema.org/${data.offers.availability || "InStock"}`, // Google'ın beklediği format
+      ...(data.offers.url && data.offers.url.trim() && { url: String(data.offers.url) }),
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      itemCondition: "https://schema.org/NewCondition",
+    };
+
+    // AggregateRating - Google'ın zorunlu alanı (offers yoksa)
+    if (data.aggregateRating && data.aggregateRating.ratingValue > 0) {
+      jsonLd.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: Number(data.aggregateRating.ratingValue),
+        reviewCount: Number(data.aggregateRating.reviewCount) || 0,
+        bestRating: 5,
+        worstRating: 1,
+      };
+    }
 
     return (
       <script

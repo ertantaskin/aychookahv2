@@ -6,16 +6,24 @@ const manifest = async (): Promise<MetadataRoute.Manifest> => {
   const siteSEO = await getSiteSEO();
   
   // Favicon URL'i varsa onu kullan
-    // Icon boyutlarını ve type'ı belirtmek yerine, tarayıcının otomatik algılamasına izin veriyoruz
-    // Bu, "Resource size is not correct" hatasını önler
-    const icons: MetadataRoute.Manifest['icons'] = siteSEO?.favicon
+    const icons: MetadataRoute.Manifest['icons'] = siteSEO?.favicon && siteSEO.favicon.trim() !== ""
     ? [
         {
           src: siteSEO.favicon,
-          // sizes ve type belirtilmezse tarayıcı otomatik algılar ve boyut hatası vermez
+          sizes: 'any',
+          type: 'image/x-icon',
+        },
+        {
+          src: '/favicon.ico', // Fallback
+          sizes: 'any',
         },
       ]
-    : [];
+    : [
+        {
+          src: '/favicon.ico',
+          sizes: 'any',
+        },
+      ];
 
   return {
       name: siteSEO?.siteName || 'Aychookah - Lüks Nargile Takımları',

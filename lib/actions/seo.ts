@@ -227,6 +227,8 @@ export async function updateSiteSEO(formData: FormData) {
 
     revalidatePath("/admin/seo");
     revalidatePath("/");
+    revalidatePath("/favicon.ico"); // Favicon route'unu revalidate et
+    revalidatePath("/manifest.json"); // Manifest'i revalidate et
     
     return { success: true, data: siteSEO };
   } catch (error) {

@@ -40,6 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
       metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com'),
       icons: {
         icon: '/favicon.ico',
+        shortcut: '/favicon.ico',
+        apple: '/favicon.ico',
       },
     };
   }

@@ -40,12 +40,24 @@ export async function getDefaultMetadata(): Promise<Metadata> {
     authors: [{ name: siteSEO.siteName }],
     creator: siteSEO.siteName,
     publisher: siteSEO.siteName,
-    icons: siteSEO.favicon ? {
+    icons: siteSEO.favicon && siteSEO.favicon.trim() !== "" ? {
       icon: [
         { url: siteSEO.favicon, sizes: 'any' },
+        { url: '/favicon.ico', sizes: 'any' }, // Fallback için
       ],
       shortcut: siteSEO.favicon,
       apple: siteSEO.favicon,
+      other: [
+        {
+          rel: 'apple-touch-icon',
+          url: siteSEO.favicon,
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          url: siteSEO.favicon,
+        },
+      ],
     } : {
       // Favicon yoksa varsayılan favicon.ico'yu dene
       icon: '/favicon.ico',
@@ -119,6 +131,27 @@ export async function getPageMetadata(pagePath: string): Promise<Metadata | null
     description: pageSEO.description || undefined,
     keywords: pageSEO.keywords?.split(",").map((k: string) => k.trim()),
     metadataBase: new URL(baseUrl),
+    icons: siteSEO?.favicon && siteSEO.favicon.trim() !== "" ? {
+      icon: [
+        { url: siteSEO.favicon, sizes: 'any' },
+        { url: '/favicon.ico', sizes: 'any' }, // Fallback için
+      ],
+      shortcut: siteSEO.favicon,
+      apple: siteSEO.favicon,
+      other: [
+        {
+          rel: 'apple-touch-icon',
+          url: siteSEO.favicon,
+        },
+        {
+          rel: 'icon',
+          type: 'image/png',
+          url: siteSEO.favicon,
+        },
+      ],
+    } : {
+      icon: '/favicon.ico',
+    },
     alternates: {
       canonical: pageSEO.canonical || `${baseUrl}${pageSEO.pagePath}`,
     },
