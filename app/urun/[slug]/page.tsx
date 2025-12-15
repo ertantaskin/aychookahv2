@@ -4,7 +4,7 @@ import { getProduct, getRelatedProducts } from "@/lib/actions/products";
 import { getSiteSEO } from "@/lib/actions/seo";
 import ProductDetailClient from "@/components/products/ProductDetailClient";
 import RelatedProducts from "@/components/products/RelatedProducts";
-import { ProductStructuredData, BreadcrumbStructuredData, AggregateRatingStructuredData } from "@/components/seo/StructuredData";
+import { ProductStructuredData, BreadcrumbStructuredData } from "@/components/seo/StructuredData";
 import { getTaxSettings } from "@/lib/utils/tax-calculator";
 
 // Cache'i devre dışı bırak - her istekte yeniden oluştur
@@ -242,14 +242,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <div className="min-h-screen bg-white">
         <ProductStructuredData data={productData} />
         <BreadcrumbStructuredData data={breadcrumbData} />
-        {avgRating > 0 && reviews.length > 0 && (
-          <AggregateRatingStructuredData
-            itemReviewed={product.name}
-            ratingValue={avgRating}
-            reviewCount={reviews.length}
-            itemUrl={`${baseUrl}/urun/${product.slug}`}
-          />
-        )}
         <ProductDetailClient product={product} taxSettings={taxSettings} />
         {relatedProducts.length > 0 && (
           <RelatedProducts products={relatedProducts} />

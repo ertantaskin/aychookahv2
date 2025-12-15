@@ -218,38 +218,75 @@ export function AggregateRatingStructuredData({
   ratingValue,
   reviewCount,
   itemUrl,
+  offers, // Offers ekle - Google gereksinimi
 }: {
   itemReviewed: string;
   ratingValue: number;
   reviewCount: number;
   itemUrl?: string;
+  offers?: {
+    price: number;
+    priceCurrency: string;
+    availability: string;
+    url: string;
+  };
 }) {
-  // Veriler sistemden geliyor (prop'lar üzerinden)
-  // Eğer rating yoksa veya geçersizse render etme
-  if (!ratingValue || ratingValue <= 0 || reviewCount <= 0) {
+  try {
+    // Veriler sistemden geliyor (prop'lar üzerinden)
+    // Eğer rating yoksa veya geçersizse render etme
+    if (!ratingValue || ratingValue <= 0 || reviewCount <= 0) {
+      return null;
+    }
+
+    const jsonLd: any = {
+      "@context": "https://schema.org",
+      "@type": "AggregateRating",
+      itemReviewed: {
+        "@type": "Product",
+        name: itemReviewed,
+        ...(itemUrl && { url: itemUrl }),
+        // Offers ekle - Google gereksinimi (offers, review veya aggregateRating zorunlu)
+        ...(offers && {
+          offers: {
+            "@type": "Offer",
+            price: Number(offers.price) || 1,
+            priceCurrency: String(offers.priceCurrency || "TRY"),
+            availability: `https://schema.org/${offers.availability || "InStock"}`,
+            ...(offers.url && offers.url.trim() && { url: String(offers.url) }),
+            priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            itemCondition: "https://schema.org/NewCondition",
+          },
+        }),
+      },
+      ratingValue: Number(ratingValue.toFixed(1)), // Virgülden sonra 1 basamak
+      reviewCount: Number(reviewCount),
+      bestRating: 5,
+      worstRating: 1,
+    };
+
+    // Eğer offers yoksa, minimum bir offer ekle (Google gereksinimi)
+    if (!offers && jsonLd.itemReviewed) {
+      jsonLd.itemReviewed.offers = {
+        "@type": "Offer",
+        price: 1,
+        priceCurrency: "TRY",
+        availability: "https://schema.org/InStock",
+        ...(itemUrl && { url: itemUrl }),
+        priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        itemCondition: "https://schema.org/NewCondition",
+      };
+    }
+
+    return (
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+    );
+  } catch (error) {
+    console.error("Error generating AggregateRatingStructuredData:", error);
     return null;
   }
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "AggregateRating",
-    itemReviewed: {
-      "@type": "Product",
-      name: itemReviewed,
-      ...(itemUrl && { url: itemUrl }),
-    },
-    ratingValue: Number(ratingValue.toFixed(1)), // Virgülden sonra 1 basamak
-    reviewCount: Number(reviewCount),
-    bestRating: 5,
-    worstRating: 1,
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
-  );
 }
 
 interface FAQData {
