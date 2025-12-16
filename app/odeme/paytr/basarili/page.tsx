@@ -1,136 +1,94 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { getOrder } from "@/lib/actions/orders";
+import { useEffect, useState } from "react";
+import PaymentSuccessClient from "@/components/checkout/PaymentSuccessClient";
 
-function PayTRSuccessPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const orderId = searchParams.get("orderId");
+export default function PayTRSuccessPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string>("paytr");
+
+  // URL parametrelerini client-side'da al
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("orderId");
+    const number = urlParams.get("orderNumber");
+    const method = urlParams.get("paymentMethod") || "paytr";
+
+    setOrderId(id);
+    setOrderNumber(number);
+    setPaymentMethod(method);
+  }, []);
 
   useEffect(() => {
-    const fetchOrder = async () => {
+    async function fetchData() {
       if (!orderId) {
-        router.push("/sepet");
+        // orderId yoksa ama orderNumber varsa sayfayı göster
+        setIsLoading(false);
         return;
       }
 
       try {
-        const orderData = await getOrder(orderId);
-        setOrder(orderData);
+        // Order bilgilerini getir - credentials ile
+        const response = await fetch(`/api/orders/${orderId}`, {
+          credentials: "include", // Cookie'leri gönder
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setOrder(data.order);
+        } else if (response.status === 401) {
+          // Unauthorized - ama orderNumber varsa sayfayı göster
+          console.warn("401 Unauthorized - but orderNumber might be available");
+          // Order yoksa bile sayfayı göster (orderNumber varsa)
+        } else if (response.status === 404) {
+          // Order bulunamadı - ama orderNumber varsa sayfayı göster
+          console.warn("404 Order not found - but orderNumber might be available");
+        }
       } catch (error) {
         console.error("Error fetching order:", error);
-      } finally {
-        setLoading(false);
+        // Hata durumunda da sayfayı göster (orderNumber varsa)
       }
-    };
 
-    fetchOrder();
-  }, [orderId, router]);
+      // Ödeme başarılı olduğunda sepet temizlendi, header'ı güncelle
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
 
-  if (loading) {
+      setIsLoading(false);
+    }
+
+    if (orderId || orderNumber) {
+      fetchData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [orderId, orderNumber, paymentMethod]);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-luxury-goldLight border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-sans">Yükleniyor...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-luxury-gold mx-auto"></div>
+          <p className="mt-4 text-gray-600">Yükleniyor...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg
-              className="w-10 h-10 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-
-          <h1 className="text-3xl font-sans font-bold text-gray-900 mb-4">
-            Ödeme Başarılı!
-          </h1>
-
-          <p className="text-gray-600 font-sans mb-8">
-            Ödemeniz başarıyla tamamlandı. Siparişiniz en kısa sürede hazırlanacaktır.
-          </p>
-
-          {order && (
-            <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
-              <h2 className="text-lg font-sans font-semibold text-gray-900 mb-4">
-                Sipariş Detayları
-              </h2>
-              <div className="space-y-2 text-sm font-sans">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Sipariş No:</span>
-                  <span className="font-semibold text-gray-900">{order.orderNumber}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Toplam Tutar:</span>
-                  <span className="font-semibold text-gray-900">
-                    {order.total.toFixed(2)} ₺
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Ödeme Durumu:</span>
-                  <span className="font-semibold text-green-600">
-                    {order.paymentStatus === "COMPLETED" ? "Ödendi" : "Beklemede"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/hesabim/siparisler"
-              className="px-6 py-3 bg-luxury-goldLight text-luxury-black font-sans font-semibold rounded-lg hover:bg-luxury-gold transition-colors"
-            >
-              Siparişlerim
-            </Link>
-            <Link
-              href="/"
-              className="px-6 py-3 bg-gray-200 text-gray-900 font-sans font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              Ana Sayfa
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function PayTRSuccess() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-luxury-goldLight border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 font-sans">Yükleniyor...</p>
-          </div>
-        </div>
-      }
-    >
-      <PayTRSuccessPage />
-    </Suspense>
+    <PaymentSuccessClient
+      order={order}
+      orderNumber={orderNumber || order?.orderNumber || ""}
+      paymentMethod={paymentMethod}
+      bankInfo={null}
+      requiresAuth={false}
+    />
   );
 }
 
