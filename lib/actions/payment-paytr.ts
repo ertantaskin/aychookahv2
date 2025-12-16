@@ -93,10 +93,12 @@ export const createPayTRToken = async (
     const merchant_oid = order.orderNumber.replace(/[^a-zA-Z0-9]/g, "").substring(0, 64) || `ORD${Date.now()}`;
 
     // Sepet içeriği (base64 encoded JSON)
+    // PayTR formatı: [["Ürün Adı", "fiyat_kuruş", "miktar"]]
+    // Fiyat kuruş cinsinden, ondalık kısmı olmadan gönderilmeli (örn: 4999 TL = "499900")
     const basket = order.items.map((item) => [
       item.productName || item.product?.name || "Ürün",
-      (item.price * 100).toFixed(2), // Kuruş cinsinden
-      item.quantity,
+      Math.round(item.price * 100).toString(), // Kuruş cinsinden, ondalık kısmı olmadan
+      item.quantity.toString(),
     ]);
 
     const user_basket = Buffer.from(JSON.stringify(basket)).toString("base64");
