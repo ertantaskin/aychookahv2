@@ -158,8 +158,8 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
       0
     );
 
-    // Sipariş numarası oluştur
-    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    // Sipariş numarası oluştur - PayTR için alfanumerik olmalı (özel karakter yok)
+    const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
     // Seçilen gateway'i kontrol et (eğer paymentMethod bir gateway ID'si ise)
     let selectedGateway = null;
@@ -264,7 +264,8 @@ export const createPayment = async (shippingAddress: any, paymentMethod?: string
               total: taxCalculation.total,
             };
 
-        const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        // PayTR için alfanumerik order number (özel karakter yok)
+        const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
         paytrPendingOrder = await prisma.order.create({
           data: {

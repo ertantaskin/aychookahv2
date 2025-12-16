@@ -89,8 +89,8 @@ export const createPayTRToken = async (
     // Ödeme tutarı (kuruş cinsinden)
     const payment_amount = Math.round(order.total * 100);
 
-    // Sipariş numarası
-    const merchant_oid = order.orderNumber;
+    // Sipariş numarası - PayTR sadece alfanumerik kabul ediyor, özel karakterleri temizle
+    const merchant_oid = order.orderNumber.replace(/[^a-zA-Z0-9]/g, "").substring(0, 64) || `ORD${Date.now()}`;
 
     // Sepet içeriği (base64 encoded JSON)
     const basket = order.items.map((item) => [

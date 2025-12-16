@@ -124,16 +124,21 @@ export default function PaymentGatewaysClient({
           accountNumber: formData.accountNumber,
         };
       } else if (formData.name === "paytr") {
+        // PayTR için zorunlu alanları kontrol et
+        if (!formData.merchant_id || !formData.merchant_key || !formData.merchant_salt) {
+          throw new Error("Merchant ID, Merchant Key ve Merchant Salt alanları zorunludur");
+        }
+        
         config = {
-          merchant_id: formData.merchant_id,
-          merchant_key: formData.merchant_key,
-          merchant_salt: formData.merchant_salt,
-          iframe_v2_dark: formData.iframe_v2_dark,
-          no_installment: formData.no_installment,
-          max_installment: formData.max_installment,
-          currency: formData.currency,
-          timeout_limit: formData.timeout_limit,
-          lang: formData.lang,
+          merchant_id: formData.merchant_id.trim(),
+          merchant_key: formData.merchant_key.trim(),
+          merchant_salt: formData.merchant_salt.trim(),
+          iframe_v2_dark: formData.iframe_v2_dark || "0",
+          no_installment: formData.no_installment || "0",
+          max_installment: formData.max_installment || "0",
+          currency: formData.currency || "TL",
+          timeout_limit: formData.timeout_limit || "30",
+          lang: formData.lang || "tr",
         };
       } else {
         // iyzico veya diğer gateway'ler
