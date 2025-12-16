@@ -267,6 +267,24 @@ export default function CheckoutClient({
       return;
     }
 
+    // Telefon numarası validasyonu - PayTR gereksinimi: En az 10 hane
+    if (formData.phone) {
+      // Tüm boşluk, tire, parantez, + gibi karakterleri kaldır, sadece rakamları al
+      const cleanPhone = formData.phone.replace(/\D/g, "");
+      
+      // Eğer "+90" ile başlıyorsa (90 rakamları), "+90"ı kaldır
+      const phoneDigits = cleanPhone.startsWith("90") && cleanPhone.length > 10 
+        ? cleanPhone.substring(2) 
+        : cleanPhone;
+      
+      // En az 10 hane kontrolü
+      if (phoneDigits.length < 10) {
+        toast.error("Telefon numarası en az 10 haneli olmalıdır (örn: 5XX XXX XX XX)");
+        setIsProcessing(false);
+        return;
+      }
+    }
+
     setIsProcessing(true);
 
     try {
@@ -485,8 +503,12 @@ export default function CheckoutClient({
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
+                    placeholder="5XX XXX XX XX veya +90 5XX XXX XX XX"
                     className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
                   />
+                  <p className="mt-1 text-xs text-gray-500 font-sans">
+                    En az 10 haneli telefon numarası giriniz
+                  </p>
                 </div>
 
                 <div>

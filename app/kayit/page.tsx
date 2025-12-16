@@ -35,6 +35,24 @@ export default function RegisterPage() {
       return;
     }
 
+    // Telefon numarası validasyonu (opsiyonel ama girilmişse en az 10 hane olmalı)
+    if (formData.phone && formData.phone !== "+90") {
+      // Tüm boşluk, tire, parantez, + gibi karakterleri kaldır, sadece rakamları al
+      const cleanPhone = formData.phone.replace(/\D/g, "");
+      
+      // Eğer "+90" ile başlıyorsa (90 rakamları), "+90"ı kaldır
+      const phoneDigits = cleanPhone.startsWith("90") && cleanPhone.length > 10 
+        ? cleanPhone.substring(2) 
+        : cleanPhone;
+      
+      // En az 10 hane kontrolü
+      if (phoneDigits.length < 10) {
+        setErrorMessage("Telefon numarası en az 10 haneli olmalıdır (örn: 5XX XXX XX XX)");
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",

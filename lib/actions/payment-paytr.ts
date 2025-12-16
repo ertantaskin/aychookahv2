@@ -113,7 +113,26 @@ export const createPayTRToken = async (
       ? `${shippingAddress.firstName} ${shippingAddress.lastName || ""}`.trim()
       : order.user?.name || "";
     const user_address = shippingAddress.address || "";
-    const user_phone = shippingAddress.phone || "";
+    
+    // Telefon numarasını PayTR formatına uygun hale getir
+    // PayTR gereksinimleri: Sadece rakamlar, en az 10 hane
+    let user_phone = shippingAddress.phone || "";
+    if (user_phone) {
+      // Tüm boşluk, tire, parantez, + gibi karakterleri kaldır, sadece rakamları al
+      user_phone = user_phone.replace(/\D/g, "");
+      
+      // Eğer "+90" ile başlıyorsa (90 rakamları), "+90"ı kaldır
+      // Türkiye numaraları için 10 hane yeterli (5XX XXX XX XX)
+      if (user_phone.startsWith("90") && user_phone.length > 10) {
+        user_phone = user_phone.substring(2);
+      }
+      
+      // En az 10 hane kontrolü - PayTR gereksinimi
+      if (user_phone.length < 10) {
+        console.warn(`PayTR: Telefon numarası 10 haneden az: ${user_phone.length} hane. Boş gönderiliyor.`);
+        user_phone = ""; // PayTR'ye boş gönder (PayTR boş telefon numarasını kabul eder)
+      }
+    }
 
     // Callback URL'leri - Production URL'i kullan
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
