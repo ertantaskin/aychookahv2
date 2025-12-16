@@ -29,21 +29,22 @@ export default function GoogleAnalytics({ analyticsId }: GoogleAnalyticsProps) {
 
   return (
     <>
+      {/* Google tag (gtag.js) - Next.js Script component otomatik olarak head'e ekler */}
       <Script
+        id="google-analytics-gtag"
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${analyticsId}`}
+        async
       />
       <Script
-        id="google-analytics"
+        id="google-analytics-init"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${analyticsId}', {
-              page_path: window.location.pathname + window.location.search,
-            });
+            gtag('config', '${analyticsId}');
           `,
         }}
       />
