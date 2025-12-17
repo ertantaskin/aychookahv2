@@ -240,43 +240,28 @@ export const createOrder = async (shippingAddress: any, paymentId?: string, coup
 };
 
 // Siparişleri getir
-export const getOrders = async (userId: string, page: number = 1, limit: number = 20) => {
+export const getOrders = async (userId: string) => {
   try {
-    const skip = (page - 1) * limit;
-
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where: { userId },
-        include: {
-          items: {
-            include: {
-              product: {
-                include: {
-                  images: {
-                    where: { isPrimary: true },
-                    take: 1,
-                  },
+    const orders = await prisma.order.findMany({
+      where: { userId },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                images: {
+                  where: { isPrimary: true },
+                  take: 1,
                 },
               },
             },
           },
         },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.order.count({
-        where: { userId },
-      }),
-    ]);
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-    return {
-      orders,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return orders;
   } catch (error) {
     console.error("Error fetching orders:", error);
     throw new Error("Siparişler yüklenirken bir hata oluştu");
