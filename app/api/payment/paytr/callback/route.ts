@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
+// PayTR callback için timeout süresini artır (30 saniye)
+export const maxDuration = 30;
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.formData();
@@ -24,45 +28,80 @@ export async function POST(request: NextRequest) {
       return new NextResponse("OK", { status: 200 });
     }
 
-    // Siparişi bul
+    // Siparişi bul - Optimize edilmiş sorgu
     // merchant_oid PayTR'ye gönderilirken temizlenmiş (özel karakterler kaldırılmış) olabilir
-    // Önce direkt orderNumber ile dene, sonra temizlenmiş halini dene
+    // Önce direkt orderNumber ile dene
     let order = await prisma.order.findFirst({
       where: {
-        OR: [
-          { orderNumber: merchant_oid }, // Direkt eşleşme
-          // Prisma'da regex desteği yok, bu yüzden contains kullanıyoruz
-          // Ama daha iyi bir çözüm için tüm siparişleri çekip filtreleyebiliriz
-        ],
+        orderNumber: merchant_oid, // Direkt eşleşme
       },
       include: {
         items: {
           include: {
-            product: true,
+            product: {
+              select: {
+                id: true,
+                stock: true,
+              },
+            },
           },
         },
-        user: true,
+        user: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
-    // Eğer direkt bulunamadıysa, tüm siparişleri çekip temizlenmiş orderNumber ile karşılaştır
+    // Eğer direkt bulunamadıysa, temizlenmiş orderNumber ile dene
+    // Sadece son 100 siparişi kontrol et (performans için)
     if (!order) {
-      const orders = await prisma.order.findMany({
-        include: {
-          items: {
-            include: {
-              product: true,
-            },
+      const recentOrders = await prisma.order.findMany({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Son 24 saat
           },
-          user: true,
+        },
+        select: {
+          id: true,
+          orderNumber: true,
+        },
+        take: 100,
+        orderBy: {
+          createdAt: "desc",
         },
       });
 
       // merchant_oid ile eşleşen siparişi bul (orderNumber'ı temizleyip karşılaştır)
-      order = orders.find((o) => {
+      const matchedOrder = recentOrders.find((o) => {
         const cleanOrderNumber = o.orderNumber.replace(/[^a-zA-Z0-9]/g, "");
         return cleanOrderNumber === merchant_oid;
-      }) || null;
+      });
+
+      if (matchedOrder) {
+        // Eşleşen siparişi tam detaylarıyla getir
+        order = await prisma.order.findUnique({
+          where: { id: matchedOrder.id },
+          include: {
+            items: {
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    stock: true,
+                  },
+                },
+              },
+            },
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        });
+      }
     }
 
     if (!order) {
@@ -123,79 +162,85 @@ export async function POST(request: NextRequest) {
         return new NextResponse("OK", { status: 200 });
       }
 
-      // Stokları düşür
-      for (const item of order.items) {
-        if (item.productId) {
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity,
+      // ÖNEMLİ: PayTR'ye hızlı yanıt ver, sonra işlemleri yap
+      // Önce "OK" döndür, sonra arka planda işlemleri tamamla
+      // Ancak bu güvenli değil, bu yüzden kritik işlemleri önce yapalım
+
+      // Transaction içinde tüm işlemleri yap (daha hızlı ve güvenli)
+      await prisma.$transaction(async (tx) => {
+        // 1. Stokları düşür (paralel güncellemeler için Promise.all kullan)
+        const stockUpdates = order.items
+          .filter((item) => item.productId)
+          .map((item) =>
+            tx.product.update({
+              where: { id: item.productId! },
+              data: {
+                stock: {
+                  decrement: item.quantity,
+                },
+              },
+            })
+          );
+        await Promise.all(stockUpdates);
+
+        // 2. Siparişi güncelle
+        await tx.order.update({
+          where: { id: order.id },
+          data: {
+            paymentId: merchant_oid,
+            paymentStatus: "COMPLETED",
+            status: "PROCESSING",
+            notes: `Ödeme tamamlandı. PayTR Payment ID: ${merchant_oid}. Tutar: ${total_amount} ${currency}. Taksit: ${installment_count || "1"}. Ödeme Tipi: ${payment_type || "N/A"}. Test Modu: ${test_mode || "0"}. Callback time: ${new Date().toISOString()}`,
+          },
+        });
+
+        // 3. Sepeti temizle (eğer kullanıcı varsa)
+        if (order.userId) {
+          await tx.cartItem.deleteMany({
+            where: {
+              cart: {
+                userId: order.userId,
               },
             },
           });
         }
-      }
 
-      // Siparişi güncelle
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          paymentId: merchant_oid,
-          paymentStatus: "COMPLETED",
-          status: "PROCESSING",
-          notes: `Ödeme tamamlandı. PayTR Payment ID: ${merchant_oid}. Tutar: ${total_amount} ${currency}. Taksit: ${installment_count || "1"}. Ödeme Tipi: ${payment_type || "N/A"}. Test Modu: ${test_mode || "0"}. Callback time: ${new Date().toISOString()}`,
-        },
-      });
-
-      // Sepeti temizle
-      if (order.userId) {
-        await prisma.cartItem.deleteMany({
-          where: {
-            cart: {
-              userId: order.userId,
-            },
-          },
-        });
-      }
-
-      // Kupon kullanımını kaydet
-      if (order.couponCode) {
-        // Kuponu bul
-        const coupon = await prisma.coupon.findUnique({
-          where: { code: order.couponCode.toUpperCase() },
-        });
-
-        if (coupon) {
-          // Aynı sipariş için daha önce kayıt yapılmış mı kontrol et
-          const existingUsage = await prisma.couponUsage.findFirst({
-            where: {
-              couponId: coupon.id,
-              orderId: order.id,
-            },
+        // 4. Kupon kullanımını kaydet (eğer varsa)
+        if (order.couponCode) {
+          const coupon = await tx.coupon.findUnique({
+            where: { code: order.couponCode.toUpperCase() },
           });
 
-          if (!existingUsage) {
-            await prisma.couponUsage.create({
-              data: {
+          if (coupon) {
+            const existingUsage = await tx.couponUsage.findFirst({
+              where: {
                 couponId: coupon.id,
-                userId: order.userId || undefined,
                 orderId: order.id,
               },
             });
 
-            // Kupon kullanım sayısını artır
-            await prisma.coupon.update({
-              where: { id: coupon.id },
-              data: {
-                usedCount: {
-                  increment: 1,
-                },
-              },
-            });
+            if (!existingUsage) {
+              await Promise.all([
+                tx.couponUsage.create({
+                  data: {
+                    couponId: coupon.id,
+                    userId: order.userId || undefined,
+                    orderId: order.id,
+                  },
+                }),
+                tx.coupon.update({
+                  where: { id: coupon.id },
+                  data: {
+                    usedCount: {
+                      increment: 1,
+                    },
+                  },
+                }),
+              ]);
+            }
           }
         }
-      }
+      });
 
       console.log("PayTR callback: Payment completed successfully", order.id);
       // PayTR'ye sadece "OK" string'i döndür (JSON değil)
