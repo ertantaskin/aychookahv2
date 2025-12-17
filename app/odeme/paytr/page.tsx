@@ -195,7 +195,7 @@ function PayTRPaymentPage() {
                 <ul className="text-sm font-sans text-red-700 list-disc list-inside space-y-1 mb-4">
                   <li>İnternet bağlantınızı kontrol edin</li>
                   <li>PayTR servisleri şu anda kullanılamıyor olabilir</li>
-                  <li>Güvenlik duvarı veya proxy ayarlarınız PayTR'ye erişimi engelliyor olabilir</li>
+                  <li>Güvenlik duvarı veya proxy ayarlarınız PayTR&apos;ye erişimi engelliyor olabilir</li>
                 </ul>
                 <div className="flex gap-3">
                   <button
