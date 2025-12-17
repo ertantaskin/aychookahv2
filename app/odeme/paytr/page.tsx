@@ -12,6 +12,8 @@ function PayTRPaymentPage() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
 
   useEffect(() => {
     const initializePayment = async () => {
@@ -73,6 +75,55 @@ function PayTRPaymentPage() {
       }
     };
   }, []);
+
+  // Iframe yükleme kontrolü ve timeout
+  useEffect(() => {
+    if (!token) return;
+
+    let timeoutId: NodeJS.Timeout;
+    let checkInterval: NodeJS.Timeout;
+
+    // Iframe yükleme timeout'u (30 saniye)
+    timeoutId = setTimeout(() => {
+      if (!iframeLoaded) {
+        console.error("PayTR iframe yüklenemedi - timeout");
+        setIframeError(true);
+        setError("PayTR ödeme sayfasına bağlanılamadı. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.");
+        toast.error("Ödeme sayfası yüklenemedi");
+      }
+    }, 30000); // 30 saniye
+
+    // Iframe içeriğini kontrol et (her 2 saniyede bir)
+    checkInterval = setInterval(() => {
+      const iframe = document.getElementById("paytriframe") as HTMLIFrameElement;
+      if (iframe) {
+        try {
+          // Iframe'in içeriğine erişmeye çalış (cross-origin olabilir, bu yüzden try-catch)
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (iframeDoc && iframeDoc.body && iframeDoc.body.innerHTML.trim().length > 0) {
+            // Iframe içeriği yüklendi
+            if (!iframeLoaded) {
+              setIframeLoaded(true);
+              clearTimeout(timeoutId);
+              clearInterval(checkInterval);
+            }
+          }
+        } catch (e) {
+          // Cross-origin hatası - bu normal, iframe yüklenmiş olabilir
+          // Iframe'in src'sine erişebiliyorsak ve iframe elementi varsa, yüklendi sayılabilir
+          if (iframe.src && iframe.src.includes("paytr.com")) {
+            // Iframe src'si ayarlanmış, muhtemelen yükleniyor
+            // onLoad event'i ile kontrol edeceğiz
+          }
+        }
+      }
+    }, 2000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(checkInterval);
+    };
+  }, [token, iframeLoaded]);
 
   if (loading) {
     return (
@@ -136,6 +187,32 @@ function PayTRPaymentPage() {
             </p>
           </div>
           <div className="p-4">
+            {iframeError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm font-sans text-red-800 mb-3">
+                  PayTR ödeme sayfasına bağlanılamadı. Bu genellikle şu nedenlerden kaynaklanır:
+                </p>
+                <ul className="text-sm font-sans text-red-700 list-disc list-inside space-y-1 mb-4">
+                  <li>İnternet bağlantınızı kontrol edin</li>
+                  <li>PayTR servisleri şu anda kullanılamıyor olabilir</li>
+                  <li>Güvenlik duvarı veya proxy ayarlarınız PayTR'ye erişimi engelliyor olabilir</li>
+                </ul>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-red-600 text-white font-sans font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Tekrar Dene
+                  </button>
+                  <button
+                    onClick={() => router.push("/odeme")}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 font-sans font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Ödeme Sayfasına Dön
+                  </button>
+                </div>
+              </div>
+            )}
             <iframe
               id="paytriframe"
               src={`https://www.paytr.com/odeme/guvenli/${token}`}
@@ -144,6 +221,17 @@ function PayTRPaymentPage() {
               scrolling="no"
               style={{ border: "none", minHeight: "1000px" }}
               title="PayTR Ödeme Sayfası"
+              onLoad={() => {
+                console.log("PayTR iframe loaded");
+                setIframeLoaded(true);
+                setIframeError(false);
+              }}
+              onError={() => {
+                console.error("PayTR iframe load error");
+                setIframeError(true);
+                setError("PayTR ödeme sayfası yüklenemedi");
+                toast.error("Ödeme sayfası yüklenemedi");
+              }}
             />
           </div>
         </div>

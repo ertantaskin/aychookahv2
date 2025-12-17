@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createPayment } from "@/lib/actions/payment";
 import { getAvailablePaymentMethods } from "@/lib/actions/admin/payment-gateways";
+import { updateAddress, createAddress } from "@/lib/actions/addresses";
 import { toast } from "sonner";
 import { calculateTotalWithCoupon } from "@/lib/utils/coupon-calculator";
 import { calculateShippingCost } from "@/lib/utils/shipping-calculator";
@@ -96,6 +97,8 @@ export default function CheckoutClient({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
   const [isLoadingMethods, setIsLoadingMethods] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("new");
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [isSubmittingAddress, setIsSubmittingAddress] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discountAmount: number;
@@ -103,6 +106,7 @@ export default function CheckoutClient({
     discountValue: number;
   } | null>(null);
   const [formData, setFormData] = useState({
+    title: "",
     firstName: "",
     lastName: "",
     phone: "",
@@ -111,6 +115,7 @@ export default function CheckoutClient({
     city: "",
     district: "",
     postalCode: "",
+    isDefault: false,
   });
 
   // localStorage'dan kupon bilgisini yükle
@@ -147,7 +152,8 @@ export default function CheckoutClient({
   // Retry durumunda mevcut sipariş adresini yükle
   useEffect(() => {
     if (retryOrder?.shippingAddress) {
-      setFormData({
+      const retryFormData = {
+        title: "",
         firstName: retryOrder.shippingAddress.firstName || "",
         lastName: retryOrder.shippingAddress.lastName || "",
         phone: retryOrder.shippingAddress.phone || "",
@@ -156,14 +162,16 @@ export default function CheckoutClient({
         city: retryOrder.shippingAddress.city || "",
         district: retryOrder.shippingAddress.district || "",
         postalCode: retryOrder.shippingAddress.postalCode || "",
-      });
+        isDefault: false,
+      };
+      setFormData(retryFormData);
       setSelectedAddressId("retry");
     } else if (addresses.length > 0) {
       // Varsayılan adresi bul veya ilk adresi seç
       const defaultAddress = addresses.find((addr) => addr.isDefault) || addresses[0];
       if (defaultAddress) {
-        setSelectedAddressId(defaultAddress.id);
-        setFormData({
+        const defaultFormData = {
+          title: defaultAddress.title,
           firstName: defaultAddress.firstName,
           lastName: defaultAddress.lastName,
           phone: defaultAddress.phone,
@@ -172,47 +180,166 @@ export default function CheckoutClient({
           city: defaultAddress.city,
           district: defaultAddress.district,
           postalCode: defaultAddress.postalCode,
-        });
+          isDefault: defaultAddress.isDefault,
+        };
+        setSelectedAddressId(defaultAddress.id);
+        setFormData(defaultFormData);
       }
     } else {
       // Adres yoksa sadece e-postayı doldur
-      setFormData((prev) => ({
-        ...prev,
+      const emptyFormData = {
+        title: "",
+        firstName: "",
+        lastName: "",
+        phone: "",
         email: userEmail,
-      }));
+        address: "",
+        city: "",
+        district: "",
+        postalCode: "",
+        isDefault: false,
+      };
+      setFormData(emptyFormData);
     }
   }, [retryOrder, addresses, userEmail]);
 
   // Adres seçildiğinde formu doldur
   const handleAddressSelect = (addressId: string) => {
     setSelectedAddressId(addressId);
+    setEditingAddressId(null); // Düzenleme modunu kapat
     if (addressId === "new") {
       // Yeni adres seçildi, formu temizle ama e-postayı koru
-      setFormData({
+      const newFormData = {
+        title: "",
         firstName: "",
         lastName: "",
         phone: "",
-        email: userEmail, // E-postayı koru
+        email: userEmail,
         address: "",
         city: "",
         district: "",
         postalCode: "",
-      });
+        isDefault: false,
+      };
+      setFormData(newFormData);
     } else {
       // Kayıtlı adres seçildi, formu doldur
       const selectedAddress = addresses.find((addr) => addr.id === addressId);
       if (selectedAddress) {
-        setFormData({
+        const newFormData = {
+          title: selectedAddress.title,
           firstName: selectedAddress.firstName,
           lastName: selectedAddress.lastName,
           phone: selectedAddress.phone,
-          email: userEmail, // Kullanıcının e-postasını kullan
+          email: userEmail,
           address: selectedAddress.address,
           city: selectedAddress.city,
           district: selectedAddress.district,
           postalCode: selectedAddress.postalCode,
+          isDefault: selectedAddress.isDefault,
+        };
+        setFormData(newFormData);
+      }
+    }
+  };
+
+  // Adres düzenleme modunu aç/kapat
+  const handleToggleEdit = (addressId: string) => {
+    if (editingAddressId === addressId) {
+      // Düzenleme modunu kapat ve seçili adresi tekrar yükle
+      setEditingAddressId(null);
+      if (selectedAddressId === addressId) {
+        handleAddressSelect(addressId);
+      }
+    } else {
+      // Düzenleme modunu aç
+      setEditingAddressId(addressId);
+      const address = addresses.find((addr) => addr.id === addressId);
+      if (address) {
+        setFormData({
+          title: address.title,
+          firstName: address.firstName,
+          lastName: address.lastName,
+          phone: address.phone,
+          email: userEmail,
+          address: address.address,
+          city: address.city,
+          district: address.district,
+          postalCode: address.postalCode,
+          isDefault: address.isDefault,
         });
       }
+    }
+  };
+
+  // Adres kaydet/güncelle
+  const handleSaveAddress = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    setIsSubmittingAddress(true);
+
+    try {
+      // Form validasyonu
+      if (!formData.firstName || !formData.lastName || !formData.phone || !formData.address || !formData.city || !formData.district || !formData.postalCode) {
+        toast.error("Lütfen tüm zorunlu alanları doldurun");
+        setIsSubmittingAddress(false);
+        return;
+      }
+
+      // Telefon numarası validasyonu
+      if (formData.phone) {
+        const cleanPhone = formData.phone.replace(/\D/g, "");
+        const phoneDigits = cleanPhone.startsWith("90") && cleanPhone.length > 10 
+          ? cleanPhone.substring(2) 
+          : cleanPhone;
+        
+        if (phoneDigits.length < 10) {
+          toast.error("Telefon numarası en az 10 haneli olmalıdır (örn: 5XX XXX XX XX)");
+          setIsSubmittingAddress(false);
+          return;
+        }
+      }
+
+      if (editingAddressId) {
+        // Adres güncelle
+        await updateAddress(editingAddressId, {
+          title: formData.title || "Yeni Adres",
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          district: formData.district,
+          postalCode: formData.postalCode,
+          isDefault: formData.isDefault,
+        });
+        toast.success("Adres başarıyla güncellendi");
+        setEditingAddressId(null);
+        // Güncellenen adresi seçili hale getir
+        setSelectedAddressId(editingAddressId);
+        router.refresh();
+      } else if (selectedAddressId === "new") {
+        // Yeni adres oluştur
+        await createAddress({
+          title: formData.title || "Yeni Adres",
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          district: formData.district,
+          postalCode: formData.postalCode,
+          isDefault: formData.isDefault,
+        });
+        toast.success("Adres başarıyla eklendi");
+        router.refresh();
+      }
+
+    } catch (error: any) {
+      toast.error(error.message || "Adres kaydedilirken bir hata oluştu");
+    } finally {
+      setIsSubmittingAddress(false);
     }
   };
 
@@ -397,46 +524,220 @@ export default function CheckoutClient({
                   <label className="block text-sm font-sans font-medium text-gray-700 mb-3">
                     Kayıtlı Adresler
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {addresses.map((address) => (
-                      <label
+                      <div
                         key={address.id}
-                        className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        className={`border-2 rounded-lg transition-all ${
                           selectedAddressId === address.id
                             ? "border-luxury-goldLight bg-luxury-goldLight/10"
-                            : "border-gray-200 hover:border-gray-300"
+                            : "border-gray-200"
                         }`}
                       >
-                        <input
-                          type="radio"
-                          name="address"
-                          value={address.id}
-                          checked={selectedAddressId === address.id}
-                          onChange={(e) => handleAddressSelect(e.target.value)}
-                          className="mt-1 w-4 h-4 text-luxury-goldLight border-gray-300 focus:ring-luxury-goldLight focus:ring-2"
-                        />
-                        <div className="ml-3 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-sans font-semibold text-gray-900">
-                              {address.title}
-                            </span>
-                            {address.isDefault && (
-                              <span className="px-2 py-0.5 text-xs font-sans font-medium bg-gray-100 text-gray-700 rounded">
-                                Varsayılan
-                              </span>
-                            )}
+                        <label
+                          className={`flex items-start p-4 cursor-pointer transition-all ${
+                            selectedAddressId === address.id
+                              ? ""
+                              : "hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="address"
+                            value={address.id}
+                            checked={selectedAddressId === address.id}
+                            onChange={(e) => handleAddressSelect(e.target.value)}
+                            className="mt-1 w-4 h-4 text-luxury-goldLight border-gray-300 focus:ring-luxury-goldLight focus:ring-2"
+                          />
+                          <div className="ml-3 flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-sans font-semibold text-gray-900">
+                                  {address.title}
+                                </span>
+                                {address.isDefault && (
+                                  <span className="px-2 py-0.5 text-xs font-sans font-medium bg-gray-100 text-gray-700 rounded">
+                                    Varsayılan
+                                  </span>
+                                )}
+                              </div>
+                              {/* Düzenleme İkonu */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleToggleEdit(address.id);
+                                }}
+                                className="p-1.5 text-gray-500 hover:text-luxury-goldLight hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Adresi Düzenle"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                            </div>
+                            <p className="text-sm font-sans text-gray-600 mt-1">
+                              {address.firstName} {address.lastName}
+                            </p>
+                            <p className="text-sm font-sans text-gray-600">
+                              {address.address}, {address.district} / {address.city}
+                            </p>
+                            <p className="text-sm font-sans text-gray-600">
+                              {address.postalCode} - Tel: {address.phone}
+                            </p>
                           </div>
-                          <p className="text-sm font-sans text-gray-600 mt-1">
-                            {address.firstName} {address.lastName}
-                          </p>
-                          <p className="text-sm font-sans text-gray-600">
-                            {address.address}, {address.district} / {address.city}
-                          </p>
-                          <p className="text-sm font-sans text-gray-600">
-                            {address.postalCode} - Tel: {address.phone}
-                          </p>
-                        </div>
-                      </label>
+                        </label>
+
+                        {/* Düzenleme Formu - Accordion/Toggle */}
+                        {editingAddressId === address.id && (
+                          <div className="px-4 pb-4 pt-2 border-t border-gray-200 bg-gray-50">
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                  Adres Başlığı
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={formData.title}
+                                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                  placeholder="Ev, İş, vs."
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                    Ad *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={formData.firstName}
+                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                    Soyad *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={formData.lastName}
+                                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                  Telefon *
+                                </label>
+                                <input
+                                  type="tel"
+                                  required
+                                  value={formData.phone}
+                                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })}
+                                  placeholder="5XX XXX XX XX"
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                />
+                                <p className="mt-1 text-xs text-gray-500 font-sans">
+                                  En az 10 haneli telefon numarası giriniz
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                  Adres *
+                                </label>
+                                <textarea
+                                  required
+                                  value={formData.address}
+                                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                  rows={3}
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                    İlçe *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={formData.district}
+                                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                    Şehir *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={formData.city}
+                                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                  />
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-sans font-medium text-gray-700 mb-1">
+                                  Posta Kodu *
+                                </label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={formData.postalCode}
+                                  onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight font-sans text-gray-900"
+                                />
+                              </div>
+
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`isDefault-${address.id}`}
+                                  checked={formData.isDefault}
+                                  onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
+                                  className="w-4 h-4 text-luxury-goldLight border-gray-300 rounded focus:ring-luxury-goldLight"
+                                />
+                                <label htmlFor={`isDefault-${address.id}`} className="ml-2 text-sm font-sans text-gray-700">
+                                  Varsayılan adres olarak ayarla
+                                </label>
+                              </div>
+
+                              <div className="flex gap-4 pt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleEdit(address.id)}
+                                  className="flex-1 px-4 py-2.5 text-sm font-sans font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
+                                >
+                                  İptal
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveAddress}
+                                  disabled={isSubmittingAddress}
+                                  className="flex-1 px-4 py-2.5 text-sm font-sans font-medium text-white bg-luxury-goldLight hover:bg-luxury-gold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {isSubmittingAddress ? "Kaydediliyor..." : "Kaydet"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     ))}
                     <label
                       className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
@@ -461,131 +762,200 @@ export default function CheckoutClient({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    Ad *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    Soyad *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastName: e.target.value })
-                    }
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    Telefon *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    placeholder="5XX XXX XX XX veya +90 5XX XXX XX XX"
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 font-sans">
-                    En az 10 haneli telefon numarası giriniz
+              {/* Kayıtlı Adres Yoksa Uyarı */}
+              {addresses.length === 0 && !retryOrder && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-sans text-blue-800">
+                    Henüz kayıtlı adresiniz yok. Lütfen aşağıdaki formu doldurarak adres bilgilerinizi girin.
                   </p>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    E-posta *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
-                  />
-                </div>
+              {/* Adres Formu - Sadece yeni adres seçiliyse veya retry durumundaysa göster */}
+              {(selectedAddressId === "new" || selectedAddressId === "retry" || (addresses.length === 0 && !retryOrder)) && (
+                <div className="space-y-4">
+                  {/* Adres Başlığı - Sadece yeni adres eklerken */}
+                  {selectedAddressId === "new" && (
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        Adres Başlığı
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                        placeholder="Ev, İş, vs."
+                      />
+                    </div>
+                  )}
 
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    Adres *
-                  </label>
-                  <textarea
-                    required
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
-                    }
-                    rows={3}
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all resize-y"
-                  />
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        Ad *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.firstName}
+                        onChange={(e) =>
+                          setFormData({ ...formData, firstName: e.target.value })
+                        }
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    İl *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        Soyad *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.lastName}
+                        onChange={(e) =>
+                          setFormData({ ...formData, lastName: e.target.value })
+                        }
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    İlçe *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.district}
-                    onChange={(e) =>
-                      setFormData({ ...formData, district: e.target.value })
-                    }
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        Telefon *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) =>
+                          setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })
+                        }
+                        placeholder="5XX XXX XX XX"
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 font-sans">
+                        En az 10 haneli telefon numarası giriniz
+                      </p>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
-                    Posta Kodu *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.postalCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, postalCode: e.target.value })
-                    }
-                    className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
-                  />
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        E-posta *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        Adres *
+                      </label>
+                      <textarea
+                        required
+                        value={formData.address}
+                        onChange={(e) =>
+                          setFormData({ ...formData, address: e.target.value })
+                        }
+                        rows={3}
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all resize-y"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        İlçe *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.district}
+                        onChange={(e) =>
+                          setFormData({ ...formData, district: e.target.value })
+                        }
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        Şehir *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.city}
+                        onChange={(e) =>
+                          setFormData({ ...formData, city: e.target.value })
+                        }
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-sans font-medium text-gray-700 mb-2">
+                        Posta Kodu *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.postalCode}
+                        onChange={(e) =>
+                          setFormData({ ...formData, postalCode: e.target.value })
+                        }
+                        className="w-full px-4 py-3 font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-luxury-goldLight focus:border-luxury-goldLight placeholder:text-gray-400 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Varsayılan adres checkbox ve Kaydet butonu - Sadece yeni adres eklerken */}
+                  {selectedAddressId === "new" && (
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="isDefaultCheckout"
+                          checked={formData.isDefault}
+                          onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
+                          className="w-4 h-4 text-luxury-goldLight border-gray-300 rounded focus:ring-luxury-goldLight"
+                        />
+                        <label htmlFor="isDefaultCheckout" className="ml-2 text-sm font-sans text-gray-700">
+                          Varsayılan adres olarak ayarla
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveAddress}
+                        disabled={isSubmittingAddress}
+                        className="w-full sm:w-auto px-6 py-2.5 text-sm font-sans font-medium text-white bg-luxury-goldLight hover:bg-luxury-gold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {isSubmittingAddress ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Kaydediliyor...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Adresi Kaydet</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
+
             </div>
           </div>
 

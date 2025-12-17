@@ -43,7 +43,21 @@ export default function PayTRSuccessPage() {
         
         if (response.ok) {
           const data = await response.json();
-          setOrder(data.order);
+          const fetchedOrder = data.order;
+          
+          // ÖNEMLİ: Ödeme durumunu kontrol et
+          // Eğer ödeme tamamlanmamışsa (PENDING veya FAILED), başarılı sayfasını gösterme
+          if (fetchedOrder && fetchedOrder.paymentStatus !== "COMPLETED") {
+            console.warn("PayTR: Order payment not completed", {
+              orderId: fetchedOrder.id,
+              paymentStatus: fetchedOrder.paymentStatus,
+            });
+            // Ödeme tamamlanmamış, başarısız sayfaya yönlendir
+            window.location.href = `/odeme/paytr/basarisiz?orderId=${orderId}`;
+            return;
+          }
+          
+          setOrder(fetchedOrder);
         } else if (response.status === 401) {
           // Unauthorized - ama orderNumber varsa sayfayı göster
           console.warn("401 Unauthorized - but orderNumber might be available");
