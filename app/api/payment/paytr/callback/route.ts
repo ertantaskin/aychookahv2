@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 // PayTR callback route - PayTR'den POST request gelir
 // PayTR dokümantasyonuna göre: Bu route'a POST request gelir ve sadece "OK" text response dönmelidir
+// ÖNEMLİ: Response'u hemen döndürmeliyiz, aksi takdirde PayTR timeout'a düşer
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -19,68 +20,49 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  let merchant_oid: string | null = null;
+  // PayTR'ye hemen "OK" döndürmek için işlemleri arka planda yapacağız
+  // PayTR timeout'a düşmemesi için response'u hemen döndürmeliyiz
   
-  try {
-    // PayTR form-data olarak gönderir (application/x-www-form-urlencoded)
-    const body = await request.formData();
+  // İşlemleri arka planda yap
+  (async () => {
+    let merchant_oid: string | null = null;
+    
+    try {
+      // PayTR form-data olarak gönderir (application/x-www-form-urlencoded)
+      const body = await request.formData();
 
-    merchant_oid = body.get("merchant_oid") as string;
-    const status = body.get("status") as string;
-    const total_amount = body.get("total_amount") as string;
-    const hash = body.get("hash") as string;
-    const failed_reason_code = body.get("failed_reason_code") as string;
-    const failed_reason_msg = body.get("failed_reason_msg") as string;
-    const test_mode = body.get("test_mode") as string;
-    const payment_type = body.get("payment_type") as string;
-    const currency = body.get("currency") as string;
-    const payment_amount = body.get("payment_amount") as string;
-    const installment_count = body.get("installment_count") as string;
+      merchant_oid = body.get("merchant_oid") as string;
+      const status = body.get("status") as string;
+      const total_amount = body.get("total_amount") as string;
+      const hash = body.get("hash") as string;
+      const failed_reason_code = body.get("failed_reason_code") as string;
+      const failed_reason_msg = body.get("failed_reason_msg") as string;
+      const test_mode = body.get("test_mode") as string;
+      const payment_type = body.get("payment_type") as string;
+      const currency = body.get("currency") as string;
+      const payment_amount = body.get("payment_amount") as string;
+      const installment_count = body.get("installment_count") as string;
 
-    // Log callback (production'da sadece hata durumlarında)
-    console.log("PayTR callback received:", {
-      merchant_oid,
-      status,
-      total_amount,
-      test_mode,
-    });
-
-    if (!merchant_oid) {
-      console.error("PayTR callback: merchant_oid eksik");
-      // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
+      // Log callback
+      console.log("PayTR callback received:", {
+        merchant_oid,
+        status,
+        total_amount,
+        test_mode,
       });
-    }
 
-    // Siparişi bul
-    // merchant_oid PayTR'ye gönderilirken temizlenmiş (özel karakterler kaldırılmış) olabilir
-    // Önce direkt orderNumber ile dene, sonra temizlenmiş halini dene
-    let order = await prisma.order.findFirst({
-      where: {
-        OR: [
-          { orderNumber: merchant_oid }, // Direkt eşleşme
-          // Prisma'da regex desteği yok, bu yüzden contains kullanıyoruz
-          // Ama daha iyi bir çözüm için tüm siparişleri çekip filtreleyebiliriz
-        ],
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
+      if (!merchant_oid) {
+        console.error("PayTR callback: merchant_oid eksik");
+        return;
+      }
+
+      // Siparişi bul
+      let order = await prisma.order.findFirst({
+        where: {
+          OR: [
+            { orderNumber: merchant_oid },
+          ],
         },
-        user: true,
-      },
-    });
-
-    // Eğer direkt bulunamadıysa, tüm siparişleri çekip temizlenmiş orderNumber ile karşılaştır
-    if (!order) {
-      const orders = await prisma.order.findMany({
         include: {
           items: {
             include: {
@@ -91,244 +73,189 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // merchant_oid ile eşleşen siparişi bul (orderNumber'ı temizleyip karşılaştır)
-      order = orders.find((o) => {
-        const cleanOrderNumber = o.orderNumber.replace(/[^a-zA-Z0-9]/g, "");
-        return cleanOrderNumber === merchant_oid;
-      }) || null;
-    }
-
-    if (!order) {
-      console.error("PayTR callback: Order not found", merchant_oid);
-      // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
-      });
-    }
-
-    // PayTR gateway'ini bul
-    const gateway = await prisma.paymentGateway.findFirst({
-      where: {
-        name: "paytr",
-        isActive: true,
-      },
-    });
-
-    if (!gateway) {
-      console.error("PayTR callback: Gateway not found");
-      // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
-      });
-    }
-
-    const config = gateway.config as any;
-    const merchant_key = config?.merchant_key || process.env.PAYTR_MERCHANT_KEY;
-    const merchant_salt = config?.merchant_salt || process.env.PAYTR_MERCHANT_SALT;
-
-    if (!merchant_key || !merchant_salt) {
-      console.error("PayTR callback: Config missing");
-      // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
-      });
-    }
-
-    // Hash kontrolü
-    const hash_str = merchant_oid + merchant_salt + status + total_amount;
-    const calculated_hash = crypto
-      .createHmac("sha256", merchant_key)
-      .update(hash_str)
-      .digest("base64");
-
-    if (calculated_hash !== hash) {
-      console.error("PayTR callback: Hash mismatch", {
-        calculated: calculated_hash,
-        received: hash,
-        merchant_oid,
-        status,
-        total_amount,
-      });
-      // Güvenlik: Hash uyuşmazlığında bile "OK" döndür (PayTR tekrar deneyecek)
-      // Ama işlem yapma
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
-      });
-    }
-
-    // Ödeme başarılı
-    if (status === "success") {
-      // Duplicate kontrolü - eğer sipariş zaten ödendiyse tekrar işlem yapma
-      if (order.paymentStatus === "COMPLETED") {
-        console.log("PayTR callback: Order already completed", order.id);
-        // PayTR'ye hemen "OK" döndür
-        return new NextResponse("OK", {
-          status: 200,
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
+      // Eğer direkt bulunamadıysa, temizlenmiş orderNumber ile dene
+      if (!order) {
+        const orders = await prisma.order.findMany({
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+            user: true,
           },
         });
+
+        order = orders.find((o) => {
+          const cleanOrderNumber = o.orderNumber.replace(/[^a-zA-Z0-9]/g, "");
+          return cleanOrderNumber === merchant_oid;
+        }) || null;
       }
 
-      // ÖNEMLİ: PayTR'ye hemen "OK" döndür, sonra işlemleri yap
-      // PayTR timeout'a düşmemesi için response'u hemen göndermeliyiz
-      // İşlemleri arka planda yapacağız (await kullanmadan)
-      
-      // İşlemleri arka planda yap (await kullanmadan, Promise olarak)
-      (async () => {
-        try {
-          // Stokları düşür
-          for (const item of order.items) {
-            if (item.productId) {
-              await prisma.product.update({
-                where: { id: item.productId },
-                data: {
-                  stock: {
-                    decrement: item.quantity,
-                  },
-                },
-              });
-            }
-          }
+      if (!order) {
+        console.error("PayTR callback: Order not found", merchant_oid);
+        return;
+      }
 
-          // Siparişi güncelle
-          await prisma.order.update({
-            where: { id: order.id },
-            data: {
-              paymentId: merchant_oid,
-              paymentStatus: "COMPLETED",
-              status: "PROCESSING",
-              notes: `Ödeme tamamlandı. PayTR Payment ID: ${merchant_oid}. Tutar: ${total_amount} ${currency}. Taksit: ${installment_count || "1"}. Ödeme Tipi: ${payment_type || "N/A"}. Test Modu: ${test_mode || "0"}. Callback time: ${new Date().toISOString()}`,
-            },
-          });
+      // PayTR gateway'ini bul
+      const gateway = await prisma.paymentGateway.findFirst({
+        where: {
+          name: "paytr",
+          isActive: true,
+        },
+      });
 
-          // Cache'i yenile
-          revalidatePath("/hesabim");
-          revalidatePath("/hesabim/siparisler");
-          revalidatePath(`/hesabim/siparisler/${order.id}`);
+      if (!gateway) {
+        console.error("PayTR callback: Gateway not found");
+        return;
+      }
 
-          // Sepeti temizle
-          if (order.userId) {
-            await prisma.cartItem.deleteMany({
-              where: {
-                cart: {
-                  userId: order.userId,
+      const config = gateway.config as any;
+      const merchant_key = config?.merchant_key || process.env.PAYTR_MERCHANT_KEY;
+      const merchant_salt = config?.merchant_salt || process.env.PAYTR_MERCHANT_SALT;
+
+      if (!merchant_key || !merchant_salt) {
+        console.error("PayTR callback: Config missing");
+        return;
+      }
+
+      // Hash kontrolü - PayTR dokümantasyonuna göre
+      const hash_str = merchant_oid + merchant_salt + status + total_amount;
+      const calculated_hash = crypto
+        .createHmac("sha256", merchant_key)
+        .update(hash_str)
+        .digest("base64");
+
+      if (calculated_hash !== hash) {
+        console.error("PayTR callback: Hash mismatch", {
+          calculated: calculated_hash,
+          received: hash,
+          merchant_oid,
+          status,
+          total_amount,
+        });
+        return;
+      }
+
+      // Ödeme başarılı
+      if (status === "success") {
+        // Duplicate kontrolü
+        if (order.paymentStatus === "COMPLETED") {
+          console.log("PayTR callback: Order already completed", order.id);
+          return;
+        }
+
+        // Stokları düşür
+        for (const item of order.items) {
+          if (item.productId) {
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: item.quantity,
                 },
               },
             });
           }
+        }
 
-          // Kupon kullanımını kaydet
-          if (order.couponCode) {
-            const coupon = await prisma.coupon.findUnique({
-              where: { code: order.couponCode.toUpperCase() },
+        // Siparişi güncelle
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            paymentId: merchant_oid,
+            paymentStatus: "COMPLETED",
+            status: "PROCESSING",
+            notes: `Ödeme tamamlandı. PayTR Payment ID: ${merchant_oid}. Tutar: ${total_amount} ${currency}. Taksit: ${installment_count || "1"}. Ödeme Tipi: ${payment_type || "N/A"}. Test Modu: ${test_mode || "0"}. Callback time: ${new Date().toISOString()}`,
+          },
+        });
+
+        // Cache'i yenile
+        revalidatePath("/hesabim");
+        revalidatePath("/hesabim/siparisler");
+        revalidatePath(`/hesabim/siparisler/${order.id}`);
+
+        // Sepeti temizle
+        if (order.userId) {
+          await prisma.cartItem.deleteMany({
+            where: {
+              cart: {
+                userId: order.userId,
+              },
+            },
+          });
+        }
+
+        // Kupon kullanımını kaydet
+        if (order.couponCode) {
+          const coupon = await prisma.coupon.findUnique({
+            where: { code: order.couponCode.toUpperCase() },
+          });
+
+          if (coupon) {
+            const existingUsage = await prisma.couponUsage.findFirst({
+              where: {
+                couponId: coupon.id,
+                orderId: order.id,
+              },
             });
 
-            if (coupon) {
-              const existingUsage = await prisma.couponUsage.findFirst({
-                where: {
+            if (!existingUsage) {
+              await prisma.couponUsage.create({
+                data: {
                   couponId: coupon.id,
+                  userId: order.userId || undefined,
                   orderId: order.id,
                 },
               });
 
-              if (!existingUsage) {
-                await prisma.couponUsage.create({
-                  data: {
-                    couponId: coupon.id,
-                    userId: order.userId || undefined,
-                    orderId: order.id,
+              await prisma.coupon.update({
+                where: { id: coupon.id },
+                data: {
+                  usedCount: {
+                    increment: 1,
                   },
-                });
-
-                await prisma.coupon.update({
-                  where: { id: coupon.id },
-                  data: {
-                    usedCount: {
-                      increment: 1,
-                    },
-                  },
-                });
-              }
+                },
+              });
             }
           }
-
-          console.log("PayTR callback: Payment completed successfully", order.id);
-        } catch (error) {
-          console.error("PayTR callback: Error processing order update:", error);
         }
-      })();
 
-      // PayTR'ye hemen "OK" döndür (işlemler arka planda devam edecek)
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
-      });
-    } else {
-      // Ödeme başarısız
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          paymentStatus: "FAILED",
-          notes: `Ödeme başarısız. PayTR Hata Kodu: ${failed_reason_code || "N/A"}. Hata Mesajı: ${failed_reason_msg || "N/A"}. Callback time: ${new Date().toISOString()}`,
-        },
-      });
+        console.log("PayTR callback: Payment completed successfully", order.id);
+      } else {
+        // Ödeme başarısız
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            paymentStatus: "FAILED",
+            notes: `Ödeme başarısız. PayTR Hata Kodu: ${failed_reason_code || "N/A"}. Hata Mesajı: ${failed_reason_msg || "N/A"}. Callback time: ${new Date().toISOString()}`,
+          },
+        });
 
-      console.log("PayTR callback: Payment failed", {
-        orderId: order.id,
-        reason: failed_reason_msg,
-        code: failed_reason_code,
-      });
-      
-      // Cache'i yenile
-      revalidatePath("/hesabim");
-      revalidatePath("/hesabim/siparisler");
-      
-      // PayTR'ye sadece "OK" string'i döndür (JSON değil)
-      return new NextResponse("OK", {
-        status: 200,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-        },
+        console.log("PayTR callback: Payment failed", {
+          orderId: order.id,
+          reason: failed_reason_msg,
+          code: failed_reason_code,
+        });
+        
+        revalidatePath("/hesabim");
+        revalidatePath("/hesabim/siparisler");
+      }
+    } catch (error: any) {
+      console.error("PayTR callback error:", {
+        error: error.message,
+        stack: error.stack,
+        merchant_oid,
       });
     }
-  } catch (error: any) {
-    console.error("PayTR callback error:", {
-      error: error.message,
-      stack: error.stack,
-      merchant_oid,
-    });
-    
-    // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-    // Hata logları zaten console'a yazıldı
-    return new NextResponse("OK", {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-      },
-    });
-  }
-}
+  })();
 
+  // PayTR'ye hemen "OK" döndür (işlemler arka planda devam edecek)
+  // PayTR dokümantasyonuna göre sadece "OK" string'i dönmeli
+  return new NextResponse("OK", {
+    status: 200,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
+}

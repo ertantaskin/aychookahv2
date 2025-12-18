@@ -57,49 +57,45 @@ function PayTRPaymentPage() {
   }, [orderId, searchParams]);
 
   useEffect(() => {
-    // iframeResizer script'ini yükle (PayTR V2 için gerekli)
-    const loadIframeResizer = () => {
-      // Script zaten yüklenmiş mi kontrol et
-      const existingScript = document.querySelector(
-        'script[src="https://www.paytr.com/js/iframeResizer.min.js?v2"]'
-      );
-      
-      if (existingScript) {
-        // Script zaten yüklü, sadece iframe'i bağla
-        if (token && (window as any).iFrameResize) {
-          (window as any).iFrameResize({
-            log: false,
-            checkOrigin: false,
-            heightCalculationMethod: "max",
-          }, "#paytriframe");
-        }
-        return;
+    // PayTR V2 için iframeResizer script'ini yükle
+    // PayTR dokümantasyonuna göre: https://www.paytr.com/js/iframeResizer.min.js?v2
+    if (!token) return;
+
+    // Script zaten yüklenmiş mi kontrol et
+    const existingScript = document.querySelector(
+      'script[src="https://www.paytr.com/js/iframeResizer.min.js?v2"]'
+    );
+    
+    if (existingScript) {
+      // Script zaten yüklü, iframe'i bağla
+      if ((window as any).iFrameResize) {
+        (window as any).iFrameResize({
+          log: false,
+          checkOrigin: false,
+          heightCalculationMethod: "max",
+        }, "#paytriframe");
       }
-
-      const script = document.createElement("script");
-      script.src = "https://www.paytr.com/js/iframeResizer.min.js?v2";
-      script.async = true;
-      script.onload = () => {
-        // Script yüklendikten sonra iframe'i bağla
-        if (token && (window as any).iFrameResize) {
-          setTimeout(() => {
-            (window as any).iFrameResize({
-              log: false,
-              checkOrigin: false,
-              heightCalculationMethod: "max",
-            }, "#paytriframe");
-          }, 100);
-        }
-      };
-      document.body.appendChild(script);
-    };
-
-    if (token) {
-      loadIframeResizer();
+      return;
     }
 
+    // Script'i yükle
+    const script = document.createElement("script");
+    script.src = "https://www.paytr.com/js/iframeResizer.min.js?v2";
+    script.async = true;
+    script.onload = () => {
+      // Script yüklendikten sonra iframe'i bağla
+      if ((window as any).iFrameResize) {
+        (window as any).iFrameResize({
+          log: false,
+          checkOrigin: false,
+          heightCalculationMethod: "max",
+        }, "#paytriframe");
+      }
+    };
+    document.body.appendChild(script);
+
     return () => {
-      // Cleanup - iframeResizer'ı kaldır
+      // Cleanup
       if ((window as any).iFrameResize) {
         try {
           (window as any).iFrameResize.close("#paytriframe");

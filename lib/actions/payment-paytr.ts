@@ -110,6 +110,7 @@ export const createPayTRToken = async (
     const currency = config?.currency || "TL";
     const timeout_limit = config?.timeout_limit || "30";
     const lang = config?.lang || "tr";
+    const debug_on = config?.debug_on || (process.env.NODE_ENV === "development" ? "1" : "0"); // Hata mesajlarının ekrana basılması için
 
     // Kullanıcı bilgileri
     const user_name = shippingAddress.firstName
@@ -176,6 +177,7 @@ export const createPayTRToken = async (
     formData.append("user_basket", user_basket);
     formData.append("user_ip", user_ip);
     formData.append("timeout_limit", timeout_limit);
+    formData.append("debug_on", debug_on);
     formData.append("test_mode", test_mode);
     formData.append("lang", lang);
     formData.append("no_installment", no_installment);
