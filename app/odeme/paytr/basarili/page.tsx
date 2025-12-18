@@ -32,35 +32,57 @@ export default function PayTRSuccessPage() {
         return;
       }
 
-      try {
-        // Order bilgilerini getir - credentials ile
-        const response = await fetch(`/api/orders/${orderId}`, {
-          credentials: "include", // Cookie'leri gönder
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setOrder(data.order);
-        } else if (response.status === 401) {
-          // Unauthorized - ama orderNumber varsa sayfayı göster
-          console.warn("401 Unauthorized - but orderNumber might be available");
-          // Order yoksa bile sayfayı göster (orderNumber varsa)
-        } else if (response.status === 404) {
-          // Order bulunamadı - ama orderNumber varsa sayfayı göster
-          console.warn("404 Order not found - but orderNumber might be available");
+      let retryCount = 0;
+      const maxRetries = 10; // 10 kez deneme (toplam ~10 saniye)
+      const retryDelay = 1000; // 1 saniye bekle
+
+      const checkOrderStatus = async (): Promise<void> => {
+        try {
+          // Order bilgilerini getir - credentials ile
+          const response = await fetch(`/api/orders/${orderId}`, {
+            credentials: "include", // Cookie'leri gönder
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const orderData = data.order;
+            setOrder(orderData);
+
+            // Eğer ödeme henüz tamamlanmamışsa (PENDING), callback'in gelmesini bekle
+            if (orderData.paymentStatus === "PENDING" && retryCount < maxRetries) {
+              retryCount++;
+              console.log(`PayTR callback bekleniyor... (${retryCount}/${maxRetries})`);
+              setTimeout(checkOrderStatus, retryDelay);
+              return;
+            }
+
+            // Ödeme tamamlandı veya max retry sayısına ulaşıldı
+            if (orderData.paymentStatus === "COMPLETED") {
+              console.log("PayTR ödeme tamamlandı");
+              // Ödeme başarılı olduğunda sepet temizlendi, header'ı güncelle
+              window.dispatchEvent(new CustomEvent("cartUpdated"));
+            } else if (orderData.paymentStatus === "PENDING") {
+              console.warn("PayTR callback henüz gelmedi, sipariş PENDING durumunda");
+            }
+          } else if (response.status === 401) {
+            // Unauthorized - ama orderNumber varsa sayfayı göster
+            console.warn("401 Unauthorized - but orderNumber might be available");
+          } else if (response.status === 404) {
+            // Order bulunamadı - ama orderNumber varsa sayfayı göster
+            console.warn("404 Order not found - but orderNumber might be available");
+          }
+        } catch (error) {
+          console.error("Error fetching order:", error);
+          // Hata durumunda da sayfayı göster (orderNumber varsa)
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching order:", error);
-        // Hata durumunda da sayfayı göster (orderNumber varsa)
-      }
+      };
 
-      // Ödeme başarılı olduğunda sepet temizlendi, header'ı güncelle
-      window.dispatchEvent(new CustomEvent("cartUpdated"));
-
-      setIsLoading(false);
+      checkOrderStatus();
     }
 
     if (orderId || orderNumber) {

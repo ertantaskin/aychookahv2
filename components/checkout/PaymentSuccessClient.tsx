@@ -89,7 +89,13 @@ export default function PaymentSuccessClient({
 
   const finalOrderNumber = orderNumber || order?.orderNumber || "";
   const isEftHavale = paymentMethod === "eft-havale" || paymentMethod === "EFT/Havale";
-  const isPaymentCompleted = order?.paymentStatus === "COMPLETED" || !isEftHavale;
+  const isPayTR = paymentMethod === "paytr";
+  // PayTR için sadece paymentStatus COMPLETED ise ödeme tamamlandı sayılır
+  // EFT/Havale için paymentStatus kontrolü yapılmaz (zaten PENDING olarak kalır)
+  // Diğer ödeme yöntemleri için (iyzico) varsayılan olarak tamamlandı sayılır
+  const isPaymentCompleted = isPayTR 
+    ? order?.paymentStatus === "COMPLETED" 
+    : (order?.paymentStatus === "COMPLETED" || !isEftHavale);
 
   // Varsayılan banka bilgileri (eğer veritabanından gelmemişse)
   const defaultBankInfo = {
@@ -125,14 +131,24 @@ export default function PaymentSuccessClient({
           </div>
 
           <h1 className="text-3xl font-sans font-bold text-luxury-black mb-4">
-            Siparişiniz Alındı!
+            {isPaymentCompleted ? "Siparişiniz Alındı!" : "Ödeme İşlemi Devam Ediyor"}
           </h1>
 
           <p className="text-gray-600 font-sans mb-2">
             {isEftHavale
               ? "Siparişiniz başarıyla oluşturuldu. Lütfen ödeme bilgilerini kullanarak ödemenizi tamamlayın."
-              : "Siparişiniz başarıyla alındı ve ödemeniz tamamlandı."}
+              : isPaymentCompleted
+              ? "Siparişiniz başarıyla alındı ve ödemeniz tamamlandı."
+              : "Ödeme işleminiz işleniyor. Lütfen birkaç saniye bekleyin..."}
           </p>
+          
+          {!isPaymentCompleted && isPayTR && (
+            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800 font-sans">
+                Ödeme onayı bekleniyor. Sayfa otomatik olarak güncellenecektir.
+              </p>
+            </div>
+          )}
           {finalOrderNumber && (
             <p className="text-sm text-gray-500 font-sans">
               Sipariş No: <span className="font-semibold">{finalOrderNumber}</span>

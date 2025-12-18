@@ -57,22 +57,58 @@ function PayTRPaymentPage() {
   }, [orderId, searchParams]);
 
   useEffect(() => {
-    // iframeResizer script'ini yükle
-    const script = document.createElement("script");
-    script.src = "https://www.paytr.com/js/iframeResizer.min.js?v2";
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      // Cleanup
+    // iframeResizer script'ini yükle (PayTR V2 için gerekli)
+    const loadIframeResizer = () => {
+      // Script zaten yüklenmiş mi kontrol et
       const existingScript = document.querySelector(
         'script[src="https://www.paytr.com/js/iframeResizer.min.js?v2"]'
       );
+      
       if (existingScript) {
-        existingScript.remove();
+        // Script zaten yüklü, sadece iframe'i bağla
+        if (token && (window as any).iFrameResize) {
+          (window as any).iFrameResize({
+            log: false,
+            checkOrigin: false,
+            heightCalculationMethod: "max",
+          }, "#paytriframe");
+        }
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://www.paytr.com/js/iframeResizer.min.js?v2";
+      script.async = true;
+      script.onload = () => {
+        // Script yüklendikten sonra iframe'i bağla
+        if (token && (window as any).iFrameResize) {
+          setTimeout(() => {
+            (window as any).iFrameResize({
+              log: false,
+              checkOrigin: false,
+              heightCalculationMethod: "max",
+            }, "#paytriframe");
+          }, 100);
+        }
+      };
+      document.body.appendChild(script);
+    };
+
+    if (token) {
+      loadIframeResizer();
+    }
+
+    return () => {
+      // Cleanup - iframeResizer'ı kaldır
+      if ((window as any).iFrameResize) {
+        try {
+          (window as any).iFrameResize.close("#paytriframe");
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     };
-  }, []);
+  }, [token]);
 
   if (loading) {
     return (
@@ -142,8 +178,14 @@ function PayTRPaymentPage() {
               width="100%"
               height="1000"
               scrolling="no"
-              style={{ border: "none", minHeight: "1000px" }}
+              style={{ 
+                border: "none", 
+                minHeight: "1000px",
+                width: "100%",
+                display: "block"
+              }}
               title="PayTR Ödeme Sayfası"
+              allow="payment"
             />
           </div>
         </div>

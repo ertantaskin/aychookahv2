@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { revalidatePath } from "next/cache";
 
+// PayTR callback route - PayTR'den POST request gelir
 export async function POST(request: NextRequest) {
+  let merchant_oid: string | null = null;
+  
   try {
+    // PayTR form-data olarak gönderir
     const body = await request.formData();
 
-    const merchant_oid = body.get("merchant_oid") as string;
+    merchant_oid = body.get("merchant_oid") as string;
     const status = body.get("status") as string;
     const total_amount = body.get("total_amount") as string;
     const hash = body.get("hash") as string;
@@ -18,10 +23,23 @@ export async function POST(request: NextRequest) {
     const payment_amount = body.get("payment_amount") as string;
     const installment_count = body.get("installment_count") as string;
 
+    // Log callback (production'da sadece hata durumlarında)
+    console.log("PayTR callback received:", {
+      merchant_oid,
+      status,
+      total_amount,
+      test_mode,
+    });
+
     if (!merchant_oid) {
       console.error("PayTR callback: merchant_oid eksik");
       // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", { status: 200 });
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
     }
 
     // Siparişi bul
@@ -68,7 +86,12 @@ export async function POST(request: NextRequest) {
     if (!order) {
       console.error("PayTR callback: Order not found", merchant_oid);
       // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", { status: 200 });
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
     }
 
     // PayTR gateway'ini bul
@@ -82,7 +105,12 @@ export async function POST(request: NextRequest) {
     if (!gateway) {
       console.error("PayTR callback: Gateway not found");
       // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", { status: 200 });
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
     }
 
     const config = gateway.config as any;
@@ -92,7 +120,12 @@ export async function POST(request: NextRequest) {
     if (!merchant_key || !merchant_salt) {
       console.error("PayTR callback: Config missing");
       // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", { status: 200 });
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
     }
 
     // Hash kontrolü
@@ -110,8 +143,14 @@ export async function POST(request: NextRequest) {
         status,
         total_amount,
       });
-      // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
-      return new NextResponse("OK", { status: 200 });
+      // Güvenlik: Hash uyuşmazlığında bile "OK" döndür (PayTR tekrar deneyecek)
+      // Ama işlem yapma
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
     }
 
     // Ödeme başarılı
@@ -120,7 +159,12 @@ export async function POST(request: NextRequest) {
       if (order.paymentStatus === "COMPLETED") {
         console.log("PayTR callback: Order already completed", order.id);
         // PayTR'ye sadece "OK" string'i döndür
-        return new NextResponse("OK", { status: 200 });
+        return new NextResponse("OK", {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        });
       }
 
       // Stokları düşür
@@ -147,6 +191,11 @@ export async function POST(request: NextRequest) {
           notes: `Ödeme tamamlandı. PayTR Payment ID: ${merchant_oid}. Tutar: ${total_amount} ${currency}. Taksit: ${installment_count || "1"}. Ödeme Tipi: ${payment_type || "N/A"}. Test Modu: ${test_mode || "0"}. Callback time: ${new Date().toISOString()}`,
         },
       });
+
+      // Cache'i yenile
+      revalidatePath("/hesabim");
+      revalidatePath("/hesabim/siparisler");
+      revalidatePath(`/hesabim/siparisler/${order.id}`);
 
       // Sepeti temizle
       if (order.userId) {
@@ -199,7 +248,13 @@ export async function POST(request: NextRequest) {
 
       console.log("PayTR callback: Payment completed successfully", order.id);
       // PayTR'ye sadece "OK" string'i döndür (JSON değil)
-      return new NextResponse("OK", { status: 200 });
+      // PayTR dokümantasyonuna göre sadece "OK" text response bekliyor
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
     } else {
       // Ödeme başarısız
       await prisma.order.update({
@@ -215,14 +270,34 @@ export async function POST(request: NextRequest) {
         reason: failed_reason_msg,
         code: failed_reason_code,
       });
+      
+      // Cache'i yenile
+      revalidatePath("/hesabim");
+      revalidatePath("/hesabim/siparisler");
+      
       // PayTR'ye sadece "OK" string'i döndür (JSON değil)
-      return new NextResponse("OK", { status: 200 });
+      return new NextResponse("OK", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
     }
   } catch (error: any) {
-    console.error("PayTR callback error:", error);
+    console.error("PayTR callback error:", {
+      error: error.message,
+      stack: error.stack,
+      merchant_oid,
+    });
+    
     // PayTR'ye "OK" döndür (PayTR tekrar deneyecek)
     // Hata logları zaten console'a yazıldı
-    return new NextResponse("OK", { status: 200 });
+    return new NextResponse("OK", {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
   }
 }
 

@@ -268,6 +268,57 @@ export const getOrders = async (userId: string) => {
   }
 };
 
+// Siparişleri sayfalama ile getir
+export const getOrdersPaginated = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 15
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where: { userId },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  images: {
+                    where: { isPrimary: true },
+                    take: 1,
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.order.count({
+        where: { userId },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      orders,
+      total,
+      totalPages,
+      currentPage: page,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    };
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    throw new Error("Siparişler yüklenirken bir hata oluştu");
+  }
+};
+
 // Tek sipariş getir
 export const getOrder = async (orderId: string) => {
   try {

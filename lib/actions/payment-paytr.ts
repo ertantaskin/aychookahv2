@@ -141,8 +141,17 @@ export const createPayTRToken = async (
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     // Base URL'den trailing slash'i temizle
     const cleanBaseUrl = baseUrl.replace(/\/$/, "");
+    
+    // PayTR callback URL'i - PayTR'den POST request gelecek
+    // PayTR dokümantasyonuna göre callback URL'i merchant_ok_url ve merchant_fail_url'den farklı
+    // Callback URL'i PayTR panelinden ayarlanır, ama burada da belirtilebilir
+    // Şimdilik merchant_ok_url ve merchant_fail_url kullanıyoruz
     const merchant_ok_url = `${cleanBaseUrl}/odeme/paytr/basarili?orderId=${orderId}`;
     const merchant_fail_url = `${cleanBaseUrl}/odeme/paytr/basarisiz?orderId=${orderId}`;
+    
+    // PayTR callback URL'i (PayTR panelinden ayarlanmalı, burada sadece referans)
+    // PayTR callback'i: POST /api/payment/paytr/callback
+    const callback_url = `${cleanBaseUrl}/api/payment/paytr/callback`;
 
     // Hash oluştur
     const hash_str = `${merchant_id}${user_ip}${merchant_oid}${email}${payment_amount}${user_basket}${no_installment}${max_installment}${currency}${test_mode}`;
