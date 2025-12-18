@@ -4,11 +4,25 @@ import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 
 // PayTR callback route - PayTR'den POST request gelir
+// PayTR dokümantasyonuna göre: Bu route'a POST request gelir ve sadece "OK" text response dönmelidir
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+// Test için GET endpoint (callback URL'inin erişilebilir olduğunu kontrol etmek için)
+export async function GET(request: NextRequest) {
+  return new NextResponse("PayTR Callback Route is accessible", {
+    status: 200,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   let merchant_oid: string | null = null;
   
   try {
-    // PayTR form-data olarak gönderir
+    // PayTR form-data olarak gönderir (application/x-www-form-urlencoded)
     const body = await request.formData();
 
     merchant_oid = body.get("merchant_oid") as string;
@@ -38,6 +52,7 @@ export async function POST(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     }
@@ -90,6 +105,7 @@ export async function POST(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     }
@@ -109,6 +125,7 @@ export async function POST(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     }
@@ -124,6 +141,7 @@ export async function POST(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     }
@@ -149,6 +167,7 @@ export async function POST(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     }
@@ -158,101 +177,111 @@ export async function POST(request: NextRequest) {
       // Duplicate kontrolü - eğer sipariş zaten ödendiyse tekrar işlem yapma
       if (order.paymentStatus === "COMPLETED") {
         console.log("PayTR callback: Order already completed", order.id);
-        // PayTR'ye sadece "OK" string'i döndür
+        // PayTR'ye hemen "OK" döndür
         return new NextResponse("OK", {
           status: 200,
           headers: {
             "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
           },
         });
       }
 
-      // Stokları düşür
-      for (const item of order.items) {
-        if (item.productId) {
-          await prisma.product.update({
-            where: { id: item.productId },
+      // ÖNEMLİ: PayTR'ye hemen "OK" döndür, sonra işlemleri yap
+      // PayTR timeout'a düşmemesi için response'u hemen göndermeliyiz
+      // İşlemleri arka planda yapacağız (await kullanmadan)
+      
+      // İşlemleri arka planda yap (await kullanmadan, Promise olarak)
+      (async () => {
+        try {
+          // Stokları düşür
+          for (const item of order.items) {
+            if (item.productId) {
+              await prisma.product.update({
+                where: { id: item.productId },
+                data: {
+                  stock: {
+                    decrement: item.quantity,
+                  },
+                },
+              });
+            }
+          }
+
+          // Siparişi güncelle
+          await prisma.order.update({
+            where: { id: order.id },
             data: {
-              stock: {
-                decrement: item.quantity,
-              },
-            },
-          });
-        }
-      }
-
-      // Siparişi güncelle
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          paymentId: merchant_oid,
-          paymentStatus: "COMPLETED",
-          status: "PROCESSING",
-          notes: `Ödeme tamamlandı. PayTR Payment ID: ${merchant_oid}. Tutar: ${total_amount} ${currency}. Taksit: ${installment_count || "1"}. Ödeme Tipi: ${payment_type || "N/A"}. Test Modu: ${test_mode || "0"}. Callback time: ${new Date().toISOString()}`,
-        },
-      });
-
-      // Cache'i yenile
-      revalidatePath("/hesabim");
-      revalidatePath("/hesabim/siparisler");
-      revalidatePath(`/hesabim/siparisler/${order.id}`);
-
-      // Sepeti temizle
-      if (order.userId) {
-        await prisma.cartItem.deleteMany({
-          where: {
-            cart: {
-              userId: order.userId,
-            },
-          },
-        });
-      }
-
-      // Kupon kullanımını kaydet
-      if (order.couponCode) {
-        // Kuponu bul
-        const coupon = await prisma.coupon.findUnique({
-          where: { code: order.couponCode.toUpperCase() },
-        });
-
-        if (coupon) {
-          // Aynı sipariş için daha önce kayıt yapılmış mı kontrol et
-          const existingUsage = await prisma.couponUsage.findFirst({
-            where: {
-              couponId: coupon.id,
-              orderId: order.id,
+              paymentId: merchant_oid,
+              paymentStatus: "COMPLETED",
+              status: "PROCESSING",
+              notes: `Ödeme tamamlandı. PayTR Payment ID: ${merchant_oid}. Tutar: ${total_amount} ${currency}. Taksit: ${installment_count || "1"}. Ödeme Tipi: ${payment_type || "N/A"}. Test Modu: ${test_mode || "0"}. Callback time: ${new Date().toISOString()}`,
             },
           });
 
-          if (!existingUsage) {
-            await prisma.couponUsage.create({
-              data: {
-                couponId: coupon.id,
-                userId: order.userId || undefined,
-                orderId: order.id,
-              },
-            });
+          // Cache'i yenile
+          revalidatePath("/hesabim");
+          revalidatePath("/hesabim/siparisler");
+          revalidatePath(`/hesabim/siparisler/${order.id}`);
 
-            // Kupon kullanım sayısını artır
-            await prisma.coupon.update({
-              where: { id: coupon.id },
-              data: {
-                usedCount: {
-                  increment: 1,
+          // Sepeti temizle
+          if (order.userId) {
+            await prisma.cartItem.deleteMany({
+              where: {
+                cart: {
+                  userId: order.userId,
                 },
               },
             });
           }
-        }
-      }
 
-      console.log("PayTR callback: Payment completed successfully", order.id);
-      // PayTR'ye sadece "OK" string'i döndür (JSON değil)
-      // PayTR dokümantasyonuna göre sadece "OK" text response bekliyor
+          // Kupon kullanımını kaydet
+          if (order.couponCode) {
+            const coupon = await prisma.coupon.findUnique({
+              where: { code: order.couponCode.toUpperCase() },
+            });
+
+            if (coupon) {
+              const existingUsage = await prisma.couponUsage.findFirst({
+                where: {
+                  couponId: coupon.id,
+                  orderId: order.id,
+                },
+              });
+
+              if (!existingUsage) {
+                await prisma.couponUsage.create({
+                  data: {
+                    couponId: coupon.id,
+                    userId: order.userId || undefined,
+                    orderId: order.id,
+                  },
+                });
+
+                await prisma.coupon.update({
+                  where: { id: coupon.id },
+                  data: {
+                    usedCount: {
+                      increment: 1,
+                    },
+                  },
+                });
+              }
+            }
+          }
+
+          console.log("PayTR callback: Payment completed successfully", order.id);
+        } catch (error) {
+          console.error("PayTR callback: Error processing order update:", error);
+        }
+      })();
+
+      // PayTR'ye hemen "OK" döndür (işlemler arka planda devam edecek)
       return new NextResponse("OK", {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     } else {
@@ -280,6 +309,7 @@ export async function POST(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     }
@@ -296,6 +326,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
   }
