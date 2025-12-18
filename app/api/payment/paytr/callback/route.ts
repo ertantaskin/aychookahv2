@@ -22,6 +22,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   // PayTR'ye hemen "OK" döndürmek için işlemleri arka planda yapacağız
   // PayTR timeout'a düşmemesi için response'u hemen döndürmeliyiz
+  // ÖNEMLİ: Next.js'de request body'yi birden fazla kez okuyamayız
+  // Bu yüzden formData'yı okumadan response döndüremeyiz
+  // Ancak formData okuma işlemi çok hızlı olmalı (milisaniyeler içinde)
   
   // İşlemleri arka planda yap
   (async () => {
@@ -29,6 +32,7 @@ export async function POST(request: NextRequest) {
     
     try {
       // PayTR form-data olarak gönderir (application/x-www-form-urlencoded)
+      // formData okuma işlemini hızlı yapmak için await kullanıyoruz
       const body = await request.formData();
 
       merchant_oid = body.get("merchant_oid") as string;
