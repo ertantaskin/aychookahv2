@@ -82,7 +82,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
                 </span>
                 {product.equipmentType && (
                   <>
-                    <span className="w-1 h-1 rounded-full bg-gray-300" />
+                <span className="w-1 h-1 rounded-full bg-gray-300" />
                     <span className="font-sans text-[10px] text-gray-500">{product.equipmentType}</span>
                   </>
                 )}
@@ -100,20 +100,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
 
               {product.features.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {product.features.slice(0, 3).map((feature, idx) => (
-                    <span 
-                      key={idx}
+                {product.features.slice(0, 3).map((feature, idx) => (
+                  <span 
+                    key={idx}
                       className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-[10px] rounded font-medium"
-                    >
-                      {feature}
-                    </span>
-                  ))}
-                  {product.features.length > 3 && (
+                  >
+                    {feature}
+                  </span>
+                ))}
+                {product.features.length > 3 && (
                     <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded">
-                      +{product.features.length - 3}
-                    </span>
-                  )}
-                </div>
+                    +{product.features.length - 3}
+                  </span>
+                )}
+              </div>
               )}
             </div>
 
@@ -261,8 +261,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
         ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
         </div>
         )}
       </div>
@@ -276,7 +276,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
           </span>
           {product.equipmentType && (
             <>
-              <span className="w-1 h-1 rounded-full bg-gray-300" />
+          <span className="w-1 h-1 rounded-full bg-gray-300" />
               <span className="font-sans text-[10px] text-gray-500 truncate">{product.equipmentType}</span>
             </>
           )}
@@ -290,29 +290,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = "grid" })
         {/* Features - Kompakt */}
         {product.features.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
-            {product.features.slice(0, 2).map((feature, idx) => (
-              <span 
-                key={idx}
+          {product.features.slice(0, 2).map((feature, idx) => (
+            <span 
+              key={idx}
                 className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-[10px] rounded font-medium"
-              >
-                {feature}
-              </span>
-            ))}
-            {product.features.length > 2 && (
+            >
+              {feature}
+            </span>
+          ))}
+          {product.features.length > 2 && (
               <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded">
-                +{product.features.length - 2}
-              </span>
-            )}
-          </div>
+              +{product.features.length - 2}
+            </span>
+          )}
+        </div>
         )}
 
         {/* Price & Add to Cart */}
         <div className="flex items-center justify-between pt-2.5 border-t border-gray-100 mt-auto">
           <div>
             <p className="font-sans text-lg font-bold text-luxury-black">
-              {product.price.toLocaleString('tr-TR')}
+                  {product.price.toLocaleString('tr-TR')}
               <span className="font-sans text-xs font-normal text-gray-600"> ₺</span>
-            </p>
+                </p>
           </div>
           
           <button 

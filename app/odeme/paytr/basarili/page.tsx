@@ -37,17 +37,17 @@ export default function PayTRSuccessPage() {
       const retryDelay = 1000; // 1 saniye bekle
 
       const checkOrderStatus = async (): Promise<void> => {
-        try {
-          // Order bilgilerini getir - credentials ile
-          const response = await fetch(`/api/orders/${orderId}`, {
-            credentials: "include", // Cookie'leri gönder
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
+      try {
+        // Order bilgilerini getir - credentials ile
+        const response = await fetch(`/api/orders/${orderId}`, {
+          credentials: "include", // Cookie'leri gönder
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
             const orderData = data.order;
             setOrder(orderData);
 
@@ -67,19 +67,19 @@ export default function PayTRSuccessPage() {
             } else if (orderData.paymentStatus === "PENDING") {
               console.warn("PayTR callback henüz gelmedi, sipariş PENDING durumunda");
             }
-          } else if (response.status === 401) {
-            // Unauthorized - ama orderNumber varsa sayfayı göster
-            console.warn("401 Unauthorized - but orderNumber might be available");
-          } else if (response.status === 404) {
-            // Order bulunamadı - ama orderNumber varsa sayfayı göster
-            console.warn("404 Order not found - but orderNumber might be available");
-          }
-        } catch (error) {
-          console.error("Error fetching order:", error);
-          // Hata durumunda da sayfayı göster (orderNumber varsa)
+        } else if (response.status === 401) {
+          // Unauthorized - ama orderNumber varsa sayfayı göster
+          console.warn("401 Unauthorized - but orderNumber might be available");
+        } else if (response.status === 404) {
+          // Order bulunamadı - ama orderNumber varsa sayfayı göster
+          console.warn("404 Order not found - but orderNumber might be available");
+        }
+      } catch (error) {
+        console.error("Error fetching order:", error);
+        // Hata durumunda da sayfayı göster (orderNumber varsa)
         } finally {
           setIsLoading(false);
-        }
+      }
       };
 
       checkOrderStatus();
