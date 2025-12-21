@@ -18,6 +18,9 @@ export async function GET() {
       // Fallback URL kullan
     }
 
+    // Base URL'den trailing slash'i temizle - SEO için önemli
+    baseUrl = baseUrl.replace(/\/$/, '');
+
     // Get all active products with images
     const products = await prisma.product.findMany({
       where: { isActive: true },
@@ -35,8 +38,15 @@ ${products
   .map((product) => {
     const imagesXml = product.images
       .map((img) => {
+        // Görsel URL'ini absolute URL'e çevir (relative ise)
+        let imageUrl = img.url;
+        if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+          // Relative URL ise baseUrl ile birleştir
+          imageUrl = imageUrl.startsWith('/') ? `${baseUrl}${imageUrl}` : `${baseUrl}/${imageUrl}`;
+        }
+        
         return `    <image:image>
-      <image:loc>${img.url}</image:loc>
+      <image:loc>${escapeXml(imageUrl)}</image:loc>
       <image:title>${escapeXml(img.alt || product.name)}</image:title>
       <image:caption>${escapeXml(img.alt || product.name)}</image:caption>
     </image:image>`;
@@ -44,7 +54,7 @@ ${products
       .join('\n');
 
     return `  <url>
-    <loc>${baseUrl}/urun/${product.slug}</loc>
+    <loc>${escapeXml(`${baseUrl}/urun/${product.slug}`)}</loc>
     <lastmod>${product.updatedAt.toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

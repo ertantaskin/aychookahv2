@@ -104,6 +104,15 @@ export async function getDefaultMetadata(): Promise<Metadata> {
         ...(siteSEO.bingVerification && { other: { "msvalidate.01": siteSEO.bingVerification } }),
       },
     }),
+    // Theme color for mobile browsers - SEO ve UX için önemli
+    themeColor: '#D4AF37',
+    // Viewport Next.js tarafından otomatik eklenir, ama açıkça belirtmek daha iyi
+    viewport: {
+      width: 'device-width',
+      initialScale: 1,
+      maximumScale: 5,
+      userScalable: true,
+    },
   };
 }
 
@@ -188,6 +197,15 @@ export async function getPageMetadata(pagePath: string): Promise<Metadata | null
       title: pageSEO.ogTitle || pageSEO.title || pageSEO.pageName,
       description: pageSEO.ogDescription || pageSEO.description || undefined,
       images: pageSEO.ogImage ? [pageSEO.ogImage] : [],
+    },
+    // Theme color for mobile browsers - SEO ve UX için önemli
+    themeColor: '#D4AF37',
+    // Viewport Next.js tarafından otomatik eklenir, ama açıkça belirtmek daha iyi
+    viewport: {
+      width: 'device-width',
+      initialScale: 1,
+      maximumScale: 5,
+      userScalable: true,
     },
   };
 

@@ -1,6 +1,10 @@
 import { MetadataRoute } from 'next';
 import { getSiteSEO } from '@/lib/actions/seo';
 
+// Robots.txt'i her zaman güncel tut - Google'ın index alması için önemli
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function robots(): Promise<MetadataRoute.Robots> {
   try {
     let siteSEO;
@@ -17,8 +21,12 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       } as any;
     }
 
+    // Base URL'den trailing slash'i temizle - SEO için önemli
+    baseUrl = baseUrl.replace(/\/$/, '');
+
     // Parse robots.txt content if exists
-    let disallowPaths = ['/api/', '/admin/', '/giris', '/kayit', '/hesabim/', '/sepet', '/odeme/'];
+    // /hesabim ve /hesabim/ her ikisini de disallow et (tutarlılık için)
+    let disallowPaths = ['/api/', '/admin/', '/giris', '/kayit', '/hesabim', '/hesabim/', '/sepet', '/odeme/'];
     
     if (siteSEO.robotsTxt) {
       // Simple parsing - you can enhance this
@@ -57,13 +65,14 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       ],
       sitemap: [
         `${baseUrl}/sitemap.xml`,
-        `${baseUrl}/sitemap-image.xml`,
+        `${baseUrl}/sitemap-image`,
       ],
     };
   } catch (error) {
     console.error('Error generating robots.txt:', error);
     // Fallback robots.txt
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://aychookah.com';
+    baseUrl = baseUrl.replace(/\/$/, ''); // Trailing slash'i temizle
     return {
       rules: [
         {
@@ -84,7 +93,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       ],
       sitemap: [
         `${baseUrl}/sitemap.xml`,
-        `${baseUrl}/sitemap-image.xml`,
+        `${baseUrl}/sitemap-image`,
       ],
     };
   }

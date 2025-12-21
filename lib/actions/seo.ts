@@ -229,6 +229,9 @@ export async function updateSiteSEO(formData: FormData) {
     revalidatePath("/");
     revalidatePath("/favicon.ico"); // Favicon route'unu revalidate et
     revalidatePath("/manifest.json"); // Manifest'i revalidate et
+    revalidatePath("/sitemap.xml"); // Sitemap'i revalidate et - Google index için önemli
+    revalidatePath("/sitemap-image"); // Image sitemap'i revalidate et
+    revalidatePath("/robots.txt"); // Robots.txt'i revalidate et
     
     return { success: true, data: siteSEO };
   } catch (error) {
