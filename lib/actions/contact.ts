@@ -20,25 +20,27 @@ export type ContactInfoFromDb = {
 };
 
 /**
- * Veritabanından iletişim bilgilerini çeker (contact_info tablosu).
+ * Veritabanından iletişim bilgilerini çeker (contact_info tablosu). Tablo yoksa varsayılan döner; throw etmez.
  */
 export async function getContactInfoFromDb(): Promise<ContactInfoFromDb> {
   try {
-    const row = await prisma.contactInfo.findFirst();
+    const rows = await prisma.$queryRaw<
+      { email: string; phone: string; address: string | null; workingHours: string | null; footerDescription: string | null }[]
+    >`SELECT email, phone, address, "workingHours", "footerDescription" FROM contact_info LIMIT 1`;
+    const row = Array.isArray(rows) ? rows[0] : null;
 
     if (!row) {
       return { ...DEFAULT_CONTACT };
     }
 
     return {
-      email: row.email,
-      phone: row.phone,
+      email: row.email ?? DEFAULT_CONTACT.email,
+      phone: row.phone ?? DEFAULT_CONTACT.phone,
       address: row.address ?? DEFAULT_CONTACT.address,
       workingHours: row.workingHours ?? DEFAULT_CONTACT.workingHours,
       footerDescription: row.footerDescription ?? DEFAULT_CONTACT.footerDescription,
     };
-  } catch (error) {
-    console.error("Error fetching contact info from database:", error);
+  } catch (_error) {
     return { ...DEFAULT_CONTACT };
   }
 }

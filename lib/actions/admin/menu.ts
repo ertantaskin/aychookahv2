@@ -233,14 +233,13 @@ const DEFAULT_CONTACT_INFO = {
     "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
 } as const;
 
-// Get contact info (contact_info tablosundan). Hata durumunda varsayılan döner; hiçbir zaman throw etmez.
+// Get contact info (contact_info tablosundan). Tablo yoksa veya hata olursa varsayılan döner; hiçbir zaman throw etmez.
 export async function getContactInfo() {
   try {
-    const contactInfoModel = (prisma as { contactInfo?: { findFirst: () => Promise<unknown> } }).contactInfo;
-    if (!contactInfoModel?.findFirst) {
-      return { ...DEFAULT_CONTACT_INFO };
-    }
-    const row = (await contactInfoModel.findFirst()) as { email?: string; phone?: string; address?: string | null; workingHours?: string | null; footerDescription?: string | null } | null;
+    const rows = await prisma.$queryRaw<
+      { id: string; email: string; phone: string; address: string | null; workingHours: string | null; footerDescription: string | null }[]
+    >`SELECT id, email, phone, address, "workingHours", "footerDescription" FROM contact_info LIMIT 1`;
+    const row = Array.isArray(rows) ? rows[0] : null;
 
     if (!row) {
       return { ...DEFAULT_CONTACT_INFO };
@@ -253,8 +252,7 @@ export async function getContactInfo() {
       workingHours: row.workingHours != null && row.workingHours !== "" ? row.workingHours : DEFAULT_CONTACT_INFO.workingHours,
       footerDescription: typeof row.footerDescription === "string" ? row.footerDescription : DEFAULT_CONTACT_INFO.footerDescription,
     };
-  } catch (error) {
-    console.error("Error getting contact info:", error);
+  } catch (_error) {
     return { ...DEFAULT_CONTACT_INFO };
   }
 }
@@ -303,7 +301,13 @@ export async function updateContactInfo(data: {
     revalidatePath("/iletisim");
     return { success: true };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "İletişim bilgileri güncellenirken bir hata oluştu";
+    const isTableMissing =
+      error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "P2021";
+    const message = isTableMissing
+      ? "contact_info tablosu veritabanında yok. Lütfen proje kökünde 'npx prisma migrate deploy' çalıştırın."
+      : error instanceof Error
+        ? error.message
+        : "İletişim bilgileri güncellenirken bir hata oluştu";
     console.error("Error updating contact info:", error);
     throw new Error(message);
   }
