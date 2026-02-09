@@ -17,6 +17,7 @@ interface MenuItem {
 interface ContactInfo {
   email: string;
   phone: string;
+  whatsapp?: string;
   footerDescription: string;
 }
 
@@ -57,6 +58,7 @@ const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLo
     contactInfo: {
       email: "info@aychookah.com",
       phone: "+90 XXX XXX XX XX",
+      whatsapp: "905XXXXXXXXX",
       footerDescription: "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
     },
   };
@@ -135,6 +137,7 @@ const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLo
         const contactInfo = contactRes.ok ? await contactRes.json() : {
           email: "info@aychookah.com",
           phone: "+90 XXX XXX XX XX",
+          whatsapp: "905XXXXXXXXX",
           footerDescription: "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
         };
 
@@ -225,16 +228,21 @@ const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLo
                   {footerData.sectionTitles.social}
                 </h4>
                 <div className="flex gap-3">
-                  {footerData.social.map((social) => (
-                  <a 
-                      key={social.id}
-                      href={social.href || "#"}
-                    className="group w-10 h-10 bg-luxury-mediumGray rounded-lg flex items-center justify-center hover:bg-luxury-goldLight transition-all duration-300"
-                      aria-label={social.label}
-                    >
-                      {getSocialIcon(social.icon)}
-                    </a>
-                  ))}
+                  {footerData.social.map((social) => {
+                    const isWhatsApp = social.icon === "whatsapp";
+                    const whatsappNum = (footerData.contactInfo.whatsapp || footerData.contactInfo.phone || "").replace(/\D/g, "") || "";
+                    const href = isWhatsApp && whatsappNum ? `https://wa.me/${whatsappNum}` : (social.href || "#");
+                    return (
+                      <a
+                        key={social.id}
+                        href={href}
+                        className="group w-10 h-10 bg-luxury-mediumGray rounded-lg flex items-center justify-center hover:bg-luxury-goldLight transition-all duration-300"
+                        aria-label={social.label}
+                      >
+                        {getSocialIcon(social.icon)}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -315,7 +323,7 @@ const Footer: React.FC<FooterProps> = ({ footerData: initialFooterData, footerLo
 
               {/* WhatsApp Widget */}
               <div className="mt-6 relative z-50">
-                <WhatsAppWidget />
+                <WhatsAppWidget whatsappNumber={footerData.contactInfo.whatsapp || footerData.contactInfo.phone} />
               </div>
             </div>
           </div>

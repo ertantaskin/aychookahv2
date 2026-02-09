@@ -227,6 +227,7 @@ export async function reorderMenuItems(location: string, items: { id: string; or
 const DEFAULT_CONTACT_INFO = {
   email: "info@aychookah.com",
   phone: "+90 XXX XXX XX XX",
+  whatsapp: "905XXXXXXXXX",
   address: "İstanbul, Türkiye",
   workingHours: "Pzt - Cum: 09:00 - 18:00",
   footerDescription:
@@ -237,8 +238,8 @@ const DEFAULT_CONTACT_INFO = {
 export async function getContactInfo() {
   try {
     const rows = await prisma.$queryRaw<
-      { id: string; email: string; phone: string; address: string | null; workingHours: string | null; footerDescription: string | null }[]
-    >`SELECT id, email, phone, address, "workingHours", "footerDescription" FROM contact_info LIMIT 1`;
+      { id: string; email: string; phone: string; whatsapp: string | null; address: string | null; workingHours: string | null; footerDescription: string | null }[]
+    >`SELECT id, email, phone, whatsapp, address, "workingHours", "footerDescription" FROM contact_info LIMIT 1`;
     const row = Array.isArray(rows) ? rows[0] : null;
 
     if (!row) {
@@ -248,6 +249,7 @@ export async function getContactInfo() {
     return {
       email: typeof row.email === "string" ? row.email : DEFAULT_CONTACT_INFO.email,
       phone: typeof row.phone === "string" ? row.phone : DEFAULT_CONTACT_INFO.phone,
+      whatsapp: row.whatsapp != null && row.whatsapp !== "" ? row.whatsapp : DEFAULT_CONTACT_INFO.whatsapp,
       address: row.address != null && row.address !== "" ? row.address : DEFAULT_CONTACT_INFO.address,
       workingHours: row.workingHours != null && row.workingHours !== "" ? row.workingHours : DEFAULT_CONTACT_INFO.workingHours,
       footerDescription: typeof row.footerDescription === "string" ? row.footerDescription : DEFAULT_CONTACT_INFO.footerDescription,
@@ -261,6 +263,7 @@ export async function getContactInfo() {
 export async function updateContactInfo(data: {
   email: string;
   phone: string;
+  whatsapp?: string;
   address?: string;
   workingHours?: string;
   footerDescription: string;
@@ -282,6 +285,7 @@ export async function updateContactInfo(data: {
     const payload = {
       email: String(data.email ?? "").trim() || "info@aychookah.com",
       phone: String(data.phone ?? "").trim() || "+90 XXX XXX XX XX",
+      whatsapp: data.whatsapp != null && String(data.whatsapp).trim() !== "" ? String(data.whatsapp).trim() : null,
       address: data.address != null && data.address !== "" ? data.address : null,
       workingHours: data.workingHours != null && data.workingHours !== "" ? data.workingHours : null,
       footerDescription: String(data.footerDescription ?? "").trim() || "Lüks el işçiliği nargile takımları.",

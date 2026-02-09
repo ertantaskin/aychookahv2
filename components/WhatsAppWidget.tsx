@@ -2,9 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 
-const WhatsAppWidget: React.FC = () => {
+interface WhatsAppWidgetProps {
+  /** İletişim ayarlarından gelen WhatsApp numarası (ülke kodu ile, örn. 905XXXXXXXXX) */
+  whatsappNumber?: string | null;
+}
+
+const WhatsAppWidget: React.FC<WhatsAppWidgetProps> = ({ whatsappNumber: propNumber }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const whatsappNumber = "90XXXXXXXXX"; // Gerçek numara ile değiştirilecek
+  const whatsappNumber = (propNumber || "").replace(/\D/g, "") || "905XXXXXXXXX";
   const widgetRef = useRef<HTMLDivElement>(null);
 
   // Click outside to close

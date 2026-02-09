@@ -10,6 +10,7 @@ export default function ContactInfoManager() {
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
+    whatsapp: "",
     address: "",
     workingHours: "",
     footerDescription: "",
@@ -26,6 +27,7 @@ export default function ContactInfoManager() {
       setFormData({
         email: info.email || "",
         phone: info.phone || "",
+        whatsapp: info.whatsapp || "",
         address: info.address || "",
         workingHours: info.workingHours || "",
         footerDescription: info.footerDescription || "",
@@ -84,6 +86,19 @@ export default function ContactInfoManager() {
             className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
             placeholder="+90 XXX XXX XX XX"
           />
+        </div>
+        <div>
+          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+            WhatsApp Numarası
+          </label>
+          <input
+            type="text"
+            value={formData.whatsapp}
+            onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+            placeholder="905XXXXXXXXX (ülke kodu ile, başında + olmadan)"
+          />
+          <p className="mt-1 text-xs text-gray-500">Footer ve WhatsApp butonunda bu numara kullanılır.</p>
         </div>
         <div>
           <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">

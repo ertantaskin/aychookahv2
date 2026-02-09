@@ -1,6 +1,7 @@
 export interface ContactInfoData {
   email: string;
   phone: string;
+  whatsapp?: string;
   address?: string;
   workingHours?: string;
 }
@@ -34,6 +35,8 @@ const ClockIcon = () => (
 const ContactInfo: React.FC<ContactInfoProps> = ({ contactInfo: adminContact }) => {
   const email = adminContact?.email ?? "info@aychookah.com";
   const phone = adminContact?.phone ?? "+90 XXX XXX XX XX";
+  const whatsappNum = (adminContact?.whatsapp || phone || "").replace(/\D/g, "") || "905XXXXXXXXX";
+  const whatsappHref = `https://wa.me/${whatsappNum}`;
   const address = adminContact?.address ?? "İstanbul, Türkiye";
   const workingHours = adminContact?.workingHours ?? "Pzt - Cum: 09:00 - 18:00";
 
@@ -104,7 +107,9 @@ const ContactInfo: React.FC<ContactInfoProps> = ({ contactInfo: adminContact }) 
             </svg>
           </a>
           <a 
-            href="#" 
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
             className="w-12 h-12 bg-luxury-goldLight rounded-sm flex items-center justify-center hover:bg-luxury-goldLight/80 transition-colors"
             aria-label="WhatsApp"
           >

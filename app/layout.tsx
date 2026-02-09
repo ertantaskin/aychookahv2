@@ -77,6 +77,7 @@ const RootLayout: React.FC<{ children: React.ReactNode }> = async ({ children })
     getContactInfo().catch(() => ({
       email: "info@aychookah.com",
       phone: "+90 XXX XXX XX XX",
+      whatsapp: "905XXXXXXXXX",
       address: "İstanbul, Türkiye",
       workingHours: "Pzt - Cum: 09:00 - 18:00",
       footerDescription: "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
