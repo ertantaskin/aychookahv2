@@ -233,21 +233,25 @@ const DEFAULT_CONTACT_INFO = {
     "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
 } as const;
 
-// Get contact info (contact_info tablosundan)
+// Get contact info (contact_info tablosundan). Hata durumunda varsayılan döner; hiçbir zaman throw etmez.
 export async function getContactInfo() {
   try {
-    const row = await prisma.contactInfo.findFirst();
+    const contactInfoModel = (prisma as { contactInfo?: { findFirst: () => Promise<unknown> } }).contactInfo;
+    if (!contactInfoModel?.findFirst) {
+      return { ...DEFAULT_CONTACT_INFO };
+    }
+    const row = (await contactInfoModel.findFirst()) as { email?: string; phone?: string; address?: string | null; workingHours?: string | null; footerDescription?: string | null } | null;
 
     if (!row) {
       return { ...DEFAULT_CONTACT_INFO };
     }
 
     return {
-      email: row.email,
-      phone: row.phone,
-      address: row.address ?? DEFAULT_CONTACT_INFO.address,
-      workingHours: row.workingHours ?? DEFAULT_CONTACT_INFO.workingHours,
-      footerDescription: row.footerDescription ?? DEFAULT_CONTACT_INFO.footerDescription,
+      email: typeof row.email === "string" ? row.email : DEFAULT_CONTACT_INFO.email,
+      phone: typeof row.phone === "string" ? row.phone : DEFAULT_CONTACT_INFO.phone,
+      address: row.address != null && row.address !== "" ? row.address : DEFAULT_CONTACT_INFO.address,
+      workingHours: row.workingHours != null && row.workingHours !== "" ? row.workingHours : DEFAULT_CONTACT_INFO.workingHours,
+      footerDescription: typeof row.footerDescription === "string" ? row.footerDescription : DEFAULT_CONTACT_INFO.footerDescription,
     };
   } catch (error) {
     console.error("Error getting contact info:", error);
@@ -270,33 +274,38 @@ export async function updateContactInfo(data: {
       throw new Error("Bu işlem için admin yetkisi gereklidir");
     }
 
-    const existing = await prisma.contactInfo.findFirst();
+    const contactInfoModel = (prisma as { contactInfo?: { findFirst: () => Promise<{ id: string } | null>; update: (arg: unknown) => Promise<unknown>; create: (arg: unknown) => Promise<unknown> } }).contactInfo;
+    if (!contactInfoModel) {
+      throw new Error("İletişim bilgileri modülü yüklü değil. Lütfen 'npx prisma generate' çalıştırın.");
+    }
+
+    const existing = await contactInfoModel.findFirst();
 
     const payload = {
-      email: data.email,
-      phone: data.phone,
-      address: data.address ?? null,
-      workingHours: data.workingHours ?? null,
-      footerDescription: data.footerDescription,
+      email: String(data.email ?? "").trim() || "info@aychookah.com",
+      phone: String(data.phone ?? "").trim() || "+90 XXX XXX XX XX",
+      address: data.address != null && data.address !== "" ? data.address : null,
+      workingHours: data.workingHours != null && data.workingHours !== "" ? data.workingHours : null,
+      footerDescription: String(data.footerDescription ?? "").trim() || "Lüks el işçiliği nargile takımları.",
     };
 
-    const contact =
-      existing
-        ? await prisma.contactInfo.update({
-            where: { id: existing.id },
-            data: payload,
-          })
-        : await prisma.contactInfo.create({
-            data: payload,
-          });
+    if (existing) {
+      await contactInfoModel.update({
+        where: { id: existing.id },
+        data: payload,
+      });
+    } else {
+      await contactInfoModel.create({ data: payload });
+    }
 
     revalidatePath("/admin/menu");
     revalidatePath("/");
     revalidatePath("/iletisim");
-    return contact;
-  } catch (error: any) {
+    return { success: true };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "İletişim bilgileri güncellenirken bir hata oluştu";
     console.error("Error updating contact info:", error);
-    throw new Error(error.message || "İletişim bilgileri güncellenirken bir hata oluştu");
+    throw new Error(message);
   }
 }
 
