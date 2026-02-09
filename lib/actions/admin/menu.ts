@@ -224,40 +224,43 @@ export async function reorderMenuItems(location: string, items: { id: string; or
   }
 }
 
-// Get contact info
+const DEFAULT_CONTACT_INFO = {
+  email: "info@aychookah.com",
+  phone: "+90 XXX XXX XX XX",
+  address: "İstanbul, Türkiye",
+  workingHours: "Pzt - Cum: 09:00 - 18:00",
+  footerDescription:
+    "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
+} as const;
+
+// Get contact info (contact_info tablosundan)
 export async function getContactInfo() {
   try {
-    const settings = await prisma.storeSettings.findUnique({
-      where: { key: "contact-info" },
-    });
+    const row = await prisma.contactInfo.findFirst();
 
-    if (!settings) {
-      return {
-        email: "info@aychookah.com",
-        phone: "+90 XXX XXX XX XX",
-        footerDescription: "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
-      };
+    if (!row) {
+      return { ...DEFAULT_CONTACT_INFO };
     }
 
-    return settings.config as {
-      email: string;
-      phone: string;
-      footerDescription: string;
+    return {
+      email: row.email,
+      phone: row.phone,
+      address: row.address ?? DEFAULT_CONTACT_INFO.address,
+      workingHours: row.workingHours ?? DEFAULT_CONTACT_INFO.workingHours,
+      footerDescription: row.footerDescription ?? DEFAULT_CONTACT_INFO.footerDescription,
     };
   } catch (error) {
     console.error("Error getting contact info:", error);
-    return {
-      email: "info@aychookah.com",
-      phone: "+90 XXX XXX XX XX",
-      footerDescription: "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
-    };
+    return { ...DEFAULT_CONTACT_INFO };
   }
 }
 
-// Update contact info
+// Update contact info (contact_info tablosu)
 export async function updateContactInfo(data: {
   email: string;
   phone: string;
+  address?: string;
+  workingHours?: string;
   footerDescription: string;
 }) {
   try {
@@ -267,20 +270,30 @@ export async function updateContactInfo(data: {
       throw new Error("Bu işlem için admin yetkisi gereklidir");
     }
 
-    const settings = await prisma.storeSettings.upsert({
-      where: { key: "contact-info" },
-      update: {
-        config: data as any,
-      },
-      create: {
-        key: "contact-info",
-        config: data as any,
-      },
-    });
+    const existing = await prisma.contactInfo.findFirst();
+
+    const payload = {
+      email: data.email,
+      phone: data.phone,
+      address: data.address ?? null,
+      workingHours: data.workingHours ?? null,
+      footerDescription: data.footerDescription,
+    };
+
+    const contact =
+      existing
+        ? await prisma.contactInfo.update({
+            where: { id: existing.id },
+            data: payload,
+          })
+        : await prisma.contactInfo.create({
+            data: payload,
+          });
 
     revalidatePath("/admin/menu");
     revalidatePath("/");
-    return settings;
+    revalidatePath("/iletisim");
+    return contact;
   } catch (error: any) {
     console.error("Error updating contact info:", error);
     throw new Error(error.message || "İletişim bilgileri güncellenirken bir hata oluştu");

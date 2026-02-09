@@ -4,6 +4,7 @@ import ContactForm from "@/components/contact/ContactForm";
 import ContactInfo from "@/components/contact/ContactInfo";
 import { getPageMetadata } from "@/lib/seo";
 import { getSiteSEO } from "@/lib/actions/seo";
+import { getContactInfoFromDb } from "@/lib/actions/contact";
 import { BreadcrumbStructuredData, LocalBusinessStructuredData } from "@/components/seo/StructuredData";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -51,7 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const ContactPage: React.FC = async () => {
-  const siteSEO = await getSiteSEO();
+  const [siteSEO, contactInfo] = await Promise.all([getSiteSEO(), getContactInfoFromDb()]);
   const baseUrl = siteSEO.siteUrl;
 
   // Breadcrumb structured data
@@ -104,7 +105,7 @@ const ContactPage: React.FC = async () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             <ContactForm />
-            <ContactInfo />
+            <ContactInfo contactInfo={contactInfo} />
           </div>
         </div>
       </div>

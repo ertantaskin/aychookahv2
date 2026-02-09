@@ -10,6 +10,8 @@ export default function ContactInfoManager() {
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
+    address: "",
+    workingHours: "",
     footerDescription: "",
   });
 
@@ -24,6 +26,8 @@ export default function ContactInfoManager() {
       setFormData({
         email: info.email || "",
         phone: info.phone || "",
+        address: info.address || "",
+        workingHours: info.workingHours || "",
         footerDescription: info.footerDescription || "",
       });
     } catch (error) {
@@ -79,6 +83,30 @@ export default function ContactInfoManager() {
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
             placeholder="+90 XXX XXX XX XX"
+          />
+        </div>
+        <div>
+          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+            Adres
+          </label>
+          <input
+            type="text"
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+            placeholder="İstanbul, Türkiye"
+          />
+        </div>
+        <div>
+          <label className="block text-xs sm:text-sm font-sans font-medium text-gray-700 mb-1.5 sm:mb-2">
+            Çalışma Saatleri
+          </label>
+          <input
+            type="text"
+            value={formData.workingHours}
+            onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })}
+            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-sans text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder:text-gray-400 transition-all"
+            placeholder="Pzt - Cum: 09:00 - 18:00"
           />
         </div>
         <div>

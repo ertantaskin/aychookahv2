@@ -360,6 +360,20 @@ model StoreSettings {
   @@map("store_settings")
 }
 
+/// Site iletişim bilgileri (tek satır kullanılır)
+model ContactInfo {
+  id                String   @id @default(cuid())
+  email             String
+  phone             String
+  address           String?
+  workingHours      String?
+  footerDescription String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("contact_info")
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED

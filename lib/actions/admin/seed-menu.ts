@@ -187,24 +187,21 @@ export async function seedMenuAndHero() {
     }
     console.log("✅ Hero slides eklendi");
 
-    // 8. İletişim Bilgileri (StoreSettings)
-    const contactInfo = {
-      email: "info@aychookah.com",
-      phone: "+90 XXX XXX XX XX",
-      footerDescription: "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
-    };
-
-    await prisma.storeSettings.upsert({
-      where: { key: "contact-info" },
-      update: {
-        config: contactInfo as any,
-      },
-      create: {
-        key: "contact-info",
-        config: contactInfo as any,
-      },
-    });
-    console.log("✅ İletişim bilgileri eklendi");
+    // 8. İletişim Bilgileri (contact_info tablosu)
+    const existingContact = await prisma.contactInfo.findFirst();
+    if (!existingContact) {
+      await prisma.contactInfo.create({
+        data: {
+          email: "info@aychookah.com",
+          phone: "+90 XXX XXX XX XX",
+          address: "İstanbul, Türkiye",
+          workingHours: "Pzt - Cum: 09:00 - 18:00",
+          footerDescription:
+            "Lüks el işçiliği nargile takımları ve orijinal Rus nargile ekipmanları. Kalite ve geleneksel zanaatın buluştuğu profesyonel nargile deneyimi.",
+        },
+      });
+      console.log("✅ İletişim bilgileri (contact_info) eklendi");
+    }
 
     console.log("🎉 Tüm içerik başarıyla seed edildi!");
     return { success: true, message: "Seed başarıyla tamamlandı" };
